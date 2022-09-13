@@ -1,0 +1,12 @@
+{
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": {
+        "chrome": 55
+      }
+    }]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-runtime"
+  ]
+}

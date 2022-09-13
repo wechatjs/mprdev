@@ -1,0 +1,9 @@
+#app {
+  height: 1000px;
+}
+
+.box {
+  background-color: orange;
+  height: 50px;
+  width: 50px;
+}

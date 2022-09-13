@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    // "sourceMap": true,
+    "outDir": "../../../dist/server/app",
+  }
+}

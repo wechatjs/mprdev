@@ -1,0 +1,538 @@
+import { getObjectById, objectFormat } from '../common/remote-obj';
+import { Event } from './protocol';
+import nodes from '../common/nodes';
+import BaseDomain from './domain';
+import JDB from '../common/jdb';
+import Overlay from './overlay';
+
+const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-container'];
+
+export default class Dom extends BaseDomain {
+  namespace = 'DOM';
+
+  searchResults = new Map();
+  searchId = 0;
+
+  /**
+   * 设置$相关的函数方法
+   * @static
+   */
+  static set$Function() {
+    if (typeof window.$ !== 'function') {
+      window.$ = function (selector) {
+        return document.querySelector(selector);
+      };
+    }
+
+    if (typeof window.$$ !== 'function') {
+      window.$$ = function (selector) {
+        return document.querySelectorAll(selector);
+      };
+    }
+  }
+
+  /**
+   * 通过关键词查找元素
+   * @param {string} keyword
+   * @static
+   */
+  static getNodesByKeyword(keyword) {
+    const ret = [];
+    const whatToShow = NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT | NodeFilter.SHOW_COMMENT;
+    const treeWalker = document.createTreeWalker(document.documentElement, whatToShow);
+    for (let node = treeWalker.currentNode; node; node = treeWalker.nextNode()) {
+      switch (node.nodeType) {
+        case Node.ELEMENT_NODE: {
+          if (node.nodeName.toLowerCase().indexOf(keyword) !== -1) {
+            ret.push(node);
+            break;
+          }
+          for (let i = 0; i < node.attributes.length; i++) {
+            const a = node.attributes[i];
+            if (a.name.indexOf(keyword) !== -1 || a.value.indexOf(keyword) !== -1) {
+              ret.push(node);
+              break;
+            }
+          }
+          break;
+        }
+        default: {
+          if (node.nodeValue.indexOf(keyword) !== -1) {
+            ret.push(node);
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /**
+   * 通过选择器查找元素
+   * @param {string} selector
+   * @static
+   */
+  static getNodesBySelector(selector) {
+    return Array.from(document.querySelectorAll(selector));
+  }
+
+  /**
+   * 通过XPath查找元素
+   * @param {string} xpath
+   * @static
+   */
+  static getNodesByXPath(xpath) {
+    const ret = [];
+    const nodesSnapshot = document.evaluate(
+      xpath,
+      document,
+      null,
+      XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+      null
+    );
+    for (let i = 0; i < nodesSnapshot.snapshotLength; i++) {
+      ret.push(nodesSnapshot.snapshotItem(i));
+    }
+    return ret;
+  }
+
+  /**
+   * 启用Dom域
+   * @public
+   */
+  enable() {
+    this.nodeObserver();
+    this.setDomInspect();
+    Dom.set$Function();
+  }
+
+  /**
+   * 获取root的文档
+   * @public
+   */
+  getDocument() {
+    return {
+      root: nodes.collectNodes(document),
+    };
+  }
+
+  /**
+   * 请求获取孩子节点
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   */
+  requestChildNodes({ nodeId }) {
+    this.send({
+      method: Event.setChildNodes,
+      params: {
+        parentId: nodeId,
+        nodes: nodes.getChildNodes(nodes.getNodeById(nodeId))
+      }
+    });
+  }
+
+  /**
+   * 获取节点的外层html
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   */
+  getOuterHTML({ nodeId }) {
+    return {
+      outerHTML: nodes.getNodeById(nodeId).outerHTML
+    };
+  }
+
+  /**
+   * 设置节点的外层html
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   * @param {String} outerHTML 外层的html
+   */
+  setOuterHTML({ nodeId, outerHTML }) {
+    nodes.getNodeById(nodeId).outerHTML = outerHTML;
+  }
+
+  /**
+   * 设置节点的单个属性
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   * @param {String} name 属性名称
+   * @param {String} value 属性值
+   */
+  setAttributeValue({ nodeId, name, value }) {
+    const node = nodes.getNodeById(nodeId);
+    node.setAttribute(name, value);
+  }
+
+  /**
+   * 设置节点的属性
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   * @param {String} text 属性文本，eg: class="test" style="color:red;" data-index="1"
+   * @param {String} name 移除的属性名
+   */
+  setAttributesAsText({ nodeId, text, name }) {
+    const node = nodes.getNodeById(nodeId);
+
+    if (name) {
+      node.removeAttribute(name);
+    }
+
+    if (text) {
+      text.replace(/\n/g, '')
+        .replace(/\s*=\s*/g, '=')
+        .replace(/['"].*?['"]/g, (m) => m.replace(/\s/g, '&'))
+        .split(' ').filter(item => item)
+        .forEach((item) => {
+          const [name, value] = item.split('=');
+          node.setAttribute(name, value.replace(/\&/g, ' ').replace(/["']/g, ''));
+        });
+    } else {
+      Array.from(node.attributes).forEach((attr) => node.removeAttribute(attr.name));
+    }
+  }
+
+  /**
+   * 请求指定的node节点
+   * @public
+   * @param {Object} params
+   * @param {Number} objectId remoteObject的id
+   */
+  requestNode({ objectId }) {
+    const node = getObjectById(objectId);
+    const nodeId = nodes.getIdByNode(node);
+    return { nodeId };
+  }
+
+  /**
+   * 设置节点值
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   * @param {String} value
+   */
+  setNodeValue({ nodeId, value }) {
+    const node = nodes.getNodeById(nodeId);
+    node.nodeValue = value
+  }
+
+  /**
+   * 设置当前选中的节点
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   */
+  setInspectedNode({ nodeId }) {
+    window.$0 = nodes.getNodeById(nodeId);
+  }
+
+  /**
+   * 删除节点
+   * @public
+   * @param {Object} params
+   * @param {Number} nodeId dom节点的id
+   */
+  removeNode({ nodeId }) {
+    const node = nodes.getNodeById(nodeId);
+    node?.parentNode?.removeChild(node);
+  }
+
+  /**
+   * @public
+   */
+  pushNodesByBackendIdsToFrontend({ backendNodeIds }) {
+    return {
+      nodeIds: backendNodeIds
+    };
+  }
+
+  /**
+   * 获取dom节点id
+   * @public
+   */
+  getNodeId({ node }) {
+    return {
+      nodeId: nodes.getIdByNode(node)
+    }
+  }
+
+  /**
+   * 复制节点
+   * @public
+   * @param {Object} params
+   * @param {Object} nodeId 需要复制的dom节点id
+   * @param {Object} targetNodeId 复制位置的dom节点id
+   */
+  copyTo({ nodeId, targetNodeId, insertBeforeNodeId }) {
+    const node = nodes.getNodeById(nodeId);
+    const targetNode = nodes.getNodeById(targetNodeId);
+    const cloneNode = node.cloneNode(true);
+    if (insertBeforeNodeId) {
+      const insertBeforeNode = nodes.getNodeById(insertBeforeNodeId);
+      targetNode.insertBefore(cloneNode, insertBeforeNode);
+    } else {
+      targetNode.appendChild(cloneNode);
+    }
+  }
+
+  /**
+   * 移动节点
+   * @public
+   * @param {Object} params
+   * @param {Object} nodeId 需要移动的dom节点id
+   * @param {Object} targetNodeId 移动位置的dom节点id
+   */
+  moveTo({ nodeId, targetNodeId, insertBeforeNodeId }) {
+    const node = nodes.getNodeById(nodeId);
+    const targetNode = nodes.getNodeById(targetNodeId);
+    if (insertBeforeNodeId) {
+      const insertBeforeNode = nodes.getNodeById(insertBeforeNodeId);
+      targetNode.insertBefore(node, insertBeforeNode);
+    } else {
+      targetNode.appendChild(node);
+    }
+  }
+
+  /**
+   * 搜索
+   * @public
+   * @param {Object} params
+   * @param {Object} query 搜索关键词
+   */
+  performSearch({ query }) {
+    let result = [];
+
+    try {
+      result = result.concat(Dom.getNodesByKeyword(query));
+    } catch (e) { /* empty */ }
+    if (!result.length) {
+      try {
+        result = result.concat(Dom.getNodesBySelector(query));
+      } catch (e) { /* empty */ }
+    }
+    if (!result.length) {
+      try {
+        result = result.concat(Dom.getNodesByXPath(query));
+      } catch (e) { /* empty */ }
+    }
+
+    result = result.filter((node) => debugClsList.indexOf(node?.getAttribute?.('class')) === -1);
+
+    const searchId = this.searchId++;
+    this.searchResults.set(searchId, result);
+
+    return {
+      searchId: searchId,
+      resultCount: result.length,
+    };
+  }
+
+  /**
+   * 获取搜索结果
+   * @public
+   * @param {Object} params
+   * @param {Number} searchId 搜索id
+   * @param {String} fromIndex 开始索引
+   * @param {String} toIndex 结束索引
+   */
+  getSearchResults({ searchId, fromIndex, toIndex }) {
+    const searchResult = this.searchResults.get(searchId);
+    const result = searchResult.slice(fromIndex, toIndex);
+
+    const nodeIds = result.map((node) => {
+      const hasNode = nodes.hasNode(node);
+      const nodeId = nodes.getIdByNode(node);
+
+      if (!hasNode) {
+        // 如果目前不在devtools视图中，在devtools中展开
+        const nodeList = [node];
+        for (let parentNode = node.parentNode; parentNode; parentNode = parentNode.parentNode) {
+          nodeList.push(parentNode);
+          const hasNode = nodes.hasNode(parentNode);
+          if (!hasNode) {
+            nodes.getIdByNode(parentNode);
+          } else {
+            break;
+          }
+        }
+        for (let i = nodeList.length - 1; i > -1; i--) {
+          // 从根节点开始遍历，请求子树
+          this.requestChildNodes({
+            nodeId: nodes.getIdByNode(nodeList[i]),
+          });
+        }
+      }
+
+      return nodeId;
+    });
+
+    return {
+      nodeIds,
+    };
+  }
+
+  /**
+   * 取消搜索
+   * @public
+   * @param {Object} params
+   * @param {Number} searchId 搜索id
+   */
+  discardSearchResults({ searchId }) {
+    this.searchResults.delete(searchId);
+  }
+
+  /**
+   * 转换dom节点
+   * @public
+   * @param {Object} params
+   * @param {Object} nodeId 转换dom节点成对象
+   */
+  resolveNode({ nodeId }) {
+    const node = nodes.getNodeById(nodeId);
+    return {
+      object: objectFormat(node),
+    };
+  }
+
+  /**
+   * 高亮选中dom
+   * @private
+   */
+  setDomInspect() {
+    document.addEventListener('click', (e) => {
+      if (Overlay.inspectMode !== 'searchForNode') return;
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      let previousNode = e.target.parentNode;
+      const currentNodeId = nodes.getIdByNode(e.target);
+      const nodeIds = [];
+      while (!nodes.hasNode(previousNode)) {
+        const nodeId = nodes.getIdByNode(previousNode);
+        nodeIds.unshift(nodeId);
+        previousNode = previousNode.parentNode;
+      }
+
+      nodeIds.unshift(nodes.getIdByNode(previousNode));
+
+      nodeIds.forEach((nodeId) => {
+        this.requestChildNodes({ nodeId });
+      });
+
+      this.send({
+        method: Event.nodeHighlightRequested,
+        params: {
+          nodeId: currentNodeId
+        }
+      });
+      this.send({
+        method: Event.inspectNodeRequested,
+        params: {
+          backendNodeId: currentNodeId
+        }
+      });
+
+      document.getElementById('devtools-overlay').style.display = 'none';
+    }, true);
+  }
+
+  /**
+   * 开启节点变化的监听
+   * @private
+   */
+  nodeObserver() {
+    const isDevtoolMutation = ({ target, addedNodes, removedNodes }) => {
+      if (debugClsList.indexOf(target.getAttribute?.('class')) !== -1) return true;
+      if (debugClsList.indexOf(addedNodes[0]?.getAttribute?.('class')) !== -1) return true;
+      if (debugClsList.indexOf(removedNodes[0]?.getAttribute?.('class')) !== -1) return true;
+      return false;
+    };
+
+    const observer = new MutationObserver((mutationList) => {
+      return JDB.runInNativeEnv(() => {
+        mutationList.forEach((mutation) => {
+          const { attributeName, target, type, addedNodes, removedNodes } = mutation;
+  
+          // 忽略devtool相关的dom变化
+          if (isDevtoolMutation(mutation)) return;
+  
+          const parentNodeId = nodes.getIdByNode(target);
+  
+          const updateChildNodeCount = () => {
+            this.send({
+              method: Event.childNodeCountUpdated,
+              params: {
+                nodeId: parentNodeId,
+                childNodeCount: nodes.getChildNodes(target).length,
+              }
+            });
+          };
+  
+          switch (type) {
+            case 'childList':
+              addedNodes.forEach((node) => {
+                updateChildNodeCount();
+                this.send({
+                  method: Event.childNodeInserted,
+                  params: {
+                    node: nodes.collectNodes(node, 0),
+                    parentNodeId,
+                    previousNodeId: nodes.getIdByNode(nodes.getPreviousNode(node))
+                  }
+                });
+              });
+  
+              removedNodes.forEach((node) => {
+                updateChildNodeCount();
+                const nodeId = nodes.getIdByNode(node);
+                this.send({
+                  method: Event.childNodeRemoved,
+                  params: {
+                    nodeId,
+                    parentNodeId,
+                  }
+                });
+              });
+  
+              break;
+            case 'attributes':
+              // eslint-disable-next-line
+              const value = target.getAttribute(attributeName);
+              this.send({
+                method: value ? Event.attributeModified : Event.attributeRemoved,
+                params: {
+                  nodeId: parentNodeId,
+                  value: value || undefined,
+                  name: attributeName,
+                }
+              });
+              break;
+  
+            case 'characterData':
+              this.send({
+                method: Event.characterDataModified,
+                params: {
+                  nodeId: parentNodeId,
+                  characterData: target.nodeValue
+                }
+              });
+              break;
+          }
+        });
+      });
+    });
+
+    // 观测整个document的变化
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
+  }
+}

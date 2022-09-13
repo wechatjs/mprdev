@@ -1,0 +1,66 @@
+{
+  "name": "mprdev",
+  "version": "0.1.0",
+  "description": "A Web Remote Debug Toolkit",
+  "main": "dist/sdk/index.js",
+  "bin": {
+    "mmbiz-remotedev-svr": "bin/index.js"
+  },
+  "scripts": {
+    "start": "npm run build:svr:static && node bin/index.js -v -h 0.0.0.0 -p 8090",
+    "build": "npm run build:sdk && npm run build:svr",
+    "build:sdk": "rollup -c src/sdk/rollup.config.js && cp src/sdk/index.d.ts dist/sdk",
+    "build:svr": "tsc -p src/server/app/tsconfig.json && npm run build:svr:static",
+    "build:svr:static": "cp -r src/server/public dist/server/ && npm run build:svr:panel",
+    "build:svr:panel": "cd src/server/panel && vite build && cd -",
+    "dev": "npm run dev:sdk & npm run dev:svr",
+    "dev:sdk": "rollup --watch -c src/sdk/rollup.config.js",
+    "dev:svr": "tsc --watch -p src/server/app/tsconfig.json",
+    "pub": "npm run build && npm publish --registry https://registry.npmjs.org",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wechatjs/mprdev"
+  },
+  "author": "siubaak",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^22.0.0-7",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.1.3",
+    "@types/commander": "^2.12.2",
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
+    "@types/koa-send": "^4.1.3",
+    "@types/node": "^16.11.10",
+    "@types/ws": "^8.2.0",
+    "eslint": "^6.8.0",
+    "rollup": "^2.67.2",
+    "tdesign-vue": "^0.46.3",
+    "typescript": "^3.8.3",
+    "vite": "2.7.6",
+    "vite-plugin-vue2": "1.9.0",
+    "vue": "2.6.14",
+    "vue-template-compiler": "2.6.14"
+  },
+  "dependencies": {
+    "vdebugger": "^0.1.0",
+    "callsites": "^4.0.0",
+    "commander": "^8.3.0",
+    "html2canvas": "^1.4.1",
+    "js-cookie": "^3.0.1",
+    "koa": "^2.13.4",
+    "koa-router": "^10.1.1",
+    "koa-send": "^5.0.1",
+    "localforage": "^1.10.0",
+    "query-string": "^7.1.1",
+    "reconnecting-websocket": "^4.4.0",
+    "uuid": "^8.3.2",
+    "ws": "^8.3.0"
+  }
+}
