@@ -124,6 +124,7 @@ export default class Debugger extends BaseDomain {
         };
       }
     }
+    console.warn(`Failed to set breakpoint by "${url}"`);
     // 兜底返回
     const tmpId = Date.now() + Math.random();
     return {

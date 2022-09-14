@@ -66,8 +66,8 @@ export function init(opts = {}) {
         const message = JSON.parse(data);
         const ret = domain.execute(message);
         socket.send(JSON.stringify(ret));
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     });
   });
@@ -88,7 +88,7 @@ export function debug(rawCode, rawUrl) {
     throw new Error('Parameter "string" must be nonempty string for "RemoteDevSdk.debug"');
   }
   if (!url || typeof url !== 'string') {
-    throw new Error('Parameter "url" of the script must be nonempty string for `RemoteDevSdk.debug`');
+    throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debug"');
   }
   const absURL = new URL(url, location.href);
   const importUrl = absURL.href;
@@ -111,7 +111,7 @@ function debugSrcResHandler() {
 }
 export function debugSrc(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') {
-    throw new Error('Parameter "url" of the script must be nonempty string for `RemoteDevSdk.debugSrc`');
+    throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debugSrc"');
   }
   const absURL = new URL(rawUrl, location.href);
   const importUrl = absURL.href;
