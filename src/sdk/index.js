@@ -56,7 +56,7 @@ export function init(opts = {}) {
 
   const host = opts.host || location.hostname;
   const port = opts.port || location.port;
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
   const socket = new ReconnectingWebSocket(`${protocol}//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`);
   const domain = new ChromeDomain({ socket });
 
@@ -145,7 +145,8 @@ if (document.currentScript?.src) {
   const port = matchUrl('port')?.[2] * 1;
   const uin = matchUrl('uin')?.[2] * 1;
   const title = matchUrl('title')?.[2];
+  const protocol = matchUrl('protocol')?.[2];
   if (host || port || uin || title) {
-    docReady(() => init({ host, port, uin, title }));
+    docReady(() => init({ host, port, uin, title, protocol }));
   }
 }

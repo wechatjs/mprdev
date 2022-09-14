@@ -3,30 +3,28 @@
     <t-header class="header">
       <t-head-menu theme="dark">
         <div class="logo" slot="logo">远程调试</div>
-        <template #operations>
-          <div class="header-operations">
-            <t-button theme="primary" @click="getTargets" :loading="isLoading">刷新</t-button>
-            <t-dropdown
-              class="sort-dropdown"
-              placement="bottom"
-              :options="sortOptions"
-              :value="sortType"
-              @click="handleSortTypeChange"
-            >
-              <t-button>
-                {{ sortType | filterSortType }}
-                <t-icon name="chevron-down" size="small" />
-              </t-button>
-            </t-dropdown>
-            <t-input-adornment prepend="搜索">
-              <t-input
-                class="searchbar"
-                v-model="searchContent"
-                placeholder="标题 / 设备ID / URL / UIN"
-              />
-            </t-input-adornment>
-          </div>
-        </template>
+        <div class="header-operations" slot="operations">
+          <t-button theme="primary" @click="getTargets" :loading="isLoading">刷新</t-button>
+          <t-dropdown
+            class="sort-dropdown"
+            placement="bottom"
+            :options="sortOptions"
+            :value="sortType"
+            @click="handleSortTypeChange"
+          >
+            <t-button>
+              {{ sortType | filterSortType }}
+              <t-icon name="chevron-down" size="small" />
+            </t-button>
+          </t-dropdown>
+          <t-input-adornment prepend="搜索">
+            <t-input
+              class="searchbar"
+              v-model="searchContent"
+              placeholder="标题 / 设备ID / URL / UIN"
+            />
+          </t-input-adornment>
+        </div>
       </t-head-menu>
     </t-header>
     <t-content class="content">
@@ -52,9 +50,12 @@
               </div>
             </div>
           </div>
-          <template #action>
-            <t-button theme="primary" @click="goDevtools(info.targetId)">进入调试</t-button>
-          </template>
+          <t-dropdown :options="jumpOptions(info.targetId)" maxColumnWidth="200" slot="action">
+            <t-button theme="primary" @click="goDevtools(info.targetId)">
+              进入调试
+              <t-icon name="chevron-down" size="small" />
+            </t-button>
+          </t-dropdown>
         </t-list-item>
       </t-list>
       <div class="empty" v-else>暂无节点连入</div>
@@ -161,10 +162,12 @@ export default {
         xhr.send();
       });
     },
-    goDevtools(target) {
+    goDevtools(target, secure) {
+      const securePointed = secure !== undefined;
+
       const host = location.host;
-      const protocol = location.protocol;
-      const wsProtocol = (location.protocol === 'https:' ? 'wss' : 'ws');
+      const protocol = securePointed ? secure : location.protocol;
+      const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
       const devPanelUrl = `${host}/${BASE_URL.replace(/^\//, '')}/front_end/devtools_app.html`;
       const wsConnection = `${host}/devtool/${target}?targetId=${target}`;
 
@@ -175,7 +178,7 @@ export default {
       console.log('deanti e', e);
       this.sortType = e.value;
     },
-    // sorterFactory
+    // factory
     sorterFactory(type) {
       return (a, b) => {
         const isAsc = type === SORT.TIME_ASC || type === SORT.UIN_ASC;
@@ -187,7 +190,13 @@ export default {
         else if (aValue > bValue) return isAsc ? 1 : -1;
         return 0;
       }
-    }
+    },
+    jumpOptions(target) {
+      return [
+        { content: 'secure', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
+        { content: 'no secure', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
+      ];
+    },
   }
 }
 </script>

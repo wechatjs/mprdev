@@ -3,6 +3,7 @@ declare interface InitOptions {
   port?: number
   uin?: number
   title?: string
+  protocol?: 'wss:' | 'ws:'
 }
 
 export declare const version: string
