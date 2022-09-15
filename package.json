@@ -4,7 +4,7 @@
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
-    "mmbiz-remotedev-svr": "bin/index.js"
+    "mprdevsvr": "bin/index.js"
   },
   "scripts": {
     "start": "npm run build:svr:static && node bin/index.js -v -h 0.0.0.0 -p 8090",
@@ -49,7 +49,7 @@
     "vue-template-compiler": "2.6.14"
   },
   "dependencies": {
-    "vdebugger": "^0.1.0",
+    "vdebugger": "^0.1.1",
     "callsites": "^4.0.0",
     "commander": "^8.3.0",
     "html2canvas": "^1.4.1",
