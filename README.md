@@ -1,6 +1,6 @@
-# 公众平台网页远程调试工具
+# 远程调试工具 &middot; [![npm](https://img.shields.io/npm/v/mprdev.svg?style=flat-square)](https://www.npmjs.com/package/mprdev) [![github-actions](https://img.shields.io/github/workflow/status/wechatjs/mprdev/Build.svg?style=flat-square)](https://github.com/wechatjs/mprdev/actions/workflows/build.yml
 
-- [chrome devtools protocol](https://chromedevtools.github.io/devtools-protocol)
+公众平台网页远程调试工具。
 
 ## 开始
 
@@ -120,17 +120,6 @@ npm run dev & npm start
 # DevTools：http://localhost:8090/remote_dev
 ```
 
-## TODO
+## 参考
 
-## 底层
-
-- [ ] 模块系统循环引用
-
-## 特性
-
-- [x] stepOver和stepOut支持
-- [x] 条件断点和日志断点支持
-- [x] 调用栈显示及切换
-- [x] dom节点搜索支持
-- [x] 异常时断点支持
-- [ ] css文件支持修改
+- [Chrome Devtools Protocol](https://chromedevtools.github.io/devtools-protocol)

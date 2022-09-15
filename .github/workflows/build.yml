@@ -1,0 +1,17 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Setup node environment
+        uses: actions/setup-node@v3.4.1
+      - name: Install node modules
+        run: npm install
+      - name: Build code
+        run: npm run build
