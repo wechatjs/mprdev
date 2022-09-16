@@ -4,6 +4,8 @@
 
 网页远程调试工具。
 
+https://user-images.githubusercontent.com/25946398/190591248-bfac803e-cb2e-4e4c-a2d3-b2b50b2c9d06.mov
+
 ## 快速开始
 
 工具分为SDK和DevTools服务，首先是DevTools服务部署：
