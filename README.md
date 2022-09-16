@@ -10,7 +10,7 @@ Toolkit has two parts which are an SDK and a DevTools service. Firstly, deploy t
 
 ```bash
 $ npx mprdev -h 0.0.0.0 -p 8090
-# terminal will output a log as "DevTools: http://0.0.0.0:8090/remote_dev" which is the DevTools service backend entry.
+# terminal will output a log as "DevTools: http://0.0.0.0:8090/remote_dev" which is the DevTools service backend entry
 # asume that the WAN IP of the server is 123.123.123.123, then the DevTools service is served at 123.123.123.123:8090
 ```
 
@@ -32,68 +32,66 @@ Besides, if your web pages can't directly connect to the DevTools service, for e
 Currently, we implement a breakpoint feature based on [`vDebugger`](https://github.com/wechatjs/vdebugger). So, besides the steps of "Getting Started" above, you have to doing more for breakpoint debug. The SDK has to take over the execution of JavaScript, so two APIs are offered for inputing the JavaScript source code of your web pages:
 
 ```ts
-function debug(script: string, url?: string): void // input source code for remote breakpoint debug
+function debug(script: string, url: string): void // input source code for remote breakpoint debug
 function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
 ```
 
-其中：
+1. The `debug` method accepts two arguments, which are the source code `script` and the corresponding `url`. The `url` argument is used to identify the `script`, in order to match the breakpoint mapping in the DevTools service.
 
-1. `debug`接口接受两个参数，分别是断点调试的源码`script`和源码对应的链接`url`，源码对应的链接`url`参数用于唯一标识脚本以匹配DevTools服务中源码显示和断点映射。若缺失，将会作为临时脚本分配临时标识，比如`VM18248`。为了使得DevTools服务正常显示源码以及断点，强烈建议传入；
-2. `debugSrc`接口仅接受一个参数，源码对应的链接`scriptSrc`，含义和`debug`的`url`相同。不同的地方在于，但该接口会实际通过该链接请求脚本源码来进行断点调试。
+2. The `debugSrc` method accepts only one argument, which is the source url `scriptSrc`. It has the same meaning of the `url` of the `debug` method, but this method will use it to request the source code for breakpoing debug.
 
-举个例子，通常情况下，假设页面HTML中会请求以下链接获取一段JS脚本：
+For example, asume that a web page request the link below to import a script normally:
 
 ```html
 <script src="/test.js"></script>
 ```
 
-为了能让远程调试SDK接管脚本执行并进行断点，可以改写页面HTML，通过使用`debugSrc`接口进行接管即可：
+In order to take over execution of the script by the SDK, you can modify the page HTML and replace the `<script>` by the `debugSrc` method:
 
 ```html
-<!-- RemoteDevSdk为上述通过CDN引入后挂载的全局变量 -->
 <script>RemoteDevSdk.debugSrc('/test.js')</script>
 ```
 
-特别注意，使用`debugSrc`接管后，脚本加载将不会阻塞页面渲染，相当于给原来的\<script\>标签加上了defer属性，行为等同于：
+Beware that, after taking over by the `debugSrc` method, loading scripts won't block the page render, which means adding defer to the original `<script>` like:
 
 ```html
 <script defer src="/test.js"></script>
 ```
 
-如果无法接受\<script\>以defer的行为加载，或者无法通过上述改动页面HTML的方式让远程调试SDK接管脚本执行并进行断点，则可以在服务端返回JS脚本时，通过使用`debug`接口进行包裹（记得进行相应转义保证返回合法的JS脚本），以Express为例：
+If script defer can't be accepted, or modifing the page HTML isn't allowed, you can use the `debug` method to wrap source codes before server responses. However, keep in mind to escape codes to ensure the codes are valid JavaScript string. Take [Express](https://expressjs.com/) as an example:
 
 ```js
-// RemoteDevSdk为上述通过CDN引入后挂载的全局变量
 app.use('/test.js', (req, res) => {
   res.send(`RemoteDevSdk.debug(\`${script.replace(/(`|\$|\\)/g, '\\$1')}\`, '${req.url}');`);
 });
 ```
 
-注意，使用`debug`接口包裹源码的时候，务必保证是如下格式，因为DevTools服务会进行严格匹配和过滤，保证调试面板上能对源码进行高亮显示：
+Be attention to keep the format as below when wrapping codes by the `debug` method, because the DevTools service will match and filter the wrapper strictly to make sure the source codes can be highlighted as expected:
 
 ```js
-// RemoteDevSdk为上述通过CDN引入后挂载的全局变量，严格保证包裹的格式如下：
+// keep the wrapper format strictly as below ("%code%" is script string and "%url%" is script url)
 RemoteDevSdk.debug(`%code%`, '%url%');
-// 其中%code%为源码脚本内容，%url%为脚本对应链接，DevTools服务会对包裹后的脚本进行如下替换，保证调试面板能正常高亮显示源码
-// script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.replace(/\\`/g, '`').replace(/\\\$/g, '$'));
+
+// DevTools service will replace the wrapper as below to ensure scripts can be highlighted
+script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.replace(/\\`/g, '`').replace(/\\\$/g, '$'));
 ```
 
 ## SDK API Types
 
 ```ts
 declare interface InitOptions {
-  host?: string // DevTools服务部署的Host/IP
-  port?: number // DevTools服务部署的端口
-  uin?: number // 用户ID，用于DevTools服务显示和搜索入口
-  title?: string // 页面标题，用于DevTools服务显示搜索入口
+  host?: string // DevTools service deploy Host/IP
+  port?: number // DevTools service deploy port
+  uin?: number // user id for display and search in Devtools service
+  title?: string // page title for display and search in Devtools service
 }
 
-export declare const version: string // 远程调试SDK版本
-export declare function init(opts: InitOptions): void // 远程调试初始化
-export declare function debug(script: string, url?: string): void // 远程调试断点源码传入
-export declare function debugSrc(scriptSrc: string): void // 远程调试断点源码链接传入
-export declare function debugCache(check: boolean | ((url: string) => boolean)): void // 控制是否强缓存远程调试断点源码，可减少页面加载耗时
-export declare function getId(): string // 获取远程调试设备ID
+export declare const version: string
+export declare function init(opts: InitOptions): void
+export function debug(script: string, url: string): void // input source code for remote breakpoint debug
+export function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
+export declare function debugCache(check: boolean | ((url: string) => boolean)): void // control whether cache debug codes by url, which can reduce loading time 
+export declare function getId(): string // get device id
 
 declare const RemoteDevSdk: {
   version: typeof version
@@ -122,8 +120,8 @@ cd mprdev
 npm install
 npm run dev & npm start
 
-# 调试页面：http://localhost:8090/remote_dev/test
-# DevTools：http://localhost:8090/remote_dev
+# Test Page：http://localhost:8090/remote_dev/test
+# DevTools Entry：http://localhost:8090/remote_dev
 ```
 
 ## References
