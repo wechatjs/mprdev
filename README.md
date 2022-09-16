@@ -4,6 +4,8 @@
 
 A Web Remote Debug Toolkit.
 
+https://user-images.githubusercontent.com/25946398/190591248-bfac803e-cb2e-4e4c-a2d3-b2b50b2c9d06.mov
+
 ## Getting Started
 
 Toolkit has two parts which are an SDK and a DevTools service. Firstly, deploy the DevTools service:
