@@ -1,39 +1,39 @@
 # MpRdev &middot; [![npm](https://img.shields.io/npm/v/mprdev.svg?style=flat-square)](https://www.npmjs.com/package/mprdev) [![github-actions](https://img.shields.io/github/workflow/status/wechatjs/mprdev/Build.svg?style=flat-square)](https://github.com/wechatjs/mprdev/actions/workflows/build.yml)
 
-**English | [简体中文](./README_CN.md)**
+**[English](./README.md) | 简体中文**
 
-A Web Remote Debug Toolkit.
+网页远程调试工具。
 
-## Getting Started
+## 快速开始
 
-Toolkit has two parts which are an SDK and a DevTools service. Firstly, deploy the DevTools service:
+工具分为SDK和DevTools服务，首先是DevTools服务部署：
 
 ```bash
-$ npx mprdev -h 0.0.0.0 -p 8090
-# terminal will output a log as "DevTools: http://0.0.0.0:8090/remote_dev" which is the DevTools service backend entry.
-# asume that the WAN IP of the server is 123.123.123.123, then the DevTools service is served at 123.123.123.123:8090
+npx mprdev -h 0.0.0.0 -p 8090
+# 控制台输出的 DevTools: http://0.0.0.0:8090/remote_dev 为DevTools服务入口
+# 假设服务器公网IP是123.123.123.123，那么服务地址就是123.123.123.123:8090
 ```
 
-After deployment, in order to debug remotely, your web pages have to import SDK and connect to the DevTools service.
+部署以后，需要前端页面接入SDK，并连接到部署的DevTools服务，才能进行远程调试。
 
-We highly recommend you to import the SDK from CDN at the very beginning of your web pages, which ensures the SDK logging all information of the pages. And the SDK will mount at global like `window.RemoteDevSdk` by default to export all APIs. After importing the SDK, if the DevTools service is deployed to 123.123.123.123:8090, the SDK is required to connect by passing the service info to a `init` method:
+前端页面接入SDK的时候，强烈建议通过CDN链接在页面最开头引入，这样能保证SDK能记录到所有的日志和请求，并且这种方式会在全局挂载`window.RemoteDevSdk`变量来暴露接口，方便后续使用。其次，在引入SDK后，假设DevTools服务部署在123.123.123.123:8090，那么当前端页面的SDK接入时，将该信息传入`init`建立连接：
 
 ```html
-<script src="https://unpkg.com/mprdev"></script>
+<script src="mprdev"></script>
 <script>RemoteSdkDev.init({ host: '123.123.123.123', port: 8090 })</script>
 ```
 
-Finally, open your web pages and the DevTools serve to enjoy your debugging journey.
+最后，访问前端页面，打开DevTools服务，即可开始调试。
 
-Besides, if your web pages can't directly connect to the DevTools service, for example, the server is located at LAN, you need to proxy a WebSocket whose path is "/target" to ensure the SDK connecting to the DevTools service.
+另外，如果前端页面无法直接连接DevTools服务部署的机器（比如机器处于内网），则需要对`/target`路径的WebSocket请求进行代理转发，才能保证SDK能连上DevTools服务，使得DevTools服务能正常收到SDK发送的调试信息。
 
-## Breakpoint
+## 断点
 
-Currently, we implement a breakpoint feature based on [`vDebugger`](https://github.com/wechatjs/vdebugger). So, besides the steps of "Getting Started" above, you have to doing more for breakpoint debug. The SDK has to take over the execution of JavaScript, so two APIs are offered for inputing the JavaScript source code of your web pages:
+目前，远程调试的断点能力是基于[vDebugger](https://github.com/wechatjs/vdebugger)实现的断点功能，因此相对于上述“快速开始”中的接入流程外，还需要额外的接入工作。为了实现断点调试，需要让SDK接管需要断点的JS脚本。因此SDK提供了两个接口，用于传入JS脚本源码：
 
 ```ts
-function debug(script: string, url?: string): void // input source code for remote breakpoint debug
-function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
+function debug(script: string, url?: string): void // 远程调试断点源码传入
+function debugSrc(scriptSrc: string): void // 远程调试断点源码链接传入
 ```
 
 其中：
@@ -78,7 +78,7 @@ RemoteDevSdk.debug(`%code%`, '%url%');
 // script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.replace(/\\`/g, '`').replace(/\\\$/g, '$'));
 ```
 
-## SDK API Types
+## SDK接口类型
 
 ```ts
 declare interface InitOptions {
@@ -113,7 +113,7 @@ declare global {
 }
 ```
 
-## Development
+## 开发
 
 ```bash
 git clone https://github.com/wechatjs/mprdev
@@ -126,10 +126,10 @@ npm run dev & npm start
 # DevTools：http://localhost:8090/remote_dev
 ```
 
-## References
+## 参考
 
 - [Chrome Devtools Protocol](https://chromedevtools.github.io/devtools-protocol)
 
-## License
+## 协议
 
 [MIT](./LICENSE)
