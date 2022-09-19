@@ -8,7 +8,7 @@ https://user-images.githubusercontent.com/25946398/190591248-bfac803e-cb2e-4e4c-
 
 ## Getting Started
 
-Toolkit has two parts which are an SDK and a DevTools service. Firstly, deploy the DevTools service:
+The toolkit has two parts which are an SDK and a DevTools service. Firstly, deploy the DevTools service:
 
 ```bash
 $ npx mprdev -h 0.0.0.0 -p 8090
