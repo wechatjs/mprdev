@@ -31,7 +31,7 @@ Besides, if your web pages can't directly connect to the DevTools service, for e
 
 ## Breakpoint
 
-Currently, we implement a breakpoint feature based on [`vDebugger`](https://github.com/wechatjs/vdebugger). So, besides the steps of "Getting Started" above, you have to doing more for breakpoint debug. The SDK has to take over the execution of JavaScript, so two APIs are offered for inputing the JavaScript source code of your web pages:
+Currently, we implement a breakpoint feature based on [`vDebugger`](https://github.com/wechatjs/vdebugger). So, besides the steps of "Getting Started" above, you have to do more for breakpoint debug. The SDK has to take over the execution of JavaScript, so two APIs are offered for inputing the JavaScript source code of your web pages:
 
 ```ts
 function debug(script: string, url: string): void // input source code for remote breakpoint debug
