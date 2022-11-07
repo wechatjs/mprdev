@@ -14,7 +14,7 @@ export default class Debugger extends BaseDomain {
   scriptDebugOffsets = new Map();
 
   // javascript脚本的唯一id
-  scriptId = 0;
+  scriptId = 1;
 
   enabledCount = 0;
 
@@ -471,8 +471,7 @@ export default class Debugger extends BaseDomain {
    * @private
    */
   getScriptId() {
-    this.scriptId += 1;
-    return `${this.scriptId}`;
+    return `${this.scriptId++}`;
   }
 
   /**

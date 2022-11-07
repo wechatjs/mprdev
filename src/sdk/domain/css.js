@@ -13,7 +13,7 @@ export default class CSS extends BaseDomain {
   styleInsts = new Map();
 
   // css样式表的唯一id
-  styleSheetId = 0;
+  styleSheetId = 1;
 
   /**
    * 格式化css规则
@@ -336,14 +336,12 @@ export default class CSS extends BaseDomain {
       const nodeId = nodes.getIdByNode(node);
       let styleSheetId = stylesheet.getInlineStyleSheetId(nodeId);
       if (!styleSheetId) {
-        this.styleSheetId += 1;
-        styleSheetId = `${this.styleSheetId}`;
+        styleSheetId = `${this.styleSheetId++}`;
         stylesheet.setInlineStyleSheetId(nodeId, styleSheetId);
       }
       return styleSheetId;
     }
-    this.styleSheetId += 1;
-    return `${this.styleSheetId}`;
+    return `${this.styleSheetId++}`;
   }
 
   /**

@@ -10,7 +10,7 @@ export default class Network extends BaseDomain {
   namespace = 'Network';
 
   // 请求的唯一id
-  requestId = 0;
+  requestId = 1;
 
   // 请求响应的集合
   responseText = new Map();
@@ -123,8 +123,7 @@ export default class Network extends BaseDomain {
    * @private
    */
   getRequestId() {
-    this.requestId += 1;
-    return this.requestId;
+    return this.requestId++;
   }
 
   /**

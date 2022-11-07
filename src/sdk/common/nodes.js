@@ -7,7 +7,8 @@ class Nodes {
   // DOM节点id集合
   nodes = new Map();
 
-  currentId = 0;
+  // DOM节点id计数
+  currentId = 1;
 
   /**
    * 是否为node节点

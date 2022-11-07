@@ -10,8 +10,9 @@ const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-cont
 export default class Dom extends BaseDomain {
   namespace = 'DOM';
 
+  isEnabled = false;
   searchResults = new Map();
-  searchId = 0;
+  searchId = 1;
 
   /**
    * 设置$相关的函数方法
@@ -100,9 +101,12 @@ export default class Dom extends BaseDomain {
    * @public
    */
   enable() {
-    this.nodeObserver();
-    this.setDomInspect();
-    Dom.set$Function();
+    if (!this.isEnabled) {
+      this.isEnabled = true;
+      this.nodeObserver();
+      this.setDomInspect();
+      Dom.set$Function();
+    }
   }
 
   /**
