@@ -401,12 +401,14 @@ export default class Dom extends BaseDomain {
     Element.prototype.attachShadow = function attachShadow(init) {
       const shadowRoot = elAttachShadow.apply(this, arguments);
       Promise.resolve().then(() => {
-        self.send({
-          method: Event.shadowRootPushed,
-          params: {
-            hostId: nodes.getIdByNode(this),
-            root: nodes.collectNodes(shadowRoot, { depth: 0, shadowRootType: init?.mode || 'open' })
-          }
+        return JDB.runInNativeEnv(() => {
+          self.send({
+            method: Event.shadowRootPushed,
+            params: {
+              hostId: nodes.getIdByNode(this),
+              root: nodes.collectNodes(shadowRoot, { depth: 0, shadowRootType: init?.mode || 'open' })
+            }
+          });
         });
       });
       return shadowRoot;
