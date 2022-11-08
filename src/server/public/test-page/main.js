@@ -24,3 +24,12 @@ new Vue({
     }
   }
 });
+
+window.customElements.define('custom-test', class extends HTMLElement {
+  constructor() {
+    const root = this.attachShadow({ mode: 'open' });
+    const div = document.createElement('div');
+    div.innerText = 'test';
+    root.appendChild(div);
+  }
+});

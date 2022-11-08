@@ -15,6 +15,11 @@ export default class Dom extends BaseDomain {
   searchResults = new Map();
   searchId = 1;
 
+  constructor(options) {
+    super(options);
+    this.hookAttachShadow();
+  }
+
   /**
    * 设置$相关的函数方法
    * @static
@@ -387,6 +392,28 @@ export default class Dom extends BaseDomain {
   }
 
   /**
+   * 监听shadow root插入
+   * @private
+   */
+  hookAttachShadow() {
+    const self = this;
+    const elAttachShadow = Element.prototype.attachShadow;
+    Element.prototype.attachShadow = function attachShadow(init) {
+      const shadowRoot = elAttachShadow.apply(this, arguments);
+      Promise.resolve().then(() => {
+        self.send({
+          method: Event.shadowRootPushed,
+          params: {
+            hostId: nodes.getIdByNode(this),
+            root: nodes.collectNodes(shadowRoot, { depth: 0, shadowRootType: init?.mode || 'open' })
+          }
+        });
+      });
+      return shadowRoot;
+    };
+  }
+
+  /**
    * 高亮选中dom
    * @private
    */
@@ -458,7 +485,7 @@ export default class Dom extends BaseDomain {
                 this.send({
                   method: Event.childNodeInserted,
                   params: {
-                    node: nodes.collectNodes(node, 0),
+                    node: nodes.collectNodes(node, { depth: 0 }),
                     parentNodeId,
                     previousNodeId: nodes.getIdByNode(nodes.getPreviousNode(node))
                   }

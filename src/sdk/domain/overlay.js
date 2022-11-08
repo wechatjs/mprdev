@@ -96,7 +96,7 @@ export default class Overlay {
     if (isQuiteMode()) return;
 
     const node = nodeElement || nodes.getNodeById(nodeId);
-    if (!node || [3, 8, 10].includes(node.nodeType) || ['LINK', 'SCRIPT', 'HEAD'].includes(node.nodeName)) return;
+    if (!node || [3, 8, 10, 11].includes(node.nodeType) || ['LINK', 'SCRIPT', 'HEAD'].includes(node.nodeName)) return;
 
     this.highlight(node, highlightConfig);
   }

@@ -64,11 +64,12 @@ class Nodes {
    * 收集子节点
    * @public
    * @param {Element} node dom节点
-   * @param {Number} depth 子节点深度
+   * @param {Object} opts 收集选项
    */
-  collectNodes(node, depth = 2) {
+  collectNodes(node, opts = {}) {
     const nodeId = this.getIdByNode(node);
-    const { nodeType, nodeName, localName, nodeValue, parentNode, attributes, childNodes } = node;
+    const { depth = 2, shadowRootType } = opts // depth: 子节点深度
+    const { nodeType, nodeName, localName, nodeValue, parentNode, attributes, childNodes, shadowRoot } = node;
     const res = {
       nodeId,
       nodeType,
@@ -91,6 +92,14 @@ class Nodes {
       res.children = this.getChildNodes(node, depth);
     }
 
+    if (shadowRoot) {
+      res.shadowRoots = [this.collectNodes(shadowRoot, { depth: 0, shadowRootType: 'open' })];
+    }
+
+    if (shadowRootType) {
+      res.shadowRootType = shadowRootType;
+    }
+  
     return res;
   }
 
@@ -103,7 +112,7 @@ class Nodes {
   getChildNodes(node, depth = 1) {
     return Array.from(node.childNodes)
       .filter(Nodes.isNode)
-      .map(childNode => this.collectNodes(childNode, depth - 1));
+      .map(childNode => this.collectNodes(childNode, { depth: depth - 1 }));
   }
 
   /**

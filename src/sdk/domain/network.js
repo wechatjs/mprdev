@@ -18,11 +18,11 @@ export default class Network extends BaseDomain {
   // 用户缓存的请求
   cacheRequest = [];
 
-  isEnable = false;
+  isEnabled = false;
 
   socketSend = (data) => {
     this.cacheRequest.push(data);
-    if (this.isEnable) {
+    if (this.isEnabled) {
       this.send(data);
     }
   };
@@ -68,7 +68,7 @@ export default class Network extends BaseDomain {
    * @public
    */
   enable() {
-    this.isEnable = true;
+    this.isEnabled = true;
     this.cacheRequest.forEach(data => this.send(data));
   }
 

@@ -105,6 +105,7 @@ export const Event = {
   attributeModified: 'DOM.attributeModified',
   attributeRemoved: 'DOM.attributeRemoved',
   characterDataModified: 'DOM.characterDataModified',
+  shadowRootPushed: 'DOM.shadowRootPushed',
 
   requestWillBeSent: 'Network.requestWillBeSent',
   responseReceivedExtraInfo: 'Network.responseReceivedExtraInfo',
