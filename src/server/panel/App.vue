@@ -17,11 +17,11 @@
               <t-icon name="chevron-down" size="small" />
             </t-button>
           </t-dropdown>
-          <t-input-adornment prepend="搜索">
+          <t-input-adornment prepend="搜索" class="search">
             <t-input
               class="searchbar"
               v-model="searchContent"
-              placeholder="标题 / 设备ID / URL / UIN"
+              placeholder="UIN / 标题 / 设备ID / URL"
             />
           </t-input-adornment>
         </div>
@@ -34,7 +34,7 @@
             <div class="info">
               <div class="main-info">
                 <!-- favicon -->
-                <t-avatar :image="info.favicon" :hideOnLoadFailed='false' size="small"></t-avatar>
+                <t-avatar class="favicon" :image="info.favicon" :hideOnLoadFailed='false' size="small"></t-avatar>
                 <!-- title tooltip:pageUrl -->
                 <t-tooltip class="title" :content="info.pageUrl" show-arrow>{{ info.title || '未命名网站' }}</t-tooltip>
                 <!-- uin -->
@@ -50,7 +50,7 @@
               </div>
             </div>
           </div>
-          <t-dropdown :options="jumpOptions(info.targetId)" maxColumnWidth="200" slot="action">
+          <t-dropdown :options="jumpOptions(info.targetId)" maxColumnWidth="200" placement="bottom-right" slot="action">
             <t-button theme="primary" @click="goDevtools(info.targetId)">
               进入调试
               <t-icon name="chevron-down" size="small" />
@@ -193,8 +193,8 @@ export default {
     },
     jumpOptions(target) {
       return [
-        { content: 'secure', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
-        { content: 'no secure', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
+        { content: '安全信道(默认)', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
+        { content: '非安全信道', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
       ];
     },
   }
@@ -202,10 +202,15 @@ export default {
 </script>
 
 <style scoped>
+.page {
+  min-width: 700px;
+}
+
 .logo {
   color: var(--td-brand-color-7);
   font-size: 26px;
   padding: 0 24px;
+  flex-shrink: 0;
 }
 
 .header-operations {
@@ -224,6 +229,10 @@ export default {
 .sort-dropdown {
   margin-left: 24px;
 }
+
+.search {
+  flex-shrink: 0;
+} 
 
 .content {
   height: calc(100vh - 64px);
@@ -247,8 +256,7 @@ export default {
 .info {
   display: flex;
   flex-direction: column;
-
-  margin-left: 8px;
+  margin: 0 8px;
 }
 
 .main-info {
@@ -257,10 +265,23 @@ export default {
   align-items: center;
 }
 
+.favicon {
+  flex-shrink: 0;
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
 .ua {
   display: flex;
   flex-direction: row;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .main-info > *:not(:first-child) {
@@ -269,6 +290,7 @@ export default {
 
 .extra-info {
   margin-top: 8px;
+  display: flex;
 }
 
 .extra-info > *:not(:first-child) {
@@ -277,5 +299,10 @@ export default {
 
 .target {
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 </style>
