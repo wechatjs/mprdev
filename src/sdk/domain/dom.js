@@ -11,6 +11,7 @@ export default class Dom extends BaseDomain {
   namespace = 'DOM';
 
   isEnabled = false;
+  childListSetNodeIds = new Set();
   searchResults = new Map();
   searchId = 1;
 
@@ -101,6 +102,7 @@ export default class Dom extends BaseDomain {
    * @public
    */
   enable() {
+    this.resetDocument();
     if (!this.isEnabled) {
       this.isEnabled = true;
       this.nodeObserver();
@@ -126,13 +128,16 @@ export default class Dom extends BaseDomain {
    * @param {Number} nodeId dom节点的id
    */
   requestChildNodes({ nodeId }) {
-    this.send({
-      method: Event.setChildNodes,
-      params: {
-        parentId: nodeId,
-        nodes: nodes.getChildNodes(nodes.getNodeById(nodeId))
-      }
-    });
+    if (!this.childListSetNodeIds.has(nodeId)) {
+      this.childListSetNodeIds.add(nodeId);
+      this.send({
+        method: Event.setChildNodes,
+        params: {
+          parentId: nodeId,
+          nodes: nodes.getChildNodes(nodes.getNodeById(nodeId))
+        }
+      });
+    }
   }
 
   /**
@@ -416,13 +421,11 @@ export default class Dom extends BaseDomain {
       let previousNode = e.target.parentNode;
       const currentNodeId = nodes.getIdByNode(e.target);
       const nodeIds = [];
-      while (!nodes.hasNode(previousNode)) {
+      while (previousNode) {
         const nodeId = nodes.getIdByNode(previousNode);
         nodeIds.unshift(nodeId);
         previousNode = previousNode.parentNode;
       }
-
-      nodeIds.unshift(nodes.getIdByNode(previousNode));
 
       nodeIds.forEach((nodeId) => {
         this.requestChildNodes({ nodeId });
@@ -538,5 +541,14 @@ export default class Dom extends BaseDomain {
       attributes: true,
       characterData: true,
     });
+  }
+
+  /**
+   * 清理文档
+   * @private
+   */
+  resetDocument() {
+    this.childListSetNodeIds = new Set();
+    this.send({ method: Event.documentUpdated });
   }
 }

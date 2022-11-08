@@ -1,6 +1,6 @@
 import nodes from '../common/nodes';
 import * as stylesheet from '../common/stylesheet';
-import { getAbsoultPath, isMatches } from '../common/utils';
+import { escapeRegString, getAbsoultPath, isMatches } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Page from './page';
@@ -64,7 +64,7 @@ export default class CSS extends BaseDomain {
     let endColumn = 0;
     let text = '';
   
-    const reg = new RegExp(`(\\/\\*)?\\s*${name}:\\s*${value};?\\s*(\\*\\/)?`);
+    const reg = new RegExp(`(\\/\\*)?\\s*${escapeRegString(name)}:\\s*${escapeRegString(value)};?\\s*(\\*\\/)?`);
     for (let i = 0, len = lines.length; i < len; i++) {
       const line = lines[i];
       const match = line.match(reg);

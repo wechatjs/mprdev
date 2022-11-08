@@ -67,3 +67,7 @@ export function simpleHash(str) {
   }
   return hash.toString(36);
 }
+
+export function escapeRegString(string) {
+  return string.replace(/[\\\$\*\+\.\?\^\|\(\)\[\]\{\}]/g, (i) => `\\${i}`);
+}

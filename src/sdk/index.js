@@ -1,7 +1,7 @@
 import qs from 'query-string';
 import { v4 as uuid } from 'uuid';
 import { version } from '../../package.json';
-import { docReady, getAbsoultPath } from './common/utils';
+import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import ChromeDomain from './domain/index';
 import JDB from './common/jdb';
@@ -140,7 +140,7 @@ export { version }
 export default { version, init, debug, debugSrc, debugCache, getId }
 
 if (document.currentScript?.src) {
-  const matchUrl = (key) => document.currentScript.src.match(new RegExp('(\\\\?|&)' + key + '=([^&]*)(&|$)'));
+  const matchUrl = (key) => document.currentScript.src.match(new RegExp(`(\\\\?|&)${escapeRegString(key)}=([^&]*)(&|$)`));
   const host = matchUrl('host')?.[2];
   const port = matchUrl('port')?.[2] * 1;
   const uin = matchUrl('uin')?.[2] * 1;

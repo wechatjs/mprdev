@@ -98,6 +98,7 @@ export const Event = {
   domStorageItemsCleared: 'DOMStorage.domStorageItemsCleared',
 
   setChildNodes: 'DOM.setChildNodes',
+  documentUpdated: 'DOM.documentUpdated',
   childNodeCountUpdated: 'DOM.childNodeCountUpdated',
   childNodeInserted: 'DOM.childNodeInserted',
   childNodeRemoved: 'DOM.childNodeRemoved',
