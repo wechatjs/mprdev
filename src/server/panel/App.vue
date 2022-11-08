@@ -34,7 +34,7 @@
             <div class="info">
               <div class="main-info">
                 <!-- favicon -->
-                <t-avatar class="favicon" :image="info.favicon" :hideOnLoadFailed='false' size="small"></t-avatar>
+                <t-avatar class="favicon" :image="info.favicon" size="small"></t-avatar>
                 <!-- title tooltip:pageUrl -->
                 <t-tooltip class="title" :content="info.pageUrl" show-arrow>{{ info.title || '未命名网站' }}</t-tooltip>
                 <!-- uin -->
@@ -50,12 +50,14 @@
               </div>
             </div>
           </div>
-          <t-dropdown :options="jumpOptions(info.targetId)" maxColumnWidth="200" placement="bottom-right" slot="action">
-            <t-button theme="primary" @click="goDevtools(info.targetId)">
-              进入调试
-              <t-icon name="chevron-down" size="small" />
-            </t-button>
-          </t-dropdown>
+          <div slot="action">
+            <t-button theme="primary" @click="goDevtools(info.targetId)">进入调试</t-button>
+            <t-dropdown class="debug-options" trigger="click" :options="jumpOptions(info.targetId)" maxColumnWidth="200" placement="bottom-right">
+              <t-button theme="default">
+                <t-icon name="chevron-down" size="small" />
+              </t-button>
+            </t-dropdown>
+          </div>
         </t-list-item>
       </t-list>
       <div class="empty" v-else>暂无节点连入</div>
@@ -193,8 +195,8 @@ export default {
     },
     jumpOptions(target) {
       return [
-        { content: '安全信道(默认)', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
-        { content: '非安全信道', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
+        { content: '通过安全信道进入调试 (默认)', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
+        { content: '通过非安全信道进入调试', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
       ];
     },
   }
@@ -304,5 +306,9 @@ export default {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+}
+
+.debug-options {
+  margin-left: 8px;
 }
 </style>
