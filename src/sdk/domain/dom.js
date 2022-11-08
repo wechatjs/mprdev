@@ -353,30 +353,9 @@ export default class Dom extends BaseDomain {
     const result = searchResult.slice(fromIndex, toIndex);
 
     const nodeIds = result.map((node) => {
-      const hasNode = nodes.hasNode(node);
-      const nodeId = nodes.getIdByNode(node);
-
-      if (!hasNode) {
-        // 如果目前不在devtools视图中，在devtools中展开
-        const nodeList = [node];
-        for (let parentNode = node.parentNode; parentNode; parentNode = parentNode.parentNode) {
-          nodeList.push(parentNode);
-          const hasNode = nodes.hasNode(parentNode);
-          if (!hasNode) {
-            nodes.getIdByNode(parentNode);
-          } else {
-            break;
-          }
-        }
-        for (let i = nodeList.length - 1; i > -1; i--) {
-          // 从根节点开始遍历，请求子树
-          this.requestChildNodes({
-            nodeId: nodes.getIdByNode(nodeList[i]),
-          });
-        }
-      }
-
-      return nodeId;
+      // 在devtools中展开
+      this.expandParentNodes(node);
+      return nodes.getIdByNode(node);
     });
 
     return {
@@ -418,19 +397,11 @@ export default class Dom extends BaseDomain {
       e.stopPropagation();
       e.preventDefault();
 
-      let previousNode = e.target.parentNode;
+      // 在devtools中展开
+      this.expandParentNodes(e.target);
+
+      // 在devtools视图中高亮选中的节点
       const currentNodeId = nodes.getIdByNode(e.target);
-      const nodeIds = [];
-      while (previousNode) {
-        const nodeId = nodes.getIdByNode(previousNode);
-        nodeIds.unshift(nodeId);
-        previousNode = previousNode.parentNode;
-      }
-
-      nodeIds.forEach((nodeId) => {
-        this.requestChildNodes({ nodeId });
-      });
-
       this.send({
         method: Event.nodeHighlightRequested,
         params: {
@@ -550,5 +521,18 @@ export default class Dom extends BaseDomain {
   resetDocument() {
     this.childListSetNodeIds = new Set();
     this.send({ method: Event.documentUpdated });
+  }
+
+  /**
+   * 展开所有父节点
+   * @private
+   */
+  expandParentNodes(node) {
+    let parent = node;
+    const nodeIds = [];
+    while (parent = parent.parentNode) {
+      nodeIds.unshift(nodes.getIdByNode(parent));
+    }
+    nodeIds.forEach((nodeId) => this.requestChildNodes({ nodeId }));
   }
 }
