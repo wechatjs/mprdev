@@ -38,6 +38,7 @@ export default {
     'moveTo',
     'getNodeId',
     'getDocument',
+    'getNodeForLocation',
     'removeNode',
     'requestChildNodes',
     'requestNode',

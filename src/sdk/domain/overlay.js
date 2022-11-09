@@ -22,7 +22,6 @@ export default class Overlay {
   namespace = 'Overlay';
 
   highlightConfig = {};
-  highlightTimer = null;
 
   static inspectMode = 'none';
 

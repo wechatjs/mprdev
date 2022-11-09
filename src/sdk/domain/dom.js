@@ -4,6 +4,7 @@ import nodes from '../common/nodes';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
 import Overlay from './overlay';
+import Page from './page';
 
 const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-container'];
 
@@ -391,6 +392,27 @@ export default class Dom extends BaseDomain {
     return {
       object: objectFormat(node),
     };
+  }
+
+  /**
+   * 通过inspect截图选取节点
+   * @public
+   * @param {Object} params
+   * @param {Number} x 距离屏幕左上角的横向距离
+   * @param {Number} y 距离屏幕左上角的纵向距离
+   */
+  getNodeForLocation({ x, y }) {
+    const node = document.elementFromPoint(window.scrollX + x, window.scrollY + y);
+    if (node) {
+      // 在devtools中展开
+      this.expandParentNodes(node);
+      const nodeId = nodes.getIdByNode(node);
+      return {
+        frameId: Page.MAINFRAME_ID,
+        backendNodeId: nodeId,
+        nodeId,
+      };
+    }
   }
 
   /**
