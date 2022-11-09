@@ -402,7 +402,7 @@ export default class Dom extends BaseDomain {
    * @param {Number} y 距离屏幕左上角的纵向距离
    */
   getNodeForLocation({ x, y }) {
-    const node = document.elementFromPoint(window.scrollX + x, window.scrollY + y);
+    const node = document.elementFromPoint(x, y);
     if (node) {
       // 在devtools中展开
       Overlay.highlight(node);
