@@ -135,9 +135,14 @@ export default class Page extends BaseDomain {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = img.naturalWidth / 3;
-        canvas.height = img.naturalHeight / 3;
-        ctx.drawImage(img, 0, 0, img.naturalWidth / 3, img.naturalHeight / 3);
+        const ratio = window.innerHeight / window.innerWidth;
+        const iWidth = img.naturalWidth / 3;
+        const iHeight = img.naturalHeight / 3
+        const cWidth = iWidth;
+        const cHeight = iWidth * ratio;
+        canvas.width = cWidth;
+        canvas.height = cHeight;
+        ctx.drawImage(img, 0, cHeight - iHeight, iWidth, iHeight);
         const screenshot = canvas.toDataURL('image/jpeg', 0.8);
         this.send({
           method: Event.screencastFrame,
@@ -145,8 +150,8 @@ export default class Page extends BaseDomain {
             data: screenshot.replace(/^data:image\/jpeg;base64,/, ''),
             sessionId: 1,
             metadata: {
-              deviceHeight: window.screen.height,
-              deviceWidth: window.screen.width,
+              deviceHeight: window.innerHeight,
+              deviceWidth: window.innerWidth,
               pageScaleFactor: 1,
               offsetTop: 0,
               scrollOffsetX: 0,
