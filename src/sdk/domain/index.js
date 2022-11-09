@@ -6,6 +6,7 @@ import Page from './page';
 import Network from './network';
 import Css from './css';
 import SourceDebugger from './debugger';
+import Emulation from './emulation';
 import protocol from './protocol';
 
 export default class ChromeDomain {
@@ -41,6 +42,7 @@ export default class ChromeDomain {
       new Network(options),
       new Css(options),
       new SourceDebugger(options),
+      new Emulation(options),
     ];
 
     domains.forEach((domain) => {

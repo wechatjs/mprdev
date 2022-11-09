@@ -84,6 +84,9 @@ export default {
     'releaseObject',
     'callFunctionOn',
   ],
+  Emulation: [
+    'setTouchEmulationEnabled'
+  ],
 };
 
 export const Event = {

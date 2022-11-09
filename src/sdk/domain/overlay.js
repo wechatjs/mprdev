@@ -21,9 +21,12 @@ docReady(() => document.body.appendChild(wrapper));
 export default class Overlay {
   namespace = 'Overlay';
 
-  highlightConfig = {};
-
   static inspectMode = 'none';
+  static highlightConfig = { // 默认高亮配置
+    contentColor: { r: 111, g: 168, b: 220, a: 0.66 },
+    paddingColor: { r: 147, g: 196, b: 125, a: 0.55 },
+    marginColor: { r: 246, g: 178, b: 107, a: 0.66 },
+  };
 
   /**
    * 格式化css
@@ -56,76 +59,15 @@ export default class Overlay {
   }
 
   /**
-   * 启用Overlay域
-   * @public
-   */
-  enable() {
-    const highlight = (e) => {
-      if (Overlay.inspectMode !== 'searchForNode') return;
-      e.stopPropagation();
-      e.preventDefault();
-
-      let { target } = e;
-
-      if (e.touches) {
-        const touch = e.touches[0];
-        target = document.elementFromPoint(touch.clientX, touch.clientY);
-      }
-
-      this.highlightNode({
-        nodeElement: target,
-        highlightConfig: this.highlightConfig
-      });
-    };
-
-    document.addEventListener('mousemove', highlight, true);
-    document.addEventListener('touchmove', highlight, { passive: false });
-  }
-
-  /**
-   * 高亮node节点
-   * @public
-   * @param {Object} params
-   * @param {String} params.nodeId 节点id
-   * @param {Node} params.nodeElement 节点元素
-   * @param {Object} params.highlightConfig 高亮配置
-   */
-  highlightNode({ nodeId, nodeElement, highlightConfig }) {
-    // debug模式下才允许高亮
-    if (isQuiteMode()) return;
-
-    const node = nodeElement || nodes.getNodeById(nodeId);
-    if (!node || [3, 8, 10, 11].includes(node.nodeType) || ['LINK', 'SCRIPT', 'HEAD'].includes(node.nodeName)) return;
-
-    this.highlight(node, highlightConfig);
-  }
-
-  /**
-   * 隐藏dom高亮
-   * @public
-   */
-  hideHighlight() {
-    wrapper.style.display = 'none';
-  }
-
-  /**
-   * 设置dom审查模式
-   * @public
-   * @param {Object} params
-   * @param {String} params.mode 审查模式
-   * @param {Object} params.highlightConfig 高亮配置
-   */
-  setInspectMode({ mode, highlightConfig }) {
-    Overlay.inspectMode = mode;
-    this.highlightConfig = highlightConfig;
-  }
-
-  /**
    * 设置高亮样式
+   * @static
+   * @param {Object} params
    * @param {Node} params.node 节点元素
    * @param {Object} params.highlightConfig 高亮配置
    */
-  highlight(node, highlightConfig) {
+  static highlight(node, highlightConfig) {
+    if (isQuiteMode() || !node || [3, 8, 10, 11].includes(node.nodeType) || ['LINK', 'SCRIPT', 'HEAD'].includes(node.nodeName)) return;
+
     const styles = window.getComputedStyle(node);
     const margin = Overlay.getStylePropertyValue(['margin-top', 'margin-right', 'margin-bottom', 'margin-left'], styles);
     const padding = Overlay.getStylePropertyValue(['padding-top', 'padding-right', 'padding-bottom', 'padding-left'], styles);
@@ -135,7 +77,7 @@ export default class Overlay {
     const isBorderBox = window.getComputedStyle(node)['box-sizing'] === 'border-box';
     const { left, top } = node.getBoundingClientRect();
 
-    const { contentColor, paddingColor, marginColor } = highlightConfig;
+    const { contentColor, paddingColor, marginColor } = highlightConfig || Overlay.highlightConfig;
     wrapper.style.display = 'block';
 
     const commonStyle = {
@@ -192,6 +134,69 @@ export default class Overlay {
       padding: '2px 4px',
       color: '#8d8d8d'
     });
+  }
+
+  /**
+   * 隐藏高亮
+   * @static
+   */
+  static unhighlight() {
+    wrapper.style.display = 'none';
+  }
+
+  /**
+   * 启用Overlay域
+   * @public
+   */
+  enable() {
+    const highlightForSearch = (e) => {
+      if (Overlay.inspectMode !== 'searchForNode') return;
+      e.stopPropagation();
+      e.preventDefault();
+
+      let { target } = e;
+
+      if (e.touches) {
+        const touch = e.touches[0];
+        target = document.elementFromPoint(touch.clientX, touch.clientY);
+      }
+
+      Overlay.highlight(target);
+    };
+
+    document.addEventListener('mousemove', highlightForSearch, true);
+    document.addEventListener('touchmove', highlightForSearch, { passive: false });
+  }
+
+  /**
+   * 高亮node节点
+   * @public
+   * @param {Object} params
+   * @param {String} params.nodeId 节点id
+   * @param {Object} params.highlightConfig 高亮配置
+   */
+  highlightNode({ nodeId, highlightConfig }) {
+    Overlay.highlight(nodes.getNodeById(nodeId), highlightConfig);
+  }
+
+  /**
+   * 隐藏dom高亮
+   * @public
+   */
+  hideHighlight() {
+    Overlay.unhighlight();
+  }
+
+  /**
+   * 设置dom审查模式
+   * @public
+   * @param {Object} params
+   * @param {String} params.mode 审查模式
+   * @param {Object} params.highlightConfig 高亮配置
+   */
+  setInspectMode({ mode, highlightConfig }) {
+    Overlay.inspectMode = mode;
+    Overlay.highlightConfig = highlightConfig;
   }
 
   /**

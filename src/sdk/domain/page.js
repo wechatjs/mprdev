@@ -1,7 +1,6 @@
 import html2canvas from 'html2canvas';
 import BaseDomain from './domain';
 import { Event } from './protocol';
-import { isMatches } from '../common/utils';
 
 export default class Page extends BaseDomain {
   namespace = 'Page';
@@ -178,10 +177,7 @@ export default class Page extends BaseDomain {
       ignoreElements: (element) => {
         if (!element?.style) return false;
         const { display, opacity, visibility } = element.style;
-        return isMatches(element, '.devtools-overlay') ||
-          display === 'none' ||
-          opacity === 0 ||
-          visibility === 'hidden';
+        return display === 'none' || opacity === 0 || visibility === 'hidden';
       }
     }).then(canvas => canvas.toDataURL('image/jpeg')).then((screenshot) => {
       this.send({

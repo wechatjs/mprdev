@@ -405,6 +405,7 @@ export default class Dom extends BaseDomain {
     const node = document.elementFromPoint(window.scrollX + x, window.scrollY + y);
     if (node) {
       // 在devtools中展开
+      Overlay.highlight(node);
       this.expandParentNodes(node);
       const nodeId = nodes.getIdByNode(node);
       return {
