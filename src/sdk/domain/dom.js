@@ -10,6 +10,7 @@ const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-cont
 export default class Dom extends BaseDomain {
   namespace = 'DOM';
 
+  observer = null;
   isEnabled = false;
   childListSetNodeIds = new Set();
   searchResults = new Map();
@@ -17,6 +18,7 @@ export default class Dom extends BaseDomain {
 
   constructor(options) {
     super(options);
+    this.initNodeObserver();
     this.hookAttachShadow();
   }
 
@@ -110,7 +112,7 @@ export default class Dom extends BaseDomain {
     this.resetDocument();
     if (!this.isEnabled) {
       this.isEnabled = true;
-      this.nodeObserver();
+      this.observeNode(document.documentElement);
       this.setDomInspect();
       Dom.set$Function();
     }
@@ -400,8 +402,11 @@ export default class Dom extends BaseDomain {
     const elAttachShadow = Element.prototype.attachShadow;
     Element.prototype.attachShadow = function attachShadow(init) {
       const shadowRoot = elAttachShadow.apply(this, arguments);
+      this.$$shadow = { root: shadowRoot, init };
+      self.observeNode(shadowRoot);
       Promise.resolve().then(() => {
         return JDB.runInNativeEnv(() => {
+          if (!self.isEnabled) return;
           self.send({
             method: Event.shadowRootPushed,
             params: {
@@ -449,24 +454,21 @@ export default class Dom extends BaseDomain {
   }
 
   /**
-   * 开启节点变化的监听
+   * 初始化节点变化的监听
    * @private
    */
-  nodeObserver() {
-    const isDevtoolMutation = ({ target, addedNodes, removedNodes }) => {
-      if (debugClsList.indexOf(target.getAttribute?.('class')) !== -1) return true;
-      if (debugClsList.indexOf(addedNodes[0]?.getAttribute?.('class')) !== -1) return true;
-      if (debugClsList.indexOf(removedNodes[0]?.getAttribute?.('class')) !== -1) return true;
-      return false;
-    };
-
-    const observer = new MutationObserver((mutationList) => {
+  initNodeObserver() {
+    this.observer = new MutationObserver((mutationList) => {
       return JDB.runInNativeEnv(() => {
+        if (!this.isEnabled) return;
+
         mutationList.forEach((mutation) => {
           const { attributeName, target, type, addedNodes, removedNodes } = mutation;
   
           // 忽略devtool相关的dom变化
-          if (isDevtoolMutation(mutation)) return;
+          if (debugClsList.indexOf(target.getAttribute?.('class')) !== -1) return;
+          if (debugClsList.indexOf(addedNodes[0]?.getAttribute?.('class')) !== -1) return;
+          if (debugClsList.indexOf(removedNodes[0]?.getAttribute?.('class')) !== -1) return;
   
           const parentNodeId = nodes.getIdByNode(target);
   
@@ -533,9 +535,14 @@ export default class Dom extends BaseDomain {
         });
       });
     });
+  }
 
-    // 观测整个document的变化
-    observer.observe(document.documentElement, {
+  /**
+   * 监听节点变化
+   * @private
+   */
+  observeNode(node) {
+    this.observer.observe(node, {
       childList: true,
       subtree: true,
       attributes: true,
