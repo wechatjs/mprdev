@@ -144,8 +144,8 @@ if (document.currentScript?.src) {
   const host = matchUrl('host')?.[2];
   const port = matchUrl('port')?.[2] * 1;
   const uin = matchUrl('uin')?.[2] * 1;
-  const title = matchUrl('title')?.[2];
   const protocol = matchUrl('protocol')?.[2];
+  const title = decodeURIComponent(matchUrl('title')?.[2] || '');
   if (host || port || uin || title) {
     docReady(() => init({ host, port, uin, title, protocol }));
   }

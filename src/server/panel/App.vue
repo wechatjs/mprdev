@@ -273,6 +273,7 @@ export default {
 
 .title {
   overflow: hidden;
+  word-break: break-all;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-box-orient: vertical;
