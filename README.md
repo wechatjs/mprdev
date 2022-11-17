@@ -113,6 +113,15 @@ declare global {
 }
 ```
 
+## I18N
+
+DevTools service backend entry supports different languages by appending url query `lang`:
+
+```bash
+# Chinese: http://0.0.0.0:8090/remote_dev?lang=cn (Default)
+# English: http://0.0.0.0:8090/remote_dev?lang=en
+```
+
 ## Development
 
 ```bash
@@ -122,8 +131,8 @@ cd mprdev
 npm install
 npm run dev & npm start
 
-# Test Page：http://localhost:8090/remote_dev/test
-# DevTools Entry：http://localhost:8090/remote_dev
+# Test Page: http://localhost:8090/remote_dev/test
+# DevTools Entry: http://localhost:8090/remote_dev
 ```
 
 ## References

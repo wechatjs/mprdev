@@ -2,9 +2,9 @@
   <t-layout class="page">
     <t-header class="header">
       <t-head-menu theme="dark">
-        <div class="logo" slot="logo">远程调试</div>
+        <div class="logo" slot="logo">{{ I18N.RemoteDevTools }}</div>
         <div class="header-operations" slot="operations">
-          <t-button theme="primary" @click="getTargets" :loading="isLoading">刷新</t-button>
+          <t-button theme="primary" @click="getTargets" :loading="isLoading">{{ I18N.Refresh }}</t-button>
           <t-dropdown
             class="sort-dropdown"
             placement="bottom"
@@ -17,11 +17,11 @@
               <t-icon name="chevron-down" size="small" />
             </t-button>
           </t-dropdown>
-          <t-input-adornment prepend="搜索" class="search">
+          <t-input-adornment :prepend="I18N.Refresh" class="search">
             <t-input
               class="searchbar"
               v-model="searchContent"
-              placeholder="UIN / 标题 / 设备ID / URL"
+              :placeholder="'UIN / ' + I18N.Title + ' / ' + I18N.DeviceId + ' / URL'"
             />
           </t-input-adornment>
         </div>
@@ -36,7 +36,7 @@
                 <!-- favicon -->
                 <t-avatar class="favicon" :image="info.favicon" size="small"></t-avatar>
                 <!-- title tooltip:pageUrl -->
-                <t-tooltip class="title" :content="info.pageUrl" show-arrow>{{ info.title || '未命名网站' }}</t-tooltip>
+                <t-tooltip class="title" :content="info.pageUrl" show-arrow>{{ info.title || I18N.AnonymousSite }}</t-tooltip>
                 <!-- uin -->
                 <t-tag class="uin" shape="round" size="small" v-if="info.uin && info.uin !== '0'">UIN: {{ info.uin }}</t-tag>
                 <!-- tooltip:ua -->
@@ -45,14 +45,14 @@
                 </t-tooltip>
               </div>
               <div class="extra-info">
-                <t-tag theme="primary" size="small">接入时间: {{ info.time | timeFormatter }}</t-tag>
-                <span class="target">设备ID: {{ info.targetId }}<template v-if="info.devtoolNum"> ( {{ info.devtoolNum }}人正在调试 )</template></span>
+                <t-tag theme="primary" size="small">{{ I18N.ConnectTime }}: {{ info.time | timeFormatter }}</t-tag>
+                <span class="target">{{ I18N.DeviceId }}: {{ info.targetId }}<template v-if="info.devtoolNum"> ( {{ I18N.InspectNum.replace('%s', info.devtoolNum) }} )</template></span>
               </div>
             </div>
           </div>
           <div slot="action">
-            <t-button theme="primary" @click="goDevtools(info.targetId)">进入调试</t-button>
-            <t-dropdown class="debug-options" trigger="click" :options="jumpOptions(info.targetId)" maxColumnWidth="200" placement="bottom-right">
+            <t-button theme="primary" @click="openDevTools(info.targetId)">{{ I18N.Inspect }}</t-button>
+            <t-dropdown class="debug-options" trigger="click" :options="openOptions(info.targetId)" maxColumnWidth="200" placement="bottom-right">
               <t-button theme="default">
                 <t-icon name="chevron-down" size="small" />
               </t-button>
@@ -60,12 +60,14 @@
           </div>
         </t-list-item>
       </t-list>
-      <div class="empty" v-else>暂无节点连入</div>
+      <div class="empty" v-else>{{ I18N.EmptyTips }}</div>
     </t-content>
   </t-layout>
 </template>
 
 <script>
+import I18N from './i18n';
+
 const BASE_URL = '/remote_dev'; // 不需要前缀时留空字符串
 const INTERVAL = 30 * 1000; // 轮询时间间隔
 const SORT = { // 排序枚举
@@ -84,14 +86,14 @@ export default {
       const hour = `${date.getHours()}`.padStart(2, '0');
       const minute = `${date.getMinutes()}`.padStart(2, '0');
       const second = `${date.getSeconds()}`.padStart(2, '0');
-      return `${month}月${day}日 ${hour}:${minute}:${second}`;
+      return `${I18N.DateFormat.replace('%m', month).replace('%d', day)} ${hour}:${minute}:${second}`;
     },
     filterSortType(sortType) {
       switch (sortType) {
-        case SORT.TIME_ASC: return '时间升序';
-        case SORT.TIME_DESC: return '时间降序';
-        case SORT.UIN_ASC: return 'UIN升序';
-        case SORT.UIN_DESC: return 'UIN降序';
+        case SORT.TIME_ASC: return I18N.TimeAscending;
+        case SORT.TIME_DESC: return I18N.TimeDescending;
+        case SORT.UIN_ASC: return I18N.UINAscending;
+        case SORT.UIN_DESC: return I18N.UINDescending;
       }
     }
   },
@@ -99,15 +101,16 @@ export default {
     return {
       list: [],
       sortOptions: [
-        { content: '时间升序', value: SORT.TIME_ASC },
-        { content: '时间降序', value: SORT.TIME_DESC },
-        { content: 'UIN升序', value: SORT.UIN_ASC },
-        { content: 'UIN降序', value: SORT.UIN_DESC },
+        { content: I18N.TimeAscending, value: SORT.TIME_ASC },
+        { content: I18N.TimeDescending, value: SORT.TIME_DESC },
+        { content: I18N.UINAscending, value: SORT.UIN_ASC },
+        { content: I18N.UINDescending, value: SORT.UIN_DESC },
       ],
       sortType: SORT.TIME_DESC,
       intervalTimer: null,
       isLoading: false,
       searchContent: '',
+      I18N,
     };
   },
   computed: {
@@ -164,7 +167,7 @@ export default {
         xhr.send();
       });
     },
-    goDevtools(target, secure) {
+    openDevTools(target, secure) {
       const securePointed = secure !== undefined;
 
       const host = location.host;
@@ -177,7 +180,6 @@ export default {
       window.open(url);
     },
     handleSortTypeChange(e) {
-      console.log('deanti e', e);
       this.sortType = e.value;
     },
     // factory
@@ -193,10 +195,10 @@ export default {
         return 0;
       }
     },
-    jumpOptions(target) {
+    openOptions(target) {
       return [
-        { content: '通过安全信道进入调试 (默认)', value: 0, onClick: this.goDevtools.bind(this, target, 'https:') },
-        { content: '通过非安全信道进入调试', value: 1, onClick: this.goDevtools.bind(this, target, 'http:') },
+        { content: I18N.InpectBySSL, value: 0, onClick: this.openDevTools.bind(this, target, 'https:') },
+        { content: I18N.InpectByNoSSL, value: 1, onClick: this.openDevTools.bind(this, target, 'http:') },
       ];
     },
   }
