@@ -8,6 +8,7 @@
           <t-dropdown
             class="sort-dropdown"
             placement="bottom"
+            maxColumnWidth="120"
             :options="sortOptions"
             :value="sortType"
             @click="handleSortTypeChange"

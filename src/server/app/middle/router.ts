@@ -7,7 +7,8 @@ import { BASE_URL } from '../constants';
 export const router = new Router();
 
 router.get(`${BASE_URL ? BASE_URL : '/'}`, async (ctx: Context) => {
-  ctx.redirect(`${BASE_URL}/panel/index.html`);
+  const query = ctx.querystring ? `?${ctx.querystring}` : '';
+  ctx.redirect(`${BASE_URL}/panel/index.html${query}`);
 });
 
 /**
