@@ -198,8 +198,8 @@ export default {
     },
     openOptions(target) {
       return [
-        { content: I18N.InpectBySSL, value: 0, onClick: this.openDevTools.bind(this, target, 'https:') },
-        { content: I18N.InpectByNoSSL, value: 1, onClick: this.openDevTools.bind(this, target, 'http:') },
+        { content: I18N.InspectBySSL, value: 0, onClick: this.openDevTools.bind(this, target, 'https:') },
+        { content: I18N.InspectByNoSSL, value: 1, onClick: this.openDevTools.bind(this, target, 'http:') },
       ];
     },
   }

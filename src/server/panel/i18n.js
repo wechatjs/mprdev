@@ -18,8 +18,8 @@ const wordings = {
     TimeDescending: '时间降序',
     UINAscending: 'UIN升序',
     UINDescending: 'UIN降序',
-    InpectBySSL: '通过安全信道调试 (默认)',
-    InpectByNoSSL: '通过非安全信道调试',
+    InspectBySSL: '通过安全信道调试 (默认)',
+    InspectByNoSSL: '通过非安全信道调试',
   },
   en: {
     RemoteDevTools: 'Remote DevTools',
