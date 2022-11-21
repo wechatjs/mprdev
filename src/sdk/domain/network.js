@@ -191,7 +191,7 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: Number(this.getResponseHeader('Content-Length')),
+                encodedDataLength: Number(this.getResponseHeader('Content-Length')) || this.responseText.length,
               });
             }
           });
@@ -267,12 +267,8 @@ export default class Network extends BaseDomain {
           }
         });
 
-        let oriResponse;
         return originFetch(request, initConfig).then((response) => {
           return JDB.runInNativeEnv(() => {
-            // 暂时保存请求的原始响应
-            oriResponse = response;
-
             const { headers, status, statusText } = response;
             const responseHeaders = {};
             let headersText = '';
@@ -281,6 +277,12 @@ export default class Network extends BaseDomain {
               responseHeaders[key] = val;
               headersText += `${key}: ${val}\r\n`;
             });
+
+            let responseBody = ''
+            const contentType = headers.get('Content-Type');
+            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some(type => contentType.includes(type))) {
+              responseBody = response.clone().text();
+            }
 
             instance.sendNetworkEvent({
               url,
@@ -291,20 +293,12 @@ export default class Network extends BaseDomain {
               type: 'Fetch',
               blockedCookies: [],
               headers: responseHeaders,
-              encodedDataLength: Number(headers.get('Content-Length')),
+              encodedDataLength: Number(headers.get('Content-Length')) || responseBody.length,
             });
 
-            const contentType = headers.get('Content-Type');
-            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some(type => contentType.includes(type))) {
-              return response.clone().text();
-            }
-            return '';
-          });
-        }).then((responseBody) => {
-          return JDB.runInNativeEnv(() => {
             instance.responseText.set(requestId, responseBody);
-            // 返回请求的原始响应
-            return oriResponse;
+
+            return response;
           });
         }).catch((error) => {
           return JDB.runInNativeEnv(() => {
