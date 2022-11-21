@@ -124,9 +124,10 @@ export default class Page extends BaseDomain {
     window.WeixinJSBridge.invoke('handleMPPageAction', {
       action: 'takeSnapshot',
     }, (res) => {
-      if (res.err_msg.indexOf('ok') === -1) {
+      if (!res.err_msg || res.err_msg.indexOf('ok') === -1) {
         this.forceTakeScreenshotByHTML2Canvas = true;
         this.takeScreenshotByHTML2Canvas();
+        return;
       }
       const img = document.createElement('img');
       img.crossOrigin = 'anonymous';
