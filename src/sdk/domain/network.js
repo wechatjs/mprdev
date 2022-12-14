@@ -191,7 +191,7 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: Number(this.getResponseHeader('Content-Length')) || this.responseText.length,
+                encodedDataLength: this.responseText.length || Number(this.getResponseHeader('Content-Length')),
               });
             }
           });
@@ -293,7 +293,7 @@ export default class Network extends BaseDomain {
               type: 'Fetch',
               blockedCookies: [],
               headers: responseHeaders,
-              encodedDataLength: Number(headers.get('Content-Length')) || responseBody.length,
+              encodedDataLength: responseBody.length || Number(headers.get('Content-Length')),
             });
 
             instance.responseText.set(requestId, responseBody);
