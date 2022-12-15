@@ -41,12 +41,10 @@
     "@types/ws": "^8.2.0",
     "eslint": "^6.8.0",
     "rollup": "^2.67.2",
-    "tdesign-vue": "^0.46.3",
     "typescript": "^3.8.3",
-    "vite": "2.7.6",
-    "vite-plugin-vue2": "1.9.0",
-    "vue": "2.6.14",
-    "vue-template-compiler": "2.6.14"
+    "vite": "^2.7.6",
+    "vite-plugin-vue2": "^1.9.0",
+    "vue-template-compiler": "^2.6.14"
   },
   "dependencies": {
     "callsites": "^4.0.0",
@@ -59,8 +57,10 @@
     "localforage": "^1.10.0",
     "query-string": "^7.1.1",
     "reconnecting-websocket": "^4.4.0",
+    "tdesign-vue": "^0.46.3",
     "uuid": "^8.3.2",
-    "vdebugger": "^0.1.4",
+    "vdebugger": "^0.1.5",
+    "vue": "^2.6.14",
     "ws": "^8.3.0"
   }
 }
