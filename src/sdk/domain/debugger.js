@@ -382,6 +382,7 @@ export default class Debugger extends BaseDomain {
       const scriptId = this.getScriptId();
       const xhr = new XMLHttpRequest();
       this.scriptUrls.set(url, scriptId);
+      xhr.withCredentials = true;
       xhr.$$type = 'Script';
       xhr.onload = () => {
         const scriptSource = JDB.commentDebuggerCall(xhr.responseText);

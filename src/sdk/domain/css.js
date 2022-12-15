@@ -313,6 +313,7 @@ export default class CSS extends BaseDomain {
    */
   fetchStyleSource(styleSheetId, url, callback) {
     const xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
     xhr.$$type = 'Stylesheet';
     xhr.onload = () => {
       const content = xhr.responseText;
