@@ -157,12 +157,12 @@ export default class JDB {
     // 如果是直接强缓存，则检查缓存并返回，有缓存时不再发起请求
     if (JDB.forceCache(importUrl)) {
       return localForage.getItem(importUrl).then((cache) => {
-        return cache || oriFetch(importUrl).then((res) => res.text())
+        return cache || oriFetch(importUrl, { credentials: 'include' }).then((res) => res.text())
           .then((script) => localForage.setItem(importUrl, vDebugger.transform(script, importUrl)));
       });
     }
     // 否则仍然发起请求，再判断是否使用缓存
-    return oriFetch(importUrl).then((res) => res.text()).then((script) => {
+    return oriFetch(importUrl, { credentials: 'include' }).then((res) => res.text()).then((script) => {
       const hash = simpleHash(script) + importUrl;
       return localForage.getItem(hash)
         .then((cache) => cache || localForage.setItem(hash, vDebugger.transform(script, importUrl)));
