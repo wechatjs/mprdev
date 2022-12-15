@@ -418,9 +418,9 @@ export default class Debugger extends BaseDomain {
    * @param {String} url js链接地址
    */
   parseImportScriptSource(scriptSource, url) {
-    const importStrList = scriptSource.match(/(?:^|\n)\s*?import[\s|(][\s\S]*?['|"].*?['|"]\)?/g);
+    const importStrList = scriptSource.match(/(?:^|\n|;)\s*?import[\s|(][\s\S]*?['|"].*?['|"]\)?/g);
     importStrList?.forEach((importStr) => {
-      const match = importStr.match(/(?:^|\n)\s*?import[\s|(][\s\S]*?['|"](.*?)['|"]\)?/);
+      const match = importStr.match(/(?:^|\n|;)\s*?import[\s|(][\s\S]*?['|"](.*?)['|"]\)?/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const importURL = new URL(match[1], url);
         this.scriptUrlSet.add(importURL.href);
