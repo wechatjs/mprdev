@@ -229,7 +229,7 @@ export default class Debugger extends BaseDomain {
   collectScripts() {
     this.scriptUrlSet = new Set(
       Array.from(document.querySelectorAll('script'))
-        .map((se) => se.getAttribute('src'))
+        .map((se) => se.getAttribute('src') || se.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1])
         .filter(Boolean)
         .map((s) => getAbsoultPath(s))
         .concat(Array.from(this.scriptUrlSet))
