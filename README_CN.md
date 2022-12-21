@@ -27,7 +27,11 @@ npx mprdev -h 0.0.0.0 -p 8090
 
 最后，访问前端页面，打开DevTools服务，即可开始调试。
 
-另外，如果前端页面无法直接连接DevTools服务部署的机器（比如机器处于内网），则需要对`/target`路径的WebSocket请求进行代理转发，才能保证SDK能连上DevTools服务，使得DevTools服务能正常收到SDK发送的调试信息。
+另外，如果前端页面无法直接连接DevTools服务部署的机器（比如机器处于内网），则需要对以下路径进行代理：
+
+1. `/target`路径的WebSocket请求，保证SDK能连上DevTools服务；
+2. `/devtool`路径的WebSocket请求，保证DevTools能连上DevTools服务；
+3. `/remote_dev`路径的HTTPS/HTTP请求，保证DevTools服务入口的访问；
 
 ## 断点
 

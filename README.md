@@ -27,7 +27,11 @@ We highly recommend you to import the SDK from CDN at the very beginning of your
 
 Finally, open your web pages and the DevTools serve to enjoy your debugging journey.
 
-Besides, if your web pages can't directly connect to the DevTools service, for example, the server is located at LAN, you need to proxy a WebSocket whose path is "/target" to ensure the SDK connecting to the DevTools service.
+Besides, if your web pages can't directly connect to the DevTools service, for example, the server is located at LAN, you need to proxy paths below:
+
+1. Path "/target" via WebSocket, to ensure the SDK connecting to the DevTools service.
+2. Path "/devtool" via WebSocket, to ensure the DevTools connecting to the DevTools service.
+3. Path "/remote_dev" via HTTPS/HTTP, to serve the DevTools service backend entry.
 
 ## Breakpoint
 
