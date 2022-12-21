@@ -3,6 +3,7 @@ import { formatErrorStack } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
 import BaseDomain from './domain';
+import Debugger from './debugger';
 import callsites from 'callsites';
 import JDB from '../common/jdb';
 
@@ -66,10 +67,12 @@ export default class Runtime extends BaseDomain {
         const cfUrl = callFrame.debuggerId;
         const cfLineNumber = callFrame.lineNumber;
         const cfColumnNumber = callFrame.columnNumber;
+        const cfScriptId = Debugger.scriptUrls.get(cfUrl) || '';
         return {
           functionName: cfFuncName,
           lineNumber: cfLineNumber - 1, // TODO: 因为需要用到debugger里的偏移量，但目前拿不到实例，先无脑-1
-          columnNumber: cfColumnNumber - 1,
+          columnNumber: cfColumnNumber,
+          scriptId: cfScriptId,
           url: cfUrl,
         }
       });
@@ -77,6 +80,7 @@ export default class Runtime extends BaseDomain {
       // Safari不支持captureStackTrace，这里判断下
       let consoleIdx = -1; // 记录hook的console位置，忽略这部分调用栈
       callFrames = callsites().map((val, idx) => {
+        const url = val.getFileName();
         const funcName = val.getFunctionName() || '(anonymous)';
         if (funcName.includes('window.console.<computed>')) {
           consoleIdx = idx;
@@ -85,7 +89,8 @@ export default class Runtime extends BaseDomain {
           functionName: funcName,
           lineNumber: (val.getLineNumber() - 1) || 0,
           columnNumber: (val.getColumnNumber() - 1) || 0,
-          url: val.getFileName(),
+          scriptId: Debugger.scriptUrls.get(url) || '',
+          url,
         }
       }).filter((_, idx) => idx > consoleIdx);
     } else {
@@ -141,7 +146,8 @@ export default class Runtime extends BaseDomain {
     if (functionName === loc) {
       return { functionName };
     }
-    return { functionName, lineNumber, columnNumber, url };
+    const scriptId = Debugger.scriptUrls.get(url) || '';
+    return { functionName, lineNumber, columnNumber, url, scriptId };
   }
 
   /**
@@ -269,6 +275,7 @@ export default class Runtime extends BaseDomain {
       const nativeConsoleFunc = window.console[key];
       window.console[key] = (...args) => {
         return JDB.runInNativeEnv(() => {
+          const callFrames = Runtime.getCallFrames();
           this.socketSend('console', {
             method: Event.consoleAPICalled,
             params: {
@@ -276,10 +283,7 @@ export default class Runtime extends BaseDomain {
               args: args.map(arg => objectFormat(arg, { preview: true })),
               executionContextId: 1,
               timestamp: Date.now(),
-              stackTrace: {
-                // error、warn处理调用堆栈
-                callFrames: ['error', 'warn'].includes(key) ? Runtime.getCallFrames() : [],
-              }
+              stackTrace: { callFrames },
             }
           });
           return nativeConsoleFunc(...args);
@@ -308,7 +312,7 @@ export default class Runtime extends BaseDomain {
                 className: error.name,
                 description: error && formatErrorStack(error, callFrames),
               } : null,
-              stackTrace: { callFrames }
+              stackTrace: { callFrames },
             }
           }
         });

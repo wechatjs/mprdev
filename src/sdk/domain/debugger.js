@@ -9,9 +9,9 @@ export default class Debugger extends BaseDomain {
   
   // javascript脚本集合
   scripts = new Map();
-  scriptUrls = new Map();
   scriptUrlSet = new Set();
   scriptDebugOffsets = new Map();
+  static scriptUrls = new Map();
 
   // javascript脚本的唯一id
   scriptId = 1;
@@ -109,7 +109,7 @@ export default class Debugger extends BaseDomain {
    * @param {String} params.condition 条件断点执行脚本
    */
   setBreakpointByUrl({ url, lineNumber, condition }) {
-    const scriptId = this.scriptUrls.get(url);
+    const scriptId = Debugger.scriptUrls.get(url);
     if (typeof scriptId === 'string') {
       const offset = this.scriptDebugOffsets.get(scriptId) || 0;
       const breakpoint = JDB.setBreakpoint(url, lineNumber - offset, condition);
@@ -202,8 +202,8 @@ export default class Debugger extends BaseDomain {
    * @private
    */
   sendCacheScripts() {
-    for (const url of this.scriptUrls.keys()) {
-      const scriptId = this.scriptUrls.get(url);
+    for (const url of Debugger.scriptUrls.keys()) {
+      const scriptId = Debugger.scriptUrls.get(url);
       const sourceMapURL = this.getSourceMappingURL(this.getScriptSourceById(scriptId));
       this.send({
         method: Event.scriptParsed,
@@ -304,7 +304,7 @@ export default class Debugger extends BaseDomain {
         const callFrame = scope.callFrame;
         const cfFuncName = scope.name;
         const cfUrl = callFrame.debuggerId;
-        const cfScriptId = this.scriptUrls.get(cfUrl);
+        const cfScriptId = Debugger.scriptUrls.get(cfUrl);
         const cfLineNumber = callFrame.lineNumber;
         const cfColumnNumber = callFrame.columnNumber;
         const cfOffset = this.scriptDebugOffsets.get(cfScriptId) || 0;
@@ -346,7 +346,7 @@ export default class Debugger extends BaseDomain {
         const callFrame = scope.callFrame;
         const cfFuncName = scope.name;
         const cfUrl = callFrame.debuggerId;
-        const cfScriptId = this.scriptUrls.get(cfUrl);
+        const cfScriptId = Debugger.scriptUrls.get(cfUrl);
         const cfLineNumber = callFrame.lineNumber;
         const cfOffset = this.scriptDebugOffsets.get(cfScriptId) || 0;
         return {
@@ -378,10 +378,10 @@ export default class Debugger extends BaseDomain {
    * @param {String} url javascript文件的链接地址
    */
   fetchScriptSource(url) {
-    if (!this.scriptUrls.get(url)) {
+    if (!Debugger.scriptUrls.get(url)) {
       const scriptId = this.getScriptId();
       const xhr = new XMLHttpRequest();
-      this.scriptUrls.set(url, scriptId);
+      Debugger.scriptUrls.set(url, scriptId);
       xhr.withCredentials = true;
       xhr.$$type = 'Script';
       xhr.onload = () => {
