@@ -109,7 +109,7 @@ function debugSrcResHandler() {
     }
   }
 }
-export function debugSrc(rawUrl) {
+export function debugSrc(rawUrl, fetchOptions) {
   if (!rawUrl || typeof rawUrl !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debugSrc"');
   }
@@ -117,7 +117,7 @@ export function debugSrc(rawUrl) {
   const importUrl = absURL.href;
   const result = { importUrl, rawCode: null };
   debugSrcResList.push(result);
-  JDB.getTransCode(importUrl).then((rawCode) => {
+  JDB.getTransCode(importUrl, fetchOptions).then((rawCode) => {
     result.rawCode = rawCode;
     debugSrcResHandler();
   });

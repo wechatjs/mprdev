@@ -153,16 +153,20 @@ export default class JDB {
    * 获取转换脚本，如果有缓存，则使用缓存
    * @param {String} importUrl 脚本url
    */
-  static getTransCode(importUrl) {
+  static getTransCode(importUrl, fetchOptions) {
     // 如果是直接强缓存，则检查缓存并返回，有缓存时不再发起请求
+    const options = { mode: 'cors' };
+    if (fetchOptions && typeof fetchOptions === 'object') {
+      Object.assign(options, fetchOptions);
+    }
     if (JDB.forceCache(importUrl)) {
       return localForage.getItem(importUrl).then((cache) => {
-        return cache || oriFetch(importUrl, { mode: 'cors', credentials: 'include' }).then((res) => res.text())
+        return cache || oriFetch(importUrl, options).then((res) => res.text())
           .then((script) => localForage.setItem(importUrl, vDebugger.transform(script, importUrl)));
       });
     }
     // 否则仍然发起请求，再判断是否使用缓存
-    return oriFetch(importUrl, { mode: 'cors', credentials: 'include' }).then((res) => res.text()).then((script) => {
+    return oriFetch(importUrl, options).then((res) => res.text()).then((script) => {
       const hash = simpleHash(script) + importUrl;
       return localForage.getItem(hash)
         .then((cache) => cache || localForage.setItem(hash, vDebugger.transform(script, importUrl)));
