@@ -229,13 +229,16 @@ export default class Debugger extends BaseDomain {
   collectScripts() {
     this.scriptUrlSet = new Set(
       Array.from(document.querySelectorAll('script'))
-        .map((se) => se.getAttribute('src') || se.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1])
-        .filter(Boolean)
-        .map((s) => getAbsoultPath(s))
+        .map((se) => [
+          se.src || se.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1],
+          se.crossOrigin === 'use-credentials'
+        ])
+        .filter((args) => !!args[0])
+        .map((args) => [getAbsoultPath(args[0]), args[1]])
         .concat(Array.from(this.scriptUrlSet))
     );
-    Array.from(this.scriptUrlSet).forEach((absSrc) => {
-      this.fetchScriptSource(absSrc);
+    Array.from(this.scriptUrlSet).forEach((args) => {
+      this.fetchScriptSource(...args);
     });
   }
 
@@ -252,10 +255,13 @@ export default class Debugger extends BaseDomain {
         set(src) {
           if (src) {
             const absSrc = getAbsoultPath(src);
-            domainThis.scriptUrlSet.add(absSrc);
-            if (domainThis.enabledCount) {
-              domainThis.fetchScriptSource(absSrc);
-            }
+            setTimeout(() => {
+              const credentials = this.crossOrigin === 'use-credentials';
+              domainThis.scriptUrlSet.add([absSrc, credentials]);
+              if (domainThis.enabledCount) {
+                domainThis.fetchScriptSource(absSrc, credentials);
+              }
+            });
           }
           return oriSetter.apply(this, arguments);
         },
@@ -376,13 +382,14 @@ export default class Debugger extends BaseDomain {
    * 拉取js文件源内容
    * @private
    * @param {String} url javascript文件的链接地址
+   * @param {Boolean} credentials 拉取时是否带上cookie
    */
-  fetchScriptSource(url) {
+  fetchScriptSource(url, credentials) {
     if (!Debugger.scriptUrls.get(url)) {
       const scriptId = this.getScriptId();
       const xhr = new XMLHttpRequest();
       Debugger.scriptUrls.set(url, scriptId);
-      // xhr.withCredentials = true;
+      xhr.withCredentials = credentials === true;
       xhr.$$type = 'Script';
       xhr.onload = () => {
         const scriptSource = JDB.commentDebuggerCall(xhr.responseText);
@@ -423,7 +430,7 @@ export default class Debugger extends BaseDomain {
       const match = importStr.match(/(?:^|\n|;|}|\*\/)\s*?import[\s|(|{][\s\S]*?['|"](.*?)['|"]\)?/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const importURL = new URL(match[1], url);
-        this.scriptUrlSet.add(importURL.href);
+        this.scriptUrlSet.add([importURL.href]);
         this.fetchScriptSource(importURL.href);
       }
     });
@@ -441,7 +448,7 @@ export default class Debugger extends BaseDomain {
       const match = debugStr.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const debugURL = new URL(match[1], url);
-        this.scriptUrlSet.add(debugURL.href);
+        this.scriptUrlSet.add([debugURL.href]);
         this.fetchScriptSource(debugURL.href);
       }
     });

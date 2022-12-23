@@ -109,13 +109,17 @@ function debugSrcResHandler() {
     }
   }
 }
-export function debugSrc(rawUrl, fetchOptions) {
+export function debugSrc(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debugSrc"');
   }
   const absURL = new URL(rawUrl, location.href);
   const importUrl = absURL.href;
   const result = { importUrl, rawCode: null };
+  const fetchOptions = {};
+  if (document.currentScript?.crossOrigin === 'use-credentials') {
+    fetchOptions.credentials = 'include';
+  }
   debugSrcResList.push(result);
   JDB.getTransCode(importUrl, fetchOptions).then((rawCode) => {
     result.rawCode = rawCode;
