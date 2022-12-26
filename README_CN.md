@@ -1,4 +1,4 @@
-# MpRdev &middot; [![npm](https://img.shields.io/npm/v/mprdev.svg?style=flat-square)](https://www.npmjs.com/package/mprdev) [![github-actions](https://img.shields.io/github/workflow/status/wechatjs/mprdev/Build.svg?style=flat-square)](https://github.com/wechatjs/mprdev/actions/workflows/build.yml)
+# MpRdev &middot; [![npm](https://img.shields.io/npm/v/mprdev.svg?style=flat-square)](https://www.npmjs.com/package/mprdev) [![github-actions](https://img.shields.io/github/actions/workflow/status/wechatjs/mprdev/build.yml?style=flat-square)](https://github.com/wechatjs/mprdev/actions/workflows/build.yml)
 
 **[English](./README.md) | 简体中文**
 
