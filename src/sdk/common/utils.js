@@ -86,8 +86,14 @@ export function requestSource(url, type, credentials, onload, onerror) {
   const xhr = new XMLHttpRequest();
   xhr.withCredentials = !!credentials;
   xhr.$$type = type;
-  xhr.onload = () => typeof onload === 'function' && onload(xhr);
   xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
+  xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      typeof onload === 'function' && onload(xhr);
+    } else {
+      typeof onerror === 'function' && onerror(xhr);
+    }
+  };
   xhr.open('GET', url);
   xhr.send();
 }
