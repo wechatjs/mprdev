@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { formatErrorStack, getAbsoultPath, requestSource } from '../common/utils';
+import { formatErrorStack, getAbsoultPath, getUrlWithRandomNum, randomNum, requestSource } from '../common/utils';
 import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -126,7 +126,7 @@ export default class Debugger extends BaseDomain {
     }
     console.warn(`Failed to set breakpoint by "${url}"`);
     // 兜底返回
-    const tmpId = Date.now() + Math.random();
+    const tmpId = randomNum();
     return {
       breakpointId: tmpId,
       locations: [{
@@ -412,7 +412,7 @@ export default class Debugger extends BaseDomain {
       Debugger.scriptUrls.set(url, scriptId);
       // 先按照credentials选项拉取一次，如果失败了，取反再试一次
       requestSource(url, 'Script', credentials, onload, () => {
-        requestSource(url, 'Script', !credentials, onload);
+        requestSource(getUrlWithRandomNum(url), 'Script', !credentials, onload);
       });
     }
   }

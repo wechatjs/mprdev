@@ -72,6 +72,16 @@ export function escapeRegString(string) {
   return string.replace(/[\\\$\*\+\.\?\^\|\(\)\[\]\{\}]/g, (i) => `\\${i}`);
 }
 
+export function randomNum() {
+  return Date.now() + Math.random();
+}
+
+export function getUrlWithRandomNum(url) {
+  const loc = new URL(url);
+  loc.searchParams.append('r', randomNum());
+  return loc.href;
+}
+
 export function requestSource(url, type, credentials, onload, onerror) {
   const xhr = new XMLHttpRequest();
   xhr.withCredentials = !!credentials;

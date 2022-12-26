@@ -1,6 +1,6 @@
 import vDebugger from 'vdebugger';
 import localForage from 'localforage';
-import { docReady, simpleHash } from './utils';
+import { docReady, getUrlWithRandomNum, simpleHash } from './utils';
 
 // 显示调试蒙层
 const debugMark = document.createElement('div');
@@ -20,7 +20,7 @@ docReady(() => document.body.appendChild(debugMark));
 
 const oriFetch = window.fetch;
 const codeFetch = (url) => oriFetch(url).then((res) =>
-  res.ok ? res.text() : oriFetch(url, { credentials: 'include' }).then((res) => res.text())
+  res.ok ? res.text() : oriFetch(getUrlWithRandomNum(url), { credentials: 'include' }).then((res) => res.text())
 );
 
 const cacheKey = 'debug_cache';
