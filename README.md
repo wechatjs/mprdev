@@ -95,7 +95,7 @@ declare interface InitOptions {
 export declare const version: string
 export declare function init(opts: InitOptions): void
 export function debug(script: string, url: string): void // input source code for remote breakpoint debug
-export function debugSrc(scriptSrc: string, options: RequestInit): void // input source url for remote breakpoint debug
+export function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
 export declare function debugCache(check: boolean | ((url: string) => boolean)): void // control whether cache debug codes by url, which can reduce loading time 
 export declare function getId(): string // get device id
 

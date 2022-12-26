@@ -19,6 +19,10 @@ debugMark.appendChild(debugTips);
 docReady(() => document.body.appendChild(debugMark));
 
 const oriFetch = window.fetch;
+const codeFetch = (url) => oriFetch(url).then((res) =>
+  res.ok ? res.text() : oriFetch(url, { credentials: 'include' }).then((res) => res.text())
+);
+
 const cacheKey = 'debug_cache';
 const useCache = sessionStorage.getItem(cacheKey);
 localForage.config({ driver: localForage.INDEXEDDB, storeName: cacheKey });
@@ -152,18 +156,17 @@ export default class JDB {
   /**
    * 获取转换脚本，如果有缓存，则使用缓存
    * @param {String} importUrl 脚本url
-   * @param {Object} fetchOptions 请求配置
    */
-  static getTransCode(importUrl, fetchOptions) {
+  static getTransCode(importUrl) {
     // 如果是直接强缓存，则检查缓存并返回，有缓存时不再发起请求
     if (JDB.forceCache(importUrl)) {
       return localForage.getItem(importUrl).then((cache) => {
-        return cache || oriFetch(importUrl, fetchOptions).then((res) => res.text())
+        return cache || codeFetch(importUrl)
           .then((script) => localForage.setItem(importUrl, vDebugger.transform(script, importUrl)));
       });
     }
     // 否则仍然发起请求，再判断是否使用缓存
-    return oriFetch(importUrl, fetchOptions).then((res) => res.text()).then((script) => {
+    return codeFetch(importUrl).then((script) => {
       const hash = simpleHash(script) + importUrl;
       return localForage.getItem(hash)
         .then((cache) => cache || localForage.setItem(hash, vDebugger.transform(script, importUrl)));

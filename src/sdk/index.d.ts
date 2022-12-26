@@ -9,7 +9,7 @@ declare interface InitOptions {
 export declare const version: string
 export declare function init(opts: InitOptions): void
 export declare function debug(script: string, url: string): void
-export declare function debugSrc(scriptSrc: string, options: RequestInit): void
+export declare function debugSrc(scriptSrc: string): void
 export declare function debugCache(check: boolean | ((url: string) => boolean)): void
 export declare function getId(): string
 
