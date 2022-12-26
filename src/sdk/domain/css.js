@@ -312,7 +312,7 @@ export default class CSS extends BaseDomain {
    * @param {Function} callback 回调
    */
   fetchStyleSource(styleSheetId, url, callback) {
-    const onload = () => {
+    const onload = (xhr) => {
       const content = xhr.responseText;
       this.styles.set(styleSheetId, content);
       if (typeof callback === 'function') callback(content);
