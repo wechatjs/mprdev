@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { formatErrorStack, getAbsoultPath } from '../common/utils';
+import { formatErrorStack, getAbsoultPath, requestSource } from '../common/utils';
 import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -387,11 +387,7 @@ export default class Debugger extends BaseDomain {
   fetchScriptSource(url, credentials) {
     if (!Debugger.scriptUrls.get(url)) {
       const scriptId = this.getScriptId();
-      const xhr = new XMLHttpRequest();
-      Debugger.scriptUrls.set(url, scriptId);
-      xhr.withCredentials = credentials === true;
-      xhr.$$type = 'Script';
-      xhr.onload = () => {
+      const onload = (xhr) => {
         const scriptSource = JDB.commentDebuggerCall(xhr.responseText);
         const sourceMapURL = this.getSourceMappingURL(scriptSource);
         this.scripts.set(scriptId, scriptSource);
@@ -413,8 +409,11 @@ export default class Debugger extends BaseDomain {
         });
         JDB.checkIfBreakWhenEnable(url);
       };
-      xhr.open('GET', url);
-      xhr.send();
+      Debugger.scriptUrls.set(url, scriptId);
+      // 先按照credentials选项拉取一次，如果失败了，取反再试一次
+      requestSource(url, 'Script', credentials, onload, () => {
+        requestSource(url, 'Script', !credentials, onload);
+      });
     }
   }
 

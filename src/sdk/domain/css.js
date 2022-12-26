@@ -1,6 +1,6 @@
 import nodes from '../common/nodes';
 import * as stylesheet from '../common/stylesheet';
-import { escapeRegString, getAbsoultPath, isMatches } from '../common/utils';
+import { escapeRegString, getAbsoultPath, isMatches, requestSource } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Page from './page';
@@ -166,8 +166,7 @@ export default class CSS extends BaseDomain {
         this.styleInsts.set(styleSheetId, style);
         style.styleSheetId = styleSheetId;
         if (sourceURL) {
-          const credentials = style.ownerNode?.crossOrigin === 'use-credentials';
-          this.fetchStyleSource(styleSheetId, sourceURL, credentials, (content) => {
+          this.fetchStyleSource(styleSheetId, sourceURL, (content) => {
             this.send({
               method: Event.styleSheetAdded,
               params: {
@@ -310,24 +309,21 @@ export default class CSS extends BaseDomain {
    * @private
    * @param {Number} styleSheetId 样式文件id
    * @param {String} url 样式文件url地址
-   * @param {Boolean} credentials 拉取时是否带上cookie
    * @param {Function} callback 回调
    */
-  fetchStyleSource(styleSheetId, url, credentials, callback) {
-    const xhr = new XMLHttpRequest();
-    xhr.withCredentials = credentials === true;
-    xhr.$$type = 'Stylesheet';
-    xhr.onload = () => {
+  fetchStyleSource(styleSheetId, url, callback) {
+    const onload = () => {
       const content = xhr.responseText;
       this.styles.set(styleSheetId, content);
       if (typeof callback === 'function') callback(content);
     };
-    xhr.onerror = () => {
+    const onerror = () => {
       this.styles.set(styleSheetId, 'Cannot get style source code');
     };
-
-    xhr.open('GET', url);
-    xhr.send();
+    // 先不带credentials请求一次，如果失败了再带credentials请求一次
+    requestSource(url, 'Stylesheet', false, onload, () => {
+      requestSource(url, 'Stylesheet', true, onload, onerror);
+    });
   }
 
   /**

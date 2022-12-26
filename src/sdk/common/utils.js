@@ -71,3 +71,13 @@ export function simpleHash(str) {
 export function escapeRegString(string) {
   return string.replace(/[\\\$\*\+\.\?\^\|\(\)\[\]\{\}]/g, (i) => `\\${i}`);
 }
+
+export function requestSource(url, type, credentials, onload, onerror) {
+  const xhr = new XMLHttpRequest();
+  xhr.withCredentials = !!credentials;
+  xhr.$$type = type;
+  xhr.onload = () => typeof onload === 'function' && onload(xhr);
+  xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
+  xhr.open('GET', url);
+  xhr.send();
+}
