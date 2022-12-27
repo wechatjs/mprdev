@@ -42,7 +42,7 @@ function getTitle() {
 
 // 初始化远程调试
 export function init(opts = {}) {
-  if (window.__remote_dev_sdk_inited__) return;
+  if (window.__remote_dev_sdk_inited__ || window !== top) return;
 
   const query = qs.stringify({
     url: location.href,
