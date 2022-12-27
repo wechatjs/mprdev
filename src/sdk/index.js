@@ -41,9 +41,8 @@ function getTitle() {
 }
 
 // 初始化远程调试
-let hasInited = false;
 export function init(opts = {}) {
-  if (hasInited) return;
+  if (window.__remote_dev_sdk_inited__) return;
 
   const query = qs.stringify({
     url: location.href,
@@ -72,7 +71,7 @@ export function init(opts = {}) {
     });
   });
 
-  hasInited = true;
+  window.__remote_dev_sdk_inited__ = true;
 }
 
 // 断点脚本转换工具
