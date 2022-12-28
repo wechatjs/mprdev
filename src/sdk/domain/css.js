@@ -10,7 +10,6 @@ export default class CSS extends BaseDomain {
 
   // css样式集合
   styles = new Map();
-  styleInsts = new Map();
   styleRules = new Map();
 
   // css样式表的唯一id
@@ -135,7 +134,7 @@ export default class CSS extends BaseDomain {
   sendCacheStyles() {
     for (const styleSheetId of this.styles.keys()) {
       const content = this.styles.get(styleSheetId);
-      const style = this.styleInsts.get(styleSheetId);
+      const style = stylesheet.getStyleSheetById(styleSheetId);
       const sourceURL = getAbsoultPath(style.href);
       if (sourceURL) {
         this.send({
@@ -173,7 +172,7 @@ export default class CSS extends BaseDomain {
       if (!style.styleSheetId) {
         const styleSheetId = this.getStyleSheetId();
         const sourceURL = getAbsoultPath(style.href);
-        this.styleInsts.set(styleSheetId, style);
+        stylesheet.setStyleSheet(styleSheetId, style);
         style.styleSheetId = styleSheetId;
         if (sourceURL) {
           this.fetchStyleSource(styleSheetId, sourceURL, (content) => {

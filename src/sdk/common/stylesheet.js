@@ -10,6 +10,10 @@ export function getStyleSheetById(styleSheetId) {
   return styleSheetMap.get(styleSheetId);
 }
 
+export function setStyleSheet(styleSheetId, styleSheet) {
+  styleSheetMap.set(styleSheetId, styleSheet);
+}
+
 const inlineStyleSheetIds = new Map();
 const inlineStyleNodeIds = new Map();
 
