@@ -19,10 +19,11 @@ export default class CSS extends BaseDomain {
   /**
    * 格式化css规则
    * @static
+   * @param {Number} styleSheetId 样式文件id
    * @param {String} rule css选择器规则
    * @param {Node} node dom节点
    */
-  static formatCssRule(rule, node) {
+  static formatCssRule(styleSheetId, rule, node) {
     let index = 0;
     const selectors = rule.selectorText.split(',').map((item, i) => {
       const text = item.trim();
@@ -37,10 +38,18 @@ export default class CSS extends BaseDomain {
     return {
       index,
       cssRule: {
+        styleSheetId,
         style: {
+          styleSheetId,
           cssText,
           cssProperties: CSS.formatCssProperties(cssText),
           shorthandEntries: [],
+          // range: {
+          //   startLine: 0,
+          //   startColumn: 0,
+          //   endLine: 1,
+          //   endColumn: 0,
+          // }
         },
         selectorList: {
           selectors,
@@ -293,23 +302,24 @@ export default class CSS extends BaseDomain {
     const matchedCSSRules = [];
     const node = nodes.getNodeById(nodeId);
     const styleSheets = Array.from(document.styleSheets);
-    const pushMatchedCSSRules = (rule) => {
+    const pushMatchedCSSRules = (styleSheetId, rule) => {
       if (isMatches(node, rule.selectorText)) {
-        const { index, cssRule } = CSS.formatCssRule(rule, node);
+        const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
         matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
       }
     };
     styleSheets.forEach((style) => {
+      const styleSheetId = style.styleSheetId;
       try {
         // chrome不允许访问不同域名下的css规则，这里捕获下错误
         // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
-        Array.from(style.cssRules).forEach(pushMatchedCSSRules);
+        Array.from(style.cssRules).forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
       } catch {
         // 如果出错了，尝试用自己parse的结果
-        if (style.styleSheetId) {
-          const rules = this.styleRules.get(style.styleSheetId);
+        if (styleSheetId) {
+          const rules = this.styleRules.get(styleSheetId);
           if (rules) {
-            rules.forEach(pushMatchedCSSRules);
+            rules.forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
           }
         }
       }
