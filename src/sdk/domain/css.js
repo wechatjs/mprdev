@@ -11,6 +11,7 @@ export default class CSS extends BaseDomain {
   // css样式集合
   styles = new Map();
   styleInsts = new Map();
+  styleRules = new Map();
 
   // css样式表的唯一id
   styleSheetId = 1;
@@ -204,21 +205,25 @@ export default class CSS extends BaseDomain {
     const matchedCSSRules = [];
     const node = nodes.getNodeById(nodeId);
     const styleSheets = Array.from(document.styleSheets);
+    const pushMatchedCSSRules = (rule) => {
+      if (isMatches(node, rule.selectorText)) {
+        const { index, cssRule } = CSS.formatCssRule(rule, node);
+        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
+      }
+    };
     styleSheets.forEach((style) => {
       try {
         // chrome不允许访问不同域名下的css规则，这里捕获下错误
         // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
-        Array.from(style.cssRules).forEach((rule) => {
-          if (isMatches(node, rule.selectorText)) {
-            const { index, cssRule } = CSS.formatCssRule(rule, node);
-            matchedCSSRules.push({
-              matchingSelectors: [index],
-              rule: cssRule,
-            });
-          }
-        });
+        Array.from(style.cssRules).forEach(pushMatchedCSSRules);
       } catch {
-        // nothing to do.
+        // 如果出错了，尝试用自己parse的结果
+        if (style.styleSheetId) {
+          const rules = this.styleRules.get(style.styleSheetId);
+          if (rules) {
+            rules.forEach(pushMatchedCSSRules);
+          }
+        }
       }
     });
 
@@ -315,15 +320,61 @@ export default class CSS extends BaseDomain {
     const onload = (xhr) => {
       const content = xhr.responseText;
       this.styles.set(styleSheetId, content);
+      this.parseStyleRules(styleSheetId, content);
       if (typeof callback === 'function') callback(content);
     };
     const onerror = () => {
       this.styles.set(styleSheetId, 'Cannot get style source code');
+      this.parseStyleRules(styleSheetId, '');
     };
     // 先不带credentials请求一次，如果失败了再带credentials请求一次
     requestSource(url, 'Stylesheet', false, onload, () => {
       requestSource(getUrlWithRandomNum(url), 'Stylesheet', true, onload, onerror);
     });
+  }
+
+  /**
+   * 解析css规则
+   * @param {Number} styleSheetId 样式文件id
+   * @param {String} content 样式文件内容
+   */
+  parseStyleRules(styleSheetId, content) {
+    let bracketsCount = 0;
+    let storage = '';
+    const tokenList = [];
+    for (let i = 0; i < content.length; i++) {
+      const pointer = content[i];
+      switch (pointer) {
+        case '{': {
+          bracketsCount++;
+          if (bracketsCount === 1) {
+            tokenList.push(storage.trim());
+            storage = '';
+          } else {
+            storage += pointer;
+          }
+          break;
+        }
+        case '}': {
+          bracketsCount--;
+          if (bracketsCount === 0) {
+            tokenList.push(storage.trim());
+            storage = '';
+          } else {
+            storage += pointer;
+          }
+          break;
+        }
+        default: storage += pointer;
+      }
+    }
+
+    const rules = [];
+    for (let j = 0; j < tokenList.length; j += 2) {
+      rules.push({ selectorText: tokenList[j], cssText: tokenList[j + 1] });
+    }
+
+    this.styleRules.set(styleSheetId, rules);
   }
 
   /**
@@ -368,6 +419,7 @@ export default class CSS extends BaseDomain {
       styleSheet.replaceSync(newText);
 
       this.styles.set(styleSheetId, newText);
+      this.parseStyleRules(styleSheetId, newText);
 
       this.send({
         method: Event.styleSheetChanged,
@@ -401,12 +453,12 @@ export default class CSS extends BaseDomain {
           isInline: false,
           isMutable: false,
           length: 0,
-          sourceURL: "",
+          sourceURL: '',
           startLine: 0,
           endLine: 0,
           startColumn: 0,
           endColumn: 0,
-          title: "",
+          title: '',
         }
       }
     });
@@ -456,6 +508,7 @@ export default class CSS extends BaseDomain {
 
     // 储存下styleSheet的内容
     this.styles.set(styleSheetId, ruleText);
+    this.parseStyleRules(styleSheetId, ruleText);
 
     // TODO: 让styleSheet能够应用到相应节点上
 
