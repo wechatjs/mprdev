@@ -339,39 +339,41 @@ export default class CSS extends BaseDomain {
    * @param {String} content 样式文件内容
    */
   parseStyleRules(styleSheetId, content) {
-    let bracketsCount = 0;
-    let storage = '';
     const tokenList = [];
-    for (let i = 0; i < content.length; i++) {
+    const formatToken = (token) => token.trim().replace(/[\r\n]/g, '').replace(/\s+/g, ' ');
+    for (let i = 0, brackets = 0, token = ''; i < content.length; i++) {
       const pointer = content[i];
       switch (pointer) {
         case '{': {
-          bracketsCount++;
-          if (bracketsCount === 1) {
-            tokenList.push(storage.trim());
-            storage = '';
+          brackets++;
+          if (brackets === 1) {
+            tokenList.push(formatToken(token));
+            token = '';
           } else {
-            storage += pointer;
+            token += pointer;
           }
           break;
         }
         case '}': {
-          bracketsCount--;
-          if (bracketsCount === 0) {
-            tokenList.push(storage.trim());
-            storage = '';
+          brackets--;
+          if (brackets === 0) {
+            tokenList.push(formatToken(token));
+            token = '';
           } else {
-            storage += pointer;
+            token += pointer;
           }
           break;
         }
-        default: storage += pointer;
+        default: token += pointer;
       }
     }
 
     const rules = [];
     for (let j = 0; j < tokenList.length; j += 2) {
-      rules.push({ selectorText: tokenList[j], cssText: tokenList[j + 1] });
+      rules.push({
+        selectorText: tokenList[j],
+        cssText: `${tokenList[j]} { ${tokenList[j + 1]} }`
+      });
     }
 
     this.styleRules.set(styleSheetId, rules);
