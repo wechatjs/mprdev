@@ -196,6 +196,94 @@ export default class CSS extends BaseDomain {
   }
 
   /**
+   * 拉取css文件源内容
+   * @private
+   * @param {Number} styleSheetId 样式文件id
+   * @param {String} url 样式文件url地址
+   * @param {Function} callback 回调
+   */
+  fetchStyleSource(styleSheetId, url, callback) {
+    const onload = (xhr) => {
+      const content = xhr.responseText;
+      this.styles.set(styleSheetId, content);
+      this.parseStyleRules(styleSheetId, content);
+      if (typeof callback === 'function') callback(content);
+    };
+    const onerror = () => {
+      this.styles.set(styleSheetId, 'Cannot get style source code');
+      this.parseStyleRules(styleSheetId, '');
+    };
+    // 先不带credentials请求一次，如果失败了再带credentials请求一次
+    requestSource(url, 'Stylesheet', false, onload, () => {
+      requestSource(getUrlWithRandomNum(url), 'Stylesheet', true, onload, onerror);
+    });
+  }
+
+  /**
+   * 解析css规则
+   * @private
+   * @param {Number} styleSheetId 样式文件id
+   * @param {String} content 样式文件内容
+   */
+  parseStyleRules(styleSheetId, content) {
+    const tokenList = [];
+    const formatToken = (token) => token.trim().replace(/[\r\n]/g, '').replace(/\s+/g, ' ');
+    for (let i = 0, brackets = 0, token = ''; i < content.length; i++) {
+      const pointer = content[i];
+      switch (pointer) {
+        case '{': {
+          brackets++;
+          if (brackets === 1) {
+            tokenList.push(formatToken(token));
+            token = '';
+          } else {
+            token += pointer;
+          }
+          break;
+        }
+        case '}': {
+          brackets--;
+          if (brackets === 0) {
+            tokenList.push(formatToken(token));
+            token = '';
+          } else {
+            token += pointer;
+          }
+          break;
+        }
+        default: token += pointer;
+      }
+    }
+
+    const rules = [];
+    for (let j = 0; j < tokenList.length; j += 2) {
+      rules.push({
+        selectorText: tokenList[j],
+        cssText: `${tokenList[j]} { ${tokenList[j + 1]} }`
+      });
+    }
+
+    this.styleRules.set(styleSheetId, rules);
+  }
+
+  /**
+   * 获取style样式的唯一标识id
+   * @private
+   */
+  getStyleSheetId(node) {
+    if (node) {
+      const nodeId = nodes.getIdByNode(node);
+      let styleSheetId = stylesheet.getInlineStyleSheetId(nodeId);
+      if (!styleSheetId) {
+        styleSheetId = `${this.styleSheetId++}`;
+        stylesheet.setInlineStyleSheetId(nodeId, styleSheetId);
+      }
+      return styleSheetId;
+    }
+    return `${this.styleSheetId++}`;
+  }
+
+  /**
    * 获取指定DOM节点的匹配的样式
    * @public
    * @param {Object} params
@@ -307,93 +395,6 @@ export default class CSS extends BaseDomain {
     return {
       text: this.styles.get(styleSheetId),
     };
-  }
-
-  /**
-   * 拉取css文件源内容
-   * @private
-   * @param {Number} styleSheetId 样式文件id
-   * @param {String} url 样式文件url地址
-   * @param {Function} callback 回调
-   */
-  fetchStyleSource(styleSheetId, url, callback) {
-    const onload = (xhr) => {
-      const content = xhr.responseText;
-      this.styles.set(styleSheetId, content);
-      this.parseStyleRules(styleSheetId, content);
-      if (typeof callback === 'function') callback(content);
-    };
-    const onerror = () => {
-      this.styles.set(styleSheetId, 'Cannot get style source code');
-      this.parseStyleRules(styleSheetId, '');
-    };
-    // 先不带credentials请求一次，如果失败了再带credentials请求一次
-    requestSource(url, 'Stylesheet', false, onload, () => {
-      requestSource(getUrlWithRandomNum(url), 'Stylesheet', true, onload, onerror);
-    });
-  }
-
-  /**
-   * 解析css规则
-   * @param {Number} styleSheetId 样式文件id
-   * @param {String} content 样式文件内容
-   */
-  parseStyleRules(styleSheetId, content) {
-    const tokenList = [];
-    const formatToken = (token) => token.trim().replace(/[\r\n]/g, '').replace(/\s+/g, ' ');
-    for (let i = 0, brackets = 0, token = ''; i < content.length; i++) {
-      const pointer = content[i];
-      switch (pointer) {
-        case '{': {
-          brackets++;
-          if (brackets === 1) {
-            tokenList.push(formatToken(token));
-            token = '';
-          } else {
-            token += pointer;
-          }
-          break;
-        }
-        case '}': {
-          brackets--;
-          if (brackets === 0) {
-            tokenList.push(formatToken(token));
-            token = '';
-          } else {
-            token += pointer;
-          }
-          break;
-        }
-        default: token += pointer;
-      }
-    }
-
-    const rules = [];
-    for (let j = 0; j < tokenList.length; j += 2) {
-      rules.push({
-        selectorText: tokenList[j],
-        cssText: `${tokenList[j]} { ${tokenList[j + 1]} }`
-      });
-    }
-
-    this.styleRules.set(styleSheetId, rules);
-  }
-
-  /**
-   * 获取style样式的唯一标识id
-   * @private
-   */
-  getStyleSheetId(node) {
-    if (node) {
-      const nodeId = nodes.getIdByNode(node);
-      let styleSheetId = stylesheet.getInlineStyleSheetId(nodeId);
-      if (!styleSheetId) {
-        styleSheetId = `${this.styleSheetId++}`;
-        stylesheet.setInlineStyleSheetId(nodeId, styleSheetId);
-      }
-      return styleSheetId;
-    }
-    return `${this.styleSheetId++}`;
   }
 
   /**
