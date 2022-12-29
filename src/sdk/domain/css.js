@@ -118,7 +118,8 @@ export default class CSS extends BaseDomain {
       if (value) {
         let range;
         if (cssRange) {
-          const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
+          const index = cssText.match(new RegExp(`[{;\s\n]${style}`))?.index + 1;
+          const leftExcludes = cssText.substring(0, index).split('\n');
           const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
           range = {
             startLine: cssRange.startLine + leftExcludes.length - 1,
