@@ -23,7 +23,7 @@ export function getSubType(val) {
   // DOM节点类型
   try {
     if (val && [1, 8, 9].includes(val.nodeType)) return 'node';
-  } catch (err) { /* empty */ }
+  } catch { /* empty */ }
 
   const realType = getRealType(val).toLowerCase();
   return [
@@ -52,7 +52,7 @@ export function getPreview(val, opts = {}) {
     let subVal;
     try {
       subVal = val[key];
-    } catch (err) { /* empty */ }
+    } catch { /* empty */ }
 
     const { type, subtype } = getType(subVal);
     if (type === 'object') {
@@ -68,7 +68,7 @@ export function getPreview(val, opts = {}) {
         try {
           // try catch一下，防止访问window的constructor报跨域错误
           subVal = subVal.constructor?.name || 'Object';
-        } catch (err) {
+        } catch {
           subVal = 'Object';
         }
       }
@@ -140,7 +140,7 @@ export function objectFormat(val, opts = {}) {
     try {
       // try catch一下，防止访问window的constructor报跨域错误
       ctorName = val.constructor?.name || 'Object';
-    } catch (err) { /* empty */ }
+    } catch { /* empty */ }
     res.className = ctorName;
     res.description = ctorName;
     opts.preview && (res.preview = {

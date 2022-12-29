@@ -325,16 +325,16 @@ export default class Dom extends BaseDomain {
 
     try {
       result = result.concat(Dom.getNodesByKeyword(query));
-    } catch (e) { /* empty */ }
+    } catch { /* empty */ }
     if (!result.length) {
       try {
         result = result.concat(Dom.getNodesBySelector(query));
-      } catch (e) { /* empty */ }
+      } catch { /* empty */ }
     }
     if (!result.length) {
       try {
         result = result.concat(Dom.getNodesByXPath(query));
-      } catch (e) { /* empty */ }
+      } catch { /* empty */ }
     }
 
     result = result.filter((node) => debugClsList.indexOf(node?.getAttribute?.('class')) === -1);

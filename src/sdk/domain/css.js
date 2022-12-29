@@ -100,7 +100,7 @@ export default class CSS extends BaseDomain {
    * @param {Object} cssRange css文本范围，eg: {startLine,startColumn,endLine,endColumn}
    */
   static formatCssProperties(cssText = '', cssRange) {
-    const splitProps = (text) => text.split(';').map(val => val?.trim()).filter(Boolean).map(val => `${val};`);
+    const splitProps = (text) => text.split(';').map((v, i, a) => i < a.length - 1 ? `${v};` : v);
     const splited = cssText.split(/\/\*/)
       .map((text) => text.split(/\*\//))
       .map((item) => {
@@ -115,28 +115,30 @@ export default class CSS extends BaseDomain {
 
     return splited.map((style) => {
       const [name, value] = style.replace(/^\/\*|;?\s*\*\/$|;$/g, '').split(':');
-      let range;
-      if (cssRange) {
-        const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
-        const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
-        range = {
-          startLine: cssRange.startLine + leftExcludes.length - 1,
-          startColumn: (leftExcludes.length === 1 ? cssRange.startColumn : 0) + leftExcludes[leftExcludes.length - 1].length,
-          endLine: cssRange.startLine + leftIncludes.length - 1,
-          endColumn: (leftIncludes.length === 1 ? cssRange.startColumn : 0) + leftIncludes[leftIncludes.length - 1].length,
+      if (value) {
+        let range;
+        if (cssRange) {
+          const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
+          const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
+          range = {
+            startLine: cssRange.startLine + leftExcludes.length - 1,
+            startColumn: (leftExcludes.length === 1 ? cssRange.startColumn : 0) + leftExcludes[leftExcludes.length - 1].length,
+            endLine: cssRange.startLine + leftIncludes.length - 1,
+            endColumn: (leftIncludes.length === 1 ? cssRange.startColumn : 0) + leftIncludes[leftIncludes.length - 1].length,
+          };
+        }
+        return {
+          name: name.trim(),
+          value: value.trim(),
+          text: style,
+          important: value.includes('important'),
+          disabled: style.startsWith('/*'),
+          implicit: false,
+          shorthandEntries: [],
+          range,
         };
       }
-      return {
-        name: name.trim(),
-        value: value.trim(),
-        text: style,
-        important: value.includes('important'),
-        disabled: style.startsWith('/*'),
-        implicit: false,
-        shorthandEntries: [],
-        range,
-      };
-    });
+    }).filter(Boolean);
   }
 
   /**
@@ -356,9 +358,7 @@ export default class CSS extends BaseDomain {
         // chrome不允许访问不同域名下的css规则，这里捕获下错误
         // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
         Array.from(style.cssRules).forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
-      } catch {
-        // nothing to do.
-      }
+      } catch { /* empty */ }
     });
 
     return {
@@ -488,21 +488,23 @@ export default class CSS extends BaseDomain {
           if (newRule) {
             const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
 
-            styleSheet.insertRule(newRule.cssText, index);
-            styleSheet.deleteRule(index + 1);
+            try {
+              styleSheet.insertRule(newRule.cssText, index);
+              styleSheet.deleteRule(index + 1);
 
-            this.send({
-              method: Event.styleSheetChanged,
-              params: { styleSheetId },
-            });
+              this.send({
+                method: Event.styleSheetChanged,
+                params: { styleSheetId },
+              });
 
-            return {
-              styleSheetId,
-              cssText,
-              cssProperties: CSS.formatCssProperties(cssText, newRule.range),
-              shorthandEntries: [],
-              range: newRule.range,
-            };
+              return {
+                styleSheetId,
+                cssText,
+                cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+                shorthandEntries: [],
+                range: newRule.range,
+              };
+            } catch { /* empty */ }
           }
         }
       }
@@ -584,30 +586,32 @@ export default class CSS extends BaseDomain {
         if (newRule) {
           const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
 
-          styleSheet.insertRule(newRule.cssText, index);
-          styleSheet.deleteRule(index + 1);
-
-          this.send({
-            method: Event.styleSheetChanged,
-            params: { styleSheetId },
-          });
-
-          return {
-            rule: {
-              styleSheetId,
-              style: {
+          try {
+            styleSheet.insertRule(newRule.cssText, index);
+            styleSheet.deleteRule(index + 1);
+  
+            this.send({
+              method: Event.styleSheetChanged,
+              params: { styleSheetId },
+            });
+  
+            return {
+              rule: {
                 styleSheetId,
-                cssText,
-                cssProperties: CSS.formatCssProperties(cssText, newRule.range),
-                shorthandEntries: [],
-                range: newRule.range,
+                style: {
+                  styleSheetId,
+                  cssText,
+                  cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+                  shorthandEntries: [],
+                  range: newRule.range,
+                },
+                selectorList: {
+                  selectors: selectorText.split(',').map((item) => ({ text: item.trim() })),
+                  text: newRule.selectorText.trim(),
+                },
               },
-              selectorList: {
-                selectors: selectorText.split(',').map((item) => ({ text: item.trim() })),
-                text: newRule.selectorText.trim(),
-              },
-            },
-          };
+            };
+          } catch { /* empty */ }
         }
       }
     }
