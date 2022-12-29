@@ -120,6 +120,7 @@ export default class CSS extends BaseDomain {
           text: style,
           important: value.includes('important'),
           disabled: false,
+          implicit: false,
           shorthandEntries: [],
           range,
         };
@@ -222,12 +223,12 @@ export default class CSS extends BaseDomain {
     const onload = (xhr) => {
       const content = xhr.responseText;
       this.styles.set(styleSheetId, content);
-      this.parseStyleRules(styleSheetId, content);
+      this.styleRules.set(styleSheetId, this.parseStyleRules(content));
       if (typeof callback === 'function') callback(content);
     };
     const onerror = () => {
       this.styles.set(styleSheetId, 'Cannot get style source code');
-      this.parseStyleRules(styleSheetId, '');
+      this.styleRules.set(styleSheetId, this.parseStyleRules(''));
     };
     // 先不带credentials请求一次，如果失败了再带credentials请求一次
     requestSource(url, 'Stylesheet', false, onload, () => {
@@ -238,10 +239,9 @@ export default class CSS extends BaseDomain {
   /**
    * 解析css规则
    * @private
-   * @param {Number} styleSheetId 样式文件id
    * @param {String} content 样式文件内容
    */
-  parseStyleRules(styleSheetId, content) {
+  parseStyleRules(content) {
     const tokenList = [];
     for (let i = 0, line = 0, column = 0, brackets = 0, token = ''; i < content.length; i++) {
       const pointer = content[i];
@@ -295,7 +295,7 @@ export default class CSS extends BaseDomain {
       });
     }
 
-    this.styleRules.set(styleSheetId, rules);
+    return rules;
   }
 
   /**
@@ -441,27 +441,53 @@ export default class CSS extends BaseDomain {
    */
   setStyleTexts({ edits }) {
     const styles = edits.map((edit) => {
-      const { styleSheetId, text } = edit;
+      const { styleSheetId, range } = edit;
+      const text = edit.text.replace(/;+/g, ';');
       const nodeId = stylesheet.getInlineStyleNodeId(styleSheetId);
       if (nodeId) {
         const node = nodes.getNodeById(nodeId);
         node.setAttribute('style', text);
         return this.getInlineStylesForNode({ nodeId }).inlineStyle;
       }
-      // TODO: 如果styleSheet没有ownerNode
+
       const styleSheet = stylesheet.getStyleSheetById(styleSheetId);
-      const cssRule = styleSheet.cssRules.item(0);
-      const { selectorText } = cssRule;
-      const newText = `${selectorText} { ${text} }`;
-      styleSheet.replaceSync(newText);
+      const content = this.styles.get(styleSheetId);
+      if (styleSheet && content) {
+        const lines = content.split('\n');
+        const newContent = [
+          ...lines.slice(0, range.startLine),
+          lines[range.startLine].substring(0, range.startColumn)
+            + text + lines[range.endLine].substring(range.endColumn),
+          ...lines.slice(range.endLine + 1),
+        ].join('\n');
 
-      this.styles.set(styleSheetId, newText);
-      this.parseStyleRules(styleSheetId, newText);
+        this.styles.set(styleSheetId, newContent);
+        this.styleRules.set(styleSheetId, this.parseStyleRules(newContent));
 
-      this.send({
-        method: Event.styleSheetChanged,
-        params: { styleSheetId },
-      });
+        const rules = this.styleRules.get(styleSheetId);
+        if (rules) {
+          const newRule = rules.find((rule) => rule.range.startLine === range.startLine && rule.range.startColumn === range.startColumn);
+
+          if (newRule) {
+            const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
+
+            styleSheet.insertRule(newRule.cssText, 0);
+
+            this.send({
+              method: Event.styleSheetChanged,
+              params: { styleSheetId },
+            });
+
+            return {
+              styleSheetId,
+              cssText,
+              cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+              shorthandEntries: [],
+              range: newRule.range,
+            };
+          }
+        }
+      }
 
       return { styleSheetId };
     });
@@ -545,7 +571,7 @@ export default class CSS extends BaseDomain {
 
     // 储存下styleSheet的内容
     this.styles.set(styleSheetId, ruleText);
-    this.parseStyleRules(styleSheetId, ruleText);
+    this.styleRules.set(styleSheetId, this.parseStyleRules(ruleText));
 
     // TODO: 让styleSheet能够应用到相应节点上
 
