@@ -32,7 +32,7 @@ export default class CSS extends BaseDomain {
       return { text };
     });
 
-    const cssText = /\{(.*)\}/.exec(rule.cssText)[1];
+    const cssText = /\{([\s\S]*)\}/.exec(rule.cssText)[1];
 
     return {
       index,
@@ -41,14 +41,9 @@ export default class CSS extends BaseDomain {
         style: {
           styleSheetId,
           cssText,
-          cssProperties: CSS.formatCssProperties(cssText),
+          cssProperties: CSS.formatCssProperties(cssText, rule.range),
           shorthandEntries: [],
-          // range: {
-          //   startLine: 0,
-          //   startColumn: 0,
-          //   endLine: 1,
-          //   endColumn: 0,
-          // }
+          range: rule.range,
         },
         selectorList: {
           selectors,
@@ -72,7 +67,7 @@ export default class CSS extends BaseDomain {
     let startColumn = 0;
     let endColumn = 0;
     let text = '';
-  
+
     const reg = new RegExp(`(\\/\\*)?\\s*${escapeRegString(name)}:\\s*${escapeRegString(value)};?\\s*(\\*\\/)?`);
     for (let i = 0, len = lines.length; i < len; i++) {
       const line = lines[i];
@@ -86,7 +81,7 @@ export default class CSS extends BaseDomain {
         break;
       }
     }
-  
+
     return {
       range: {
         startLine,
@@ -101,12 +96,24 @@ export default class CSS extends BaseDomain {
   /**
    * 格式化css属性为具体的数据结构
    * @static
-   * @param {String} cssText css文本，eg：height:100px;width:100px !important;
+   * @param {String} cssText css文本，eg: height:100px;width:100px !important;
+   * @param {Object} cssRange css文本范围，eg: {startLine, startColumn, endLine, endColumn}
    */
-  static formatCssProperties(cssText = '') {
-    return cssText.replace(/(\/\*|\*\/)/g, '').split(';').filter(val => val?.trim())
+  static formatCssProperties(cssText = '', cssRange) {
+    return cssText.replace(/(\/\*|\*\/)/g, '').split(';').map(val => val?.trim()).filter(Boolean)
       .map((style) => {
         const [name, value] = style.split(':');
+        let range;
+        if (cssRange) {
+          const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
+          const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
+          range = {
+            startLine: cssRange.startLine + leftExcludes.length - 1,
+            startColumn: leftExcludes[leftExcludes.length - 1].length,
+            endLine: cssRange.startLine + leftIncludes.length - 1,
+            endColumn: leftIncludes[leftIncludes.length - 1].length,
+          };
+        }
         return {
           name: name.trim(),
           value: value.trim(),
@@ -114,6 +121,7 @@ export default class CSS extends BaseDomain {
           important: value.includes('important'),
           disabled: false,
           shorthandEntries: [],
+          range,
         };
       });
   }
@@ -235,14 +243,14 @@ export default class CSS extends BaseDomain {
    */
   parseStyleRules(styleSheetId, content) {
     const tokenList = [];
-    const formatToken = (token) => token.trim().replace(/[\r\n]/g, '').replace(/\s+/g, ' ');
-    for (let i = 0, brackets = 0, token = ''; i < content.length; i++) {
+    for (let i = 0, line = 0, column = 0, brackets = 0, token = ''; i < content.length; i++) {
       const pointer = content[i];
       switch (pointer) {
         case '{': {
           brackets++;
+          column++;
           if (brackets === 1) {
-            tokenList.push(formatToken(token));
+            tokenList.push({ token, line, column });
             token = '';
           } else {
             token += pointer;
@@ -252,22 +260,38 @@ export default class CSS extends BaseDomain {
         case '}': {
           brackets--;
           if (brackets === 0) {
-            tokenList.push(formatToken(token));
+            tokenList.push({ token, line, column });
             token = '';
           } else {
             token += pointer;
           }
+          column++;
           break;
         }
-        default: token += pointer;
+        case '\n': {
+          token += pointer;
+          column = 0;
+          line++;
+          break;
+        }
+        default: {
+          token += pointer;
+          column++;
+        }
       }
     }
 
     const rules = [];
     for (let j = 0; j < tokenList.length; j += 2) {
       rules.push({
-        selectorText: tokenList[j],
-        cssText: `${tokenList[j]} { ${tokenList[j + 1]} }`
+        selectorText: tokenList[j].token.trim(),
+        cssText: `${tokenList[j].token}{${tokenList[j + 1].token}}`.trim(),
+        range: {
+          startLine: tokenList[j].line,
+          startColumn: tokenList[j].column,
+          endLine: tokenList[j + 1].line,
+          endColumn: tokenList[j + 1].column,
+        }
       });
     }
 
@@ -309,18 +333,19 @@ export default class CSS extends BaseDomain {
     };
     styleSheets.forEach((style) => {
       const styleSheetId = style.styleSheetId;
+      if (style.href && styleSheetId) {
+        const rules = this.styleRules.get(styleSheetId);
+        if (rules) {
+          rules.forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
+          return;
+        }
+      }
       try {
         // chrome不允许访问不同域名下的css规则，这里捕获下错误
         // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
         Array.from(style.cssRules).forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
       } catch {
-        // 如果出错了，尝试用自己parse的结果
-        if (styleSheetId) {
-          const rules = this.styleRules.get(styleSheetId);
-          if (rules) {
-            rules.forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
-          }
-        }
+        // nothing to do.
       }
     });
 
