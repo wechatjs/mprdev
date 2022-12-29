@@ -97,34 +97,46 @@ export default class CSS extends BaseDomain {
    * 格式化css属性为具体的数据结构
    * @static
    * @param {String} cssText css文本，eg: height:100px;width:100px !important;
-   * @param {Object} cssRange css文本范围，eg: {startLine, startColumn, endLine, endColumn}
+   * @param {Object} cssRange css文本范围，eg: {startLine,startColumn,endLine,endColumn}
    */
   static formatCssProperties(cssText = '', cssRange) {
-    return cssText.replace(/(\/\*|\*\/)/g, '').split(';').map(val => val?.trim()).filter(Boolean)
-      .map((style) => {
-        const [name, value] = style.split(':');
-        let range;
-        if (cssRange) {
-          const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
-          const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
-          range = {
-            startLine: cssRange.startLine + leftExcludes.length - 1,
-            startColumn: leftExcludes[leftExcludes.length - 1].length,
-            endLine: cssRange.startLine + leftIncludes.length - 1,
-            endColumn: leftIncludes[leftIncludes.length - 1].length,
-          };
-        }
-        return {
-          name: name.trim(),
-          value: value.trim(),
-          text: style,
-          important: value.includes('important'),
-          disabled: false,
-          implicit: false,
-          shorthandEntries: [],
-          range,
+    const splitProps = (text) => text.split(';').map(val => val?.trim()).filter(Boolean).map(val => `${val};`);
+    const splited = cssText.split(/\/\*/)
+      .map((text) => text.split(/\*\//))
+      .map((item) => {
+        if (item.length === 1) return item;
+        if (item[0].split('\n').length > 1) return [item[1]];
+        return item;
+      })
+      .reduce((pre, cur) => {
+        if (cur.length === 1) return pre.concat(splitProps(cur[0]));
+        return pre.concat(`/*${cur[0]}*/`, splitProps(cur[1]));
+      }, []);
+
+    return splited.map((style) => {
+      const [name, value] = style.replace(/^\/\*|;?\s*\*\/$|;$/g, '').split(':');
+      let range;
+      if (cssRange) {
+        const leftExcludes = cssText.substring(0, cssText.indexOf(style)).split('\n');
+        const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
+        range = {
+          startLine: cssRange.startLine + leftExcludes.length - 1,
+          startColumn: (leftExcludes.length === 1 ? cssRange.startColumn : 0) + leftExcludes[leftExcludes.length - 1].length,
+          endLine: cssRange.startLine + leftIncludes.length - 1,
+          endColumn: (leftIncludes.length === 1 ? cssRange.startColumn : 0) + leftIncludes[leftIncludes.length - 1].length,
         };
-      });
+      }
+      return {
+        name: name.trim(),
+        value: value.trim(),
+        text: style,
+        important: value.includes('important'),
+        disabled: style.startsWith('/*'),
+        implicit: false,
+        shorthandEntries: [],
+        range,
+      };
+    });
   }
 
   /**
@@ -466,12 +478,18 @@ export default class CSS extends BaseDomain {
 
         const rules = this.styleRules.get(styleSheetId);
         if (rules) {
-          const newRule = rules.find((rule) => rule.range.startLine === range.startLine && rule.range.startColumn === range.startColumn);
+          let index = 0;
+          const newRule = rules.find((rule, i) => {
+            index = i;
+            return rule.range.startLine === range.startLine
+              && rule.range.startColumn === range.startColumn;
+          });
 
           if (newRule) {
             const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
 
-            styleSheet.insertRule(newRule.cssText, 0);
+            styleSheet.insertRule(newRule.cssText, index);
+            styleSheet.deleteRule(index + 1);
 
             this.send({
               method: Event.styleSheetChanged,
@@ -534,75 +552,64 @@ export default class CSS extends BaseDomain {
    * @public
    */
   addRule({ styleSheetId, ruleText, location }) {
-    const selectorsText = ruleText.slice(0, ruleText.indexOf('{'));
-    const cssText = ruleText.slice(ruleText.indexOf('{') + 1, ruleText.indexOf('}'));
-
-    const formatSelectorsText = selectorsText.trim();
-    const formatCssText = cssText.trim();
-
-    const cssProperties = CSS.formatCssProperties(formatCssText);
-    const selectors = selectorsText.split(',').map((sel, idx, arr) => {
-      const selectorText = sel?.trim();
-      if (!selectorText) return null;
-
-      const prefixText = arr.slice(0, idx).join('');
-      const firstWordIdxInSel = sel.indexOf(selectorText.at(0));
-      const lastWordIdxInSel = sel.lastIndexOf(selectorText.at(selectorText.length - 1));
-      const range = {
-        startLine: (
-          (prefixText.indexOf('\n') >= 0 ? prefixText.split('\n').length - 1 : 0)
-          + (sel.indexOf('\n') >= 0 ? sel.slice(0, firstWordIdxInSel).split('\n').length - 1 : 0)
-        ),
-        endLine: `${prefixText}${sel}`.split('\n').length - 1,
-        startColumn: firstWordIdxInSel - sel.slice(0, firstWordIdxInSel).lastIndexOf('\n') - 1,
-        endColumn: lastWordIdxInSel - sel.lastIndexOf('\n', lastWordIdxInSel) - 1,
-      };
-
-      return {
-        range,
-        text: selectorText,
-      };
-    }).filter(val => val !== null);
-
-    // styleSheet内容替换
     const styleSheet = stylesheet.getStyleSheetById(styleSheetId);
-    const pos = styleSheet.cssRules.length;
-    styleSheet.replaceSync(ruleText, pos);
+    const content = this.styles.get(styleSheetId);
+    if (styleSheet && content) {
+      const lines = content.split('\n');
+      const newContent = [
+        ...lines.slice(0, location.startLine),
+        lines[location.startLine].substring(0, location.startColumn)
+          + ruleText + lines[location.endLine].substring(location.endColumn),
+        ...lines.slice(location.endLine + 1),
+      ].join('\n');
 
-    // 储存下styleSheet的内容
-    this.styles.set(styleSheetId, ruleText);
-    this.styleRules.set(styleSheetId, this.parseStyleRules(ruleText));
+      this.styles.set(styleSheetId, newContent);
+      this.styleRules.set(styleSheetId, this.parseStyleRules(newContent));
 
-    // TODO: 让styleSheet能够应用到相应节点上
+      const rules = this.styleRules.get(styleSheetId);
+      if (rules) {
+        const selectorText = ruleText.slice(0, ruleText.indexOf('{'));
+        const selectorLines = selectorText.split('\n');
+        let index = 0;
+        const newRule = rules.find((rule, i) => {
+          index = i;
+          if (selectorLines.length === 1) {
+            return rule.range.startLine === location.startLine
+              && rule.range.startColumn === location.startColumn - selectorText.length;
+          }
+          return rule.range.startLine === location.startLine + selectorLines.length - 1
+            && rule.range.startColumn === selectorLines[selectorLines.length - 1].length + 1;
+        });
 
-    // 告诉调试端styleSheet发生了变化
-    this.send({
-      method: Event.styleSheetChanged,
-      params: { styleSheetId },
-    });
-    
-    return {
-      rule: {
-        styleSheetId,
-        style: {
-          styleSheetId,
-          cssText: formatCssText,
-          cssProperties,
-          range: {
-            startLine: ruleText.slice(0, ruleText.indexOf('{')).split('\n').length - 1,
-            endLine: ruleText.slice(0, ruleText.indexOf('}') - 1).split('\n').length - 1,
-            startColumn: ruleText.slice(0, ruleText.indexOf('{')).replace(/.*\n/g, '').length + 1,
-            endColumn: ruleText.slice(0, ruleText.indexOf('}')).replace(/.*\n/g, '').length,
-          },
-          shorthandEntries: [],
-        },
-        origin: 'inspector',
-        media: [],
-        selectorList: {
-          selectors,
-          text: formatSelectorsText,
-        },
+        if (newRule) {
+          const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
+
+          styleSheet.insertRule(newRule.cssText, index);
+          styleSheet.deleteRule(index + 1);
+
+          this.send({
+            method: Event.styleSheetChanged,
+            params: { styleSheetId },
+          });
+
+          return {
+            rule: {
+              styleSheetId,
+              style: {
+                styleSheetId,
+                cssText,
+                cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+                shorthandEntries: [],
+                range: newRule.range,
+              },
+              selectorList: {
+                selectors: selectorText.split(',').map((item) => ({ text: item.trim() })),
+                text: newRule.selectorText.trim(),
+              },
+            },
+          };
+        }
       }
-    };
+    }
   }
 }
