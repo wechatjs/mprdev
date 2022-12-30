@@ -38,6 +38,7 @@ export default class CSS extends BaseDomain {
       index,
       cssRule: {
         styleSheetId,
+        media: rule.media || [],
         style: {
           styleSheetId,
           cssText,
@@ -258,15 +259,17 @@ export default class CSS extends BaseDomain {
    */
   parseStyleRules(content) {
     const tokenList = [];
-    for (let i = 0, line = 0, column = 0, brackets = 0, token = ''; i < content.length; i++) {
+    for (let i = 0, line = 0, column = 0, brackets = 0, media = '', token = ''; i < content.length; i++) {
       const pointer = content[i];
       switch (pointer) {
         case '{': {
           brackets++;
           column++;
-          if (brackets === 1) {
-            tokenList.push({ token, line, column });
+          if (!media && brackets === 1 || media && brackets === 2) {
+            tokenList.push({ token, media, line, column });
             token = '';
+          } else if (media && brackets === 1) {
+            // nothing to do
           } else {
             token += pointer;
           }
@@ -274,8 +277,20 @@ export default class CSS extends BaseDomain {
         }
         case '}': {
           brackets--;
-          if (brackets === 0) {
-            tokenList.push({ token, line, column });
+          if (!media && brackets === 0 || media && brackets === 1) {
+            tokenList.push({ token, media, line, column });
+            token = '';
+          } else if (media && brackets === 0) {
+            media = '';
+          } else {
+            token += pointer;
+          }
+          column++;
+          break;
+        }
+        case '@': {
+          if (content.substring(i, i + 7) === '@media ') {
+            media += token + pointer;
             token = '';
           } else {
             token += pointer;
@@ -284,13 +299,21 @@ export default class CSS extends BaseDomain {
           break;
         }
         case '\n': {
-          token += pointer;
+          if (media && brackets === 0) {
+            media += pointer
+          } else {
+            token += pointer;
+          }
           column = 0;
           line++;
           break;
         }
         default: {
-          token += pointer;
+          if (media && brackets === 0) {
+            media += pointer
+          } else {
+            token += pointer;
+          }
           column++;
         }
       }
@@ -298,15 +321,23 @@ export default class CSS extends BaseDomain {
 
     const rules = [];
     for (let j = 0; j < tokenList.length; j += 2) {
+      let media;
+      if (tokenList[j].media) {
+        media = [{
+          source: 'mediaRule',
+          text: tokenList[j].media.substring(tokenList[j].media.indexOf(' ')).trim(),
+        }];
+      }
       rules.push({
         selectorText: tokenList[j].token.trim(),
         cssText: `${tokenList[j].token}{${tokenList[j + 1].token}}`.trim(),
+        media,
         range: {
           startLine: tokenList[j].line,
           startColumn: tokenList[j].column,
           endLine: tokenList[j + 1].line,
           endColumn: tokenList[j + 1].column,
-        }
+        },
       });
     }
 
@@ -341,10 +372,10 @@ export default class CSS extends BaseDomain {
     const node = nodes.getNodeById(nodeId);
     const styleSheets = Array.from(document.styleSheets);
     const pushMatchedCSSRules = (styleSheetId, rule) => {
-      if (isMatches(node, rule.selectorText)) {
-        const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
-        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
-      }
+      if (!isMatches(node, rule.selectorText)) return;
+      if (rule.media && rule.media.length && !rule.media.find((query) => window.matchMedia(query.text).matches)) return;
+      const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
+      matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
     };
     styleSheets.forEach((style) => {
       const styleSheetId = style.styleSheetId;
