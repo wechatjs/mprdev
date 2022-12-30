@@ -31,7 +31,7 @@ export default class CSS extends BaseDomain {
         order = 3;
       } else if (text.startsWith('.')) {
         order = 2;
-      } else {
+      } else if (!text.startsWith('*')) {
         order = 1;
       }
     };
