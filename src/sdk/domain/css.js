@@ -33,7 +33,8 @@ export default class CSS extends BaseDomain {
         specificityArray = calculate(text)[0].specificityArray;
         index = i;
       } else if (['::before', '::after'].includes(node.nodeName?.toLowerCase())) {
-        const [selectorText, pseudoType] = text.split('::');
+        // 这里以1个冒号进行split，因为1个冒号和2个冒号的写法都合法，这样能都匹配上，最后去掉空值
+        const [selectorText, pseudoType] = text.split(':').filter(Boolean);
         if (pseudoType && node.nodeName.toLowerCase() === `::${pseudoType}` && isMatches(node.parentNode, selectorText)) {
           specificityArray = calculate(text)[0].specificityArray;
           index = i;
