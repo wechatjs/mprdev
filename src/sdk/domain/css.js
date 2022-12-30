@@ -26,8 +26,13 @@ export default class CSS extends BaseDomain {
     let index = 0;
     const selectors = rule.selectorText.split(',').map((item, i) => {
       const text = item.trim();
-      if (isMatches(node, text)) {
+      if (node instanceof Element && isMatches(node, text)) {
         index = i;
+      } else if (['::before', '::after'].includes(node.nodeName?.toLowerCase())) {
+        const [selectorText, pseudoType] = text.split('::');
+        if (pseudoType && node.nodeName.toLowerCase() === `::${pseudoType}` && isMatches(node.parentNode, selectorText)) {
+          index = i;
+        }
       }
       return { text };
     });
@@ -119,7 +124,8 @@ export default class CSS extends BaseDomain {
       if (value) {
         let range;
         if (cssRange) {
-          const index = cssText.match(new RegExp(`[{;\s\n]${style.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`))?.index + 1;
+          const match = cssText.match(new RegExp(`(^|[{;\s\n\/])${style.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`));
+          const index = (match?.index + match?.[1].length) || 0;
           const leftExcludes = cssText.substring(0, index).split('\n');
           const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
           range = {
@@ -397,15 +403,23 @@ export default class CSS extends BaseDomain {
    * @param {Number} params.nodeId DOM节点id
    */
   getMatchedStylesForNode({ nodeId }) {
-    const matchedCSSRules = [];
     const node = nodes.getNodeById(nodeId);
+    if (!(node instanceof Element) && !(['::before', '::after'].includes(node.nodeName?.toLowerCase()))) return;
+
+    const matchedCSSRules = [];
     const styleSheets = Array.from(document.styleSheets);
     const pushMatchedCSSRules = (styleSheetId, rule) => {
-      if (!isMatches(node, rule.selectorText)) return;
       if (rule.media && rule.media.length && !rule.media.find((query) => window.matchMedia(query.text).matches)) return;
-      const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
-      matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
+      if (
+        (node instanceof Element && isMatches(node, rule.selectorText))
+        || (node.nodeName?.toLowerCase() === '::before' && rule.selectorText.includes('::before'))
+        || (node.nodeName?.toLowerCase() === '::after' && rule.selectorText.includes('::after'))
+      ) {
+        const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
+        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
+      }
     };
+
     styleSheets.forEach((style) => {
       const styleSheetId = style.styleSheetId;
       if (style.href && styleSheetId) {
@@ -437,6 +451,7 @@ export default class CSS extends BaseDomain {
   getInlineStylesForNode({ nodeId }) {
     const node = nodes.getNodeById(nodeId);
     if (!(node instanceof Element)) return;
+
     const { style } = node || {};
     const cssText = node.getAttribute('style') || '';
 
@@ -483,8 +498,9 @@ export default class CSS extends BaseDomain {
    */
   getComputedStyleForNode({ nodeId }) {
     const node = nodes.getNodeById(nodeId);
-    if (!(node instanceof Element)) return;
-    let computedStyle = window.getComputedStyle(node);
+    if (!(node instanceof Element) && !(['::before', '::after'].includes(node.nodeName?.toLowerCase()))) return;
+
+    let computedStyle = node instanceof Element ? window.getComputedStyle(node) : window.getComputedStyle(node.parentNode, node.nodeName);
     computedStyle = Array.from(computedStyle).map(style => ({
       name: style,
       value: computedStyle[style]

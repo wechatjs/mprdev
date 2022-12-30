@@ -66,7 +66,11 @@ export default class Overlay {
    * @param {Object} params.highlightConfig 高亮配置
    */
   static highlight(node, highlightConfig) {
-    if (isQuiteMode() || !node || [3, 8, 10, 11].includes(node.nodeType) || ['LINK', 'SCRIPT', 'HEAD'].includes(node.nodeName)) return;
+    if (
+      isQuiteMode() || !node
+      || [3, 8, 10, 11].includes(node.nodeType)
+      || ['link', 'script', 'head', '::before', '::after'].includes(node.nodeName?.toLowerCase())
+    ) return;
 
     const styles = window.getComputedStyle(node);
     const margin = Overlay.getStylePropertyValue(['margin-top', 'margin-right', 'margin-bottom', 'margin-left'], styles);
