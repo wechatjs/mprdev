@@ -172,7 +172,7 @@ export default class CSS extends BaseDomain {
     for (const styleSheetId of this.styles.keys()) {
       const content = this.styles.get(styleSheetId);
       const style = stylesheet.getStyleSheetById(styleSheetId);
-      const sourceURL = getAbsoultPath(style.href);
+      const sourceURL = getAbsoultPath(style.href || location.href);
       if (sourceURL) {
         this.send({
           method: Event.styleSheetAdded,
