@@ -227,7 +227,36 @@ export default class CSS extends BaseDomain {
                   title: style.title,
                 }
               }
-            })
+            });
+          });
+        } else if (style.ownerNode?.innerHTML) {
+          const content = style.ownerNode?.innerHTML;
+          this.styles.set(styleSheetId, content);
+          this.styleRules.set(styleSheetId, this.parseStyleRules(content));
+          const htmlContent = document.documentElement.outerHTML;
+          const index = htmlContent.indexOf(content);
+          const leftExcludes = htmlContent.substring(0, index).split('\n');
+          const leftIncludes = (leftExcludes.join('\n') + content).split('\n');
+          this.send({
+            method: Event.styleSheetAdded,
+            params: {
+              header: {
+                frameId: Page.MAINFRAME_ID,
+                styleSheetId,
+                sourceURL: location.href,
+                origin: 'regular',
+                disabled: false,
+                isConstructed: false,
+                isInline: false,
+                isMutable: false,
+                length: content.length,
+                startLine: leftExcludes.length - 1,
+                startColumn: leftExcludes[leftExcludes.length - 1].length,
+                endLine: leftIncludes.length - 1,
+                endColumn: leftIncludes[leftIncludes.length - 1].length,
+                title: style.title,
+              }
+            }
           });
         }
       }
@@ -350,32 +379,20 @@ export default class CSS extends BaseDomain {
   }
 
   /**
-   * 修改样式表中css规则
+   * 修改样式表
    * @private
    * @param {Object} styleSheet 样式表
-   * @param {Object} rule 修改后的规则
-   * @param {Number} index 被修改的规则的位置
-   * @param {String} content 修改后的完整内容
+   * @param {String} styleContent 修改后的完整内容
    */
-  modifyStyleSheetRule(styleSheet, rule, index, content) {
-    try {
-      // chrome不允许修改跨域的css规则，这里捕获下错误，失败就换下面的方法实现
-      // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
-      styleSheet.insertRule(rule.cssText, index);
-      styleSheet.deleteRule(index + 1);
-    } catch {
-      if (styleSheet.ownerNode?.parentNode) {
-        if (styleSheet.devToolsOverrideStyleSheet) {
-          styleSheet.devToolsOverrideStyleSheet.insertRule(rule.cssText, index);
-          styleSheet.devToolsOverrideStyleSheet.deleteRule(index + 1);
-        } else {
-          const styleEle = document.createElement('style');
-          styleEle.className = 'devtools-stylesheet'; // 声明不用显示在devtools中
-          styleEle.innerHTML = content;
-          styleSheet.ownerNode.parentNode.insertBefore(styleEle, styleSheet.ownerNode.nextSibling);
-          styleSheet.devToolsOverrideStyleSheet = styleEle.sheet;
-        }
+  modifyStyleSheetRule(styleSheet, styleContent) {
+    if (styleSheet.ownerNode?.parentNode) {
+      if (!styleSheet.devToolsOverrideStyle) {
+        styleSheet.disabled = true; // 禁用原来的样式，用新的样式表代替
+        styleSheet.devToolsOverrideStyle = document.createElement('style');
+        styleSheet.devToolsOverrideStyle.className = 'devtools-stylesheet'; // 声明不用显示在devtools中
+        styleSheet.ownerNode.parentNode.insertBefore(styleSheet.devToolsOverrideStyle, styleSheet.ownerNode.nextSibling);
       }
+      styleSheet.devToolsOverrideStyle.innerHTML = styleContent;
     }
   }
 
@@ -422,18 +439,12 @@ export default class CSS extends BaseDomain {
 
     styleSheets.forEach((style) => {
       const styleSheetId = style.styleSheetId;
-      if (style.href && styleSheetId) {
-        const rules = this.styleRules.get(styleSheetId);
-        if (rules) {
-          rules.forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
-          return;
-        }
+      if (!styleSheetId) return;
+
+      const rules = this.styleRules.get(styleSheetId);
+      if (rules) {
+        rules.forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
       }
-      try {
-        // chrome不允许访问跨域的css规则，这里捕获下错误
-        // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
-        Array.from(style.cssRules).forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
-      } catch { /* empty */ }
     });
 
     return {
@@ -555,15 +566,11 @@ export default class CSS extends BaseDomain {
 
         const rules = this.styleRules.get(styleSheetId);
         if (rules) {
-          let index = 0;
-          const newRule = rules.find((rule, i) => {
-            index = i;
-            return rule.range.startLine === range.startLine
-              && rule.range.startColumn === range.startColumn;
-          });
+          const newRule = rules.find((rule) => rule.range.startLine === range.startLine
+            && rule.range.startColumn === range.startColumn);
 
           if (newRule) {
-            this.modifyStyleSheetRule(styleSheet, newRule, index, newContent);
+            this.modifyStyleSheetRule(styleSheet, newContent);
             this.send({
               method: Event.styleSheetChanged,
               params: { styleSheetId },
@@ -644,19 +651,15 @@ export default class CSS extends BaseDomain {
       if (rules) {
         const selectorText = ruleText.slice(0, ruleText.indexOf('{'));
         const selectorLines = selectorText.split('\n');
-        let index = 0;
-        const newRule = rules.find((rule, i) => {
-          index = i;
-          if (selectorLines.length === 1) {
-            return rule.range.startLine === location.startLine
-              && rule.range.startColumn === location.startColumn - selectorText.length;
-          }
-          return rule.range.startLine === location.startLine + selectorLines.length - 1
-            && rule.range.startColumn === selectorLines[selectorLines.length - 1].length + 1;
-        });
+        const newRule = rules.find((rule) => selectorLines.length === 1
+          ? rule.range.startLine === location.startLine
+            && rule.range.startColumn === location.startColumn - selectorText.length
+          : rule.range.startLine === location.startLine + selectorLines.length - 1
+            && rule.range.startColumn === selectorLines[selectorLines.length - 1].length + 1
+        );
 
         if (newRule) {
-          this.modifyStyleSheetRule(styleSheet, newRule, index, newContent);
+          this.modifyStyleSheetRule(styleSheet, newContent);
           this.send({
             method: Event.styleSheetChanged,
             params: { styleSheetId },
