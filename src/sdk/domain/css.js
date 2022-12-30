@@ -1,6 +1,7 @@
 import nodes from '../common/nodes';
 import * as stylesheet from '../common/stylesheet';
 import { escapeRegString, getAbsoultPath, getUrlWithRandomNum, isMatches, requestSource } from '../common/utils';
+import { calculate, compare } from 'specificity';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Page from './page';
@@ -24,27 +25,17 @@ export default class CSS extends BaseDomain {
    */
   static formatCssRule(styleSheetId, rule, node) {
     let index = 0;
-    let order = 0;
-
-    const calculateOrder = (text) => {
-      if (text.startsWith('#')) {
-        order = 3;
-      } else if (text.startsWith('.')) {
-        order = 2;
-      } else if (!text.startsWith('*')) {
-        order = 1;
-      }
-    };
+    let specificityArray = [0, 0, 0, 0];
 
     const selectors = rule.selectorText.split(',').map((item, i) => {
       const text = item.replace(/\/\*[\s\S]*?\*\//g, '').trim();
       if (node instanceof Element && isMatches(node, text)) {
-        calculateOrder(text);
+        specificityArray = calculate(text)[0].specificityArray;
         index = i;
       } else if (['::before', '::after'].includes(node.nodeName?.toLowerCase())) {
         const [selectorText, pseudoType] = text.split('::');
         if (pseudoType && node.nodeName.toLowerCase() === `::${pseudoType}` && isMatches(node.parentNode, selectorText)) {
-          calculateOrder(text);
+          specificityArray = calculate(text)[0].specificityArray;
           index = i;
         }
       }
@@ -55,7 +46,7 @@ export default class CSS extends BaseDomain {
 
     return {
       index,
-      order,
+      specificityArray,
       cssRule: {
         styleSheetId,
         media: rule.media || [],
@@ -447,8 +438,8 @@ export default class CSS extends BaseDomain {
         || (node.nodeName?.toLowerCase() === '::before' && rule.selectorText.includes('::before'))
         || (node.nodeName?.toLowerCase() === '::after' && rule.selectorText.includes('::after'))
       ) {
-        const { index, order, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
-        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule, order });
+        const { index, specificityArray, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
+        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule, specificityArray });
       }
     };
 
@@ -463,7 +454,7 @@ export default class CSS extends BaseDomain {
     });
 
     return {
-      matchedCSSRules: matchedCSSRules.sort((a, b) => a.order - b.order),
+      matchedCSSRules: matchedCSSRules.sort((a, b) => compare(a.specificityArray, b.specificityArray)),
       ...this.getInlineStylesForNode({ nodeId })
     };
   }
