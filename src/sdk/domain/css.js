@@ -435,8 +435,9 @@ export default class CSS extends BaseDomain {
       if (rule.media && rule.media.length && !rule.media.find((query) => window.matchMedia(query.text).matches)) return;
       if (
         (node instanceof Element && isMatches(node, rule.selectorText))
-        || (node.nodeName?.toLowerCase() === '::before' && rule.selectorText.includes('::before'))
-        || (node.nodeName?.toLowerCase() === '::after' && rule.selectorText.includes('::after'))
+        // 这里的判断:before和:after，因为1个冒号和2个冒号的写法都合法，这样能都匹配上
+        || (node.nodeName?.toLowerCase() === '::before' && rule.selectorText.includes(':before'))
+        || (node.nodeName?.toLowerCase() === '::after' && rule.selectorText.includes(':after'))
       ) {
         const { index, specificityArray, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
         matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule, specificityArray });
