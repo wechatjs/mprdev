@@ -119,7 +119,7 @@ export default class CSS extends BaseDomain {
       if (value) {
         let range;
         if (cssRange) {
-          const index = cssText.match(new RegExp(`[{;\s\n]${style}`))?.index + 1;
+          const index = cssText.match(new RegExp(`[{;\s\n]${style.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`))?.index + 1;
           const leftExcludes = cssText.substring(0, index).split('\n');
           const leftIncludes = (leftExcludes.join('\n') + style).split('\n');
           range = {
@@ -321,24 +321,23 @@ export default class CSS extends BaseDomain {
 
     const rules = [];
     for (let j = 0; j < tokenList.length; j += 2) {
-      let media;
-      if (tokenList[j].media) {
-        media = [{
-          source: 'mediaRule',
-          text: tokenList[j].media.substring(tokenList[j].media.indexOf(' ')).trim(),
-        }];
-      }
-      rules.push({
+      const rule = {
         selectorText: tokenList[j].token.trim(),
         cssText: `${tokenList[j].token}{${tokenList[j + 1].token}}`.trim(),
-        media,
         range: {
           startLine: tokenList[j].line,
           startColumn: tokenList[j].column,
           endLine: tokenList[j + 1].line,
           endColumn: tokenList[j + 1].column,
         },
-      });
+      };
+      if (tokenList[j].media) {
+        rule.media = [{
+          source: 'mediaRule',
+          text: tokenList[j].media.substring(tokenList[j].media.indexOf(' ')).trim(),
+        }];
+      }
+      rules.push(rule);
     }
 
     return rules;
