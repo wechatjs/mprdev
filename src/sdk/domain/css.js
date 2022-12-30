@@ -24,13 +24,27 @@ export default class CSS extends BaseDomain {
    */
   static formatCssRule(styleSheetId, rule, node) {
     let index = 0;
+    let order = 0;
+
+    const calculateOrder = (text) => {
+      if (text.startsWith('#')) {
+        order = 3;
+      } else if (text.startsWith('.')) {
+        order = 2;
+      } else {
+        order = 1;
+      }
+    };
+
     const selectors = rule.selectorText.split(',').map((item, i) => {
-      const text = item.trim();
+      const text = item.replace(/\/\*[\s\S]*?\*\//g, '').trim();
       if (node instanceof Element && isMatches(node, text)) {
+        calculateOrder(text);
         index = i;
       } else if (['::before', '::after'].includes(node.nodeName?.toLowerCase())) {
         const [selectorText, pseudoType] = text.split('::');
         if (pseudoType && node.nodeName.toLowerCase() === `::${pseudoType}` && isMatches(node.parentNode, selectorText)) {
+          calculateOrder(text);
           index = i;
         }
       }
@@ -41,6 +55,7 @@ export default class CSS extends BaseDomain {
 
     return {
       index,
+      order,
       cssRule: {
         styleSheetId,
         media: rule.media || [],
@@ -432,8 +447,8 @@ export default class CSS extends BaseDomain {
         || (node.nodeName?.toLowerCase() === '::before' && rule.selectorText.includes('::before'))
         || (node.nodeName?.toLowerCase() === '::after' && rule.selectorText.includes('::after'))
       ) {
-        const { index, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
-        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule });
+        const { index, order, cssRule } = CSS.formatCssRule(styleSheetId, rule, node);
+        matchedCSSRules.push({ matchingSelectors: [index], rule: cssRule, order });
       }
     };
 
@@ -448,7 +463,7 @@ export default class CSS extends BaseDomain {
     });
 
     return {
-      matchedCSSRules,
+      matchedCSSRules: matchedCSSRules.sort((a, b) => a.order - b.order),
       ...this.getInlineStylesForNode({ nodeId })
     };
   }
