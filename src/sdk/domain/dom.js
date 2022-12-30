@@ -1,12 +1,10 @@
+import nodes, { debugClsList } from '../common/nodes';
 import { getObjectById, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
-import nodes from '../common/nodes';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
 import Overlay from './overlay';
 import Page from './page';
-
-const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-container'];
 
 export default class Dom extends BaseDomain {
   namespace = 'DOM';

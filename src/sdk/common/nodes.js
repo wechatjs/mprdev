@@ -1,4 +1,4 @@
-const debugClsList = ['devtools-overlay', 'devtools-debugger', 'html2canvas-container'];
+export const debugClsList = ['devtools-overlay', 'devtools-debugger', 'devtools-stylesheet', 'html2canvas-container'];
 
 class Nodes {
   // DOM节点id集合

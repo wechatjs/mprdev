@@ -345,6 +345,36 @@ export default class CSS extends BaseDomain {
   }
 
   /**
+   * 修改样式表中css规则
+   * @private
+   * @param {Object} styleSheet 样式表
+   * @param {Object} rule 修改后的规则
+   * @param {Number} index 被修改的规则的位置
+   * @param {String} content 修改后的完整内容
+   */
+  modifyStyleSheetRule(styleSheet, rule, index, content) {
+    try {
+      // chrome不允许修改跨域的css规则，这里捕获下错误，失败就换下面的方法实现
+      // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
+      styleSheet.insertRule(rule.cssText, index);
+      styleSheet.deleteRule(index + 1);
+    } catch {
+      if (styleSheet.ownerNode?.parentNode) {
+        if (styleSheet.devToolsOverrideStyleSheet) {
+          styleSheet.devToolsOverrideStyleSheet.insertRule(rule.cssText, index);
+          styleSheet.devToolsOverrideStyleSheet.deleteRule(index + 1);
+        } else {
+          const styleEle = document.createElement('style');
+          styleEle.className = 'devtools-stylesheet'; // 声明不用显示在devtools中
+          styleEle.innerHTML = content;
+          styleSheet.ownerNode.parentNode.insertBefore(styleEle, styleSheet.ownerNode.nextSibling);
+          styleSheet.devToolsOverrideStyleSheet = styleEle.sheet;
+        }
+      }
+    }
+  }
+
+  /**
    * 获取style样式的唯一标识id
    * @private
    */
@@ -387,7 +417,7 @@ export default class CSS extends BaseDomain {
         }
       }
       try {
-        // chrome不允许访问不同域名下的css规则，这里捕获下错误
+        // chrome不允许访问跨域的css规则，这里捕获下错误
         // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
         Array.from(style.cssRules).forEach((rule) => pushMatchedCSSRules(styleSheetId, rule));
       } catch { /* empty */ }
@@ -518,25 +548,20 @@ export default class CSS extends BaseDomain {
           });
 
           if (newRule) {
+            this.modifyStyleSheetRule(styleSheet, newRule, index, newContent);
+            this.send({
+              method: Event.styleSheetChanged,
+              params: { styleSheetId },
+            });
+
             const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
-
-            try {
-              styleSheet.insertRule(newRule.cssText, index);
-              styleSheet.deleteRule(index + 1);
-
-              this.send({
-                method: Event.styleSheetChanged,
-                params: { styleSheetId },
-              });
-
-              return {
-                styleSheetId,
-                cssText,
-                cssProperties: CSS.formatCssProperties(cssText, newRule.range),
-                shorthandEntries: [],
-                range: newRule.range,
-              };
-            } catch { /* empty */ }
+            return {
+              styleSheetId,
+              cssText,
+              cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+              shorthandEntries: [],
+              range: newRule.range,
+            };
           }
         }
       }
@@ -616,34 +641,29 @@ export default class CSS extends BaseDomain {
         });
 
         if (newRule) {
-          const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
+          this.modifyStyleSheetRule(styleSheet, newRule, index, newContent);
+          this.send({
+            method: Event.styleSheetChanged,
+            params: { styleSheetId },
+          });
 
-          try {
-            styleSheet.insertRule(newRule.cssText, index);
-            styleSheet.deleteRule(index + 1);
-  
-            this.send({
-              method: Event.styleSheetChanged,
-              params: { styleSheetId },
-            });
-  
-            return {
-              rule: {
+          const cssText = /\{([\s\S]*)\}/.exec(newRule.cssText)[1];
+          return {
+            rule: {
+              styleSheetId,
+              style: {
                 styleSheetId,
-                style: {
-                  styleSheetId,
-                  cssText,
-                  cssProperties: CSS.formatCssProperties(cssText, newRule.range),
-                  shorthandEntries: [],
-                  range: newRule.range,
-                },
-                selectorList: {
-                  selectors: selectorText.split(',').map((item) => ({ text: item.trim() })),
-                  text: newRule.selectorText.trim(),
-                },
+                cssText,
+                cssProperties: CSS.formatCssProperties(cssText, newRule.range),
+                shorthandEntries: [],
+                range: newRule.range,
               },
-            };
-          } catch { /* empty */ }
+              selectorList: {
+                selectors: selectorText.split(',').map((item) => ({ text: item.trim() })),
+                text: newRule.selectorText.trim(),
+              },
+            },
+          };
         }
       }
     }
