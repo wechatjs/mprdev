@@ -127,7 +127,8 @@ export default class CSS extends BaseDomain {
       }, []);
 
     return splited.map((style) => {
-      const [name, value] = style.replace(/^\/\*|;?\s*\*\/$|;$/g, '').split(':');
+      const [name, ...values] = style.replace(/^\/\*|;?\s*\*\/$|;$/g, '').split(':');
+      const value = values.join(':');
       if (value) {
         let range;
         if (cssRange) {
