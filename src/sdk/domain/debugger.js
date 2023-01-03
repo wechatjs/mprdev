@@ -106,20 +106,21 @@ export default class Debugger extends BaseDomain {
    * @public
    * @param {Object} params
    * @param {Number} params.lineNumber 断点所在行
+   * @param {Number} params.columnNumber 断点所在列
    * @param {String} params.condition 条件断点执行脚本
    */
-  setBreakpointByUrl({ url, lineNumber, condition }) {
+  setBreakpointByUrl({ url, lineNumber, columnNumber, condition }) {
     const scriptId = Debugger.scriptUrls.get(url);
     if (typeof scriptId === 'string') {
       const offset = this.scriptDebugOffsets.get(scriptId) || 0;
-      const breakpoint = JDB.setBreakpoint(url, lineNumber - offset, condition);
+      const breakpoint = JDB.setBreakpoint(url, lineNumber - offset, columnNumber, condition);
       if (breakpoint) {
         return {
           breakpointId: breakpoint.id,
           locations: [{
             scriptId,
             lineNumber: breakpoint.lineNumber + offset,
-            columnNumber: 0
+            columnNumber: breakpoint.columnNumber
           }],
         };
       }
@@ -331,6 +332,7 @@ export default class Debugger extends BaseDomain {
    * @param {Object} params.debuggerId 脚本id
    * @param {Object} params.breakpointId 断点id
    * @param {Object} params.lineNumber 断点行号
+   * @param {Object} params.columnNumber 断点列号
    * @param {Object} params.scopeChian 作用域链
    * @param {Object} params.reason 断点原因
    * @param {Object} params.data 断点数据
@@ -354,6 +356,7 @@ export default class Debugger extends BaseDomain {
         const cfUrl = callFrame.debuggerId;
         const cfScriptId = Debugger.scriptUrls.get(cfUrl);
         const cfLineNumber = callFrame.lineNumber;
+        const cfColumnNumber = callFrame.columnNumber;
         const cfOffset = this.scriptDebugOffsets.get(cfScriptId) || 0;
         return {
           url: cfUrl,
@@ -362,19 +365,20 @@ export default class Debugger extends BaseDomain {
           location: {
             scriptId: cfScriptId,
             lineNumber: cfLineNumber + cfOffset,
+            columnNumber: cfColumnNumber,
           },
           scopeChain: [globalScope],
-        }
+        };
       })
       .reverse();
     this.send({
       method: Event.paused,
       params: {
-        callFrames: callFrames,
+        callFrames,
         reason: reason || 'other',
         data: data ? objectFormat(data) : null,
         hitBreakpoints: breakpointId ? [breakpointId] : [],
-      }
+      },
     });
   }
 

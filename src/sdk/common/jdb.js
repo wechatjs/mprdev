@@ -107,9 +107,11 @@ export default class JDB {
    * 设置断点
    * @param {String} debuggerId 调试器id，通常是script的url
    * @param {Number} lineNumber 尝试断点的行号
+   * @param {Number} columnNumber 尝试断点的列号
+   * @param {String} condition 条件断点的条件
    */
-  static setBreakpoint(debuggerId, lineNumber, condition) {
-    return vDebugger.setBreakpoint(debuggerId, lineNumber, condition);
+  static setBreakpoint(debuggerId, lineNumber, columnNumber, condition) {
+    return vDebugger.setBreakpoint(debuggerId, lineNumber, columnNumber, condition);
   }
 
   /**
