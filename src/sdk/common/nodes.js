@@ -10,6 +10,9 @@ class Nodes {
   // DOM节点id计数
   currentId = 1;
 
+  // 获取过子元素的DOM节点id集合
+  collapsedNodeIds = new Set();
+
   /**
    * 是否为node节点
    * @static
@@ -141,6 +144,7 @@ class Nodes {
    * @param {Number} depth 深度
    */
   getChildNodes(node, depth = 1) {
+    this.collapsedNodeIds.add(this.getIdByNode(node));
     return Array.from(node.childNodes)
       .filter(Nodes.isNode)
       .map(childNode => this.collectNodes(childNode, { depth: depth - 1 }));
@@ -160,6 +164,22 @@ class Nodes {
     }
 
     return previousNode;
+  }
+
+  /**
+   * 判断是否获取过子元素
+   * @public
+   * @param {Number} nodeId DOM的唯一id
+   */
+  hasCollapsedNodeId(nodeId) {
+    return this.collapsedNodeIds.has(nodeId);
+  }
+
+  /**
+   * 重置子元素获取集合
+   */
+  clearCollapsedNodeIds() {
+    this.collapsedNodeIds = new Set();
   }
 }
 

@@ -11,7 +11,6 @@ export default class Dom extends BaseDomain {
 
   observer = null;
   isEnabled = false;
-  childListSetNodeIds = new Set();
   searchResults = new Map();
   searchId = 1;
 
@@ -134,8 +133,7 @@ export default class Dom extends BaseDomain {
    * @param {Number} nodeId dom节点的id
    */
   requestChildNodes({ nodeId }) {
-    if (!this.childListSetNodeIds.has(nodeId)) {
-      this.childListSetNodeIds.add(nodeId);
+    if (!nodes.hasCollapsedNodeId(nodeId)) {
       this.send({
         method: Event.setChildNodes,
         params: {
@@ -360,7 +358,7 @@ export default class Dom extends BaseDomain {
 
     const nodeIds = result.map((node) => {
       // 在devtools中展开
-      this.expandParentNodes(node);
+      this.collapseParentNodes(node);
       return nodes.getIdByNode(node);
     });
 
@@ -404,7 +402,7 @@ export default class Dom extends BaseDomain {
     if (node) {
       // 在devtools中展开
       Overlay.highlight(node);
-      this.expandParentNodes(node);
+      this.collapseParentNodes(node);
       const nodeId = nodes.getIdByNode(node);
       return {
         frameId: Page.MAINFRAME_ID,
@@ -453,7 +451,7 @@ export default class Dom extends BaseDomain {
       e.preventDefault();
 
       // 在devtools中展开
-      this.expandParentNodes(e.target);
+      this.collapseParentNodes(e.target);
 
       // 在devtools视图中高亮选中的节点
       const currentNodeId = nodes.getIdByNode(e.target);
@@ -576,7 +574,7 @@ export default class Dom extends BaseDomain {
    * @private
    */
   resetDocument() {
-    this.childListSetNodeIds = new Set();
+    nodes.clearCollapsedNodeIds();
     this.send({ method: Event.documentUpdated });
   }
 
@@ -584,7 +582,7 @@ export default class Dom extends BaseDomain {
    * 展开所有父节点
    * @private
    */
-  expandParentNodes(node) {
+  collapseParentNodes(node) {
     let parent = node;
     const nodeIds = [];
     while (parent = parent.parentNode) {
