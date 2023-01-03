@@ -29,6 +29,9 @@ cd devtools-frontend
 
 ```bash
 cd devtools/devtools-frontend
+rm -rf out
+git checkout chromium/5359 # 切换到某个稳定的版本
+git pull
 ../../depot_tools/gclient sync
 ../../depot_tools/gn gen out/Default
 ../../depot_tools/autoninja -C out/Default
