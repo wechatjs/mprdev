@@ -41,7 +41,7 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  contain: layout size style;
+  contain: size style;
 }
 
 .shadow-split-widget-sidebar {

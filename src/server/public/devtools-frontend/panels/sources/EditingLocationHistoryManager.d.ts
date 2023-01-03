@@ -1,6 +1,6 @@
 import * as Workspace from '../../models/workspace/workspace.js';
-import type { SourcesView } from './SourcesView.js';
-import type { UISourceCodeFrame } from './UISourceCodeFrame.js';
+import { type SourcesView } from './SourcesView.js';
+import { type UISourceCodeFrame } from './UISourceCodeFrame.js';
 export declare const HistoryDepth = 20;
 export declare class EditingLocationHistoryManager {
     private readonly sourcesView;

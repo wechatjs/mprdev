@@ -27,11 +27,11 @@ async function loadMediaModule() {
     return loadedMediaModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'medias',
     title: i18nLazyString(UIStrings.media),
     commandPrompt: i18nLazyString(UIStrings.showMedia),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 100,
     async loadView() {
         const Media = await loadMediaModule();

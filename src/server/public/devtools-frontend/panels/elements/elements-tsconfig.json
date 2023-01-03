@@ -28,6 +28,8 @@
   "files": [
     "../../../../../../front_end/panels/elements/AccessibilityTreeUtils.ts",
     "../../../../../../front_end/panels/elements/AccessibilityTreeView.ts",
+    "../../../../../../front_end/panels/elements/CSSRuleValidator.ts",
+    "../../../../../../front_end/panels/elements/CSSRuleValidatorHelper.ts",
     "../../../../../../front_end/panels/elements/ClassesPaneWidget.ts",
     "../../../../../../front_end/panels/elements/ColorSwatchPopoverIcon.ts",
     "../../../../../../front_end/panels/elements/ComputedStyleModel.ts",
@@ -43,6 +45,7 @@
     "../../../../../../front_end/panels/elements/EventListenersWidget.ts",
     "../../../../../../front_end/panels/elements/ImagePreviewPopover.ts",
     "../../../../../../front_end/panels/elements/InspectElementModeController.ts",
+    "../../../../../../front_end/panels/elements/LayersWidget.ts",
     "../../../../../../front_end/panels/elements/LayoutSidebarPane.ts",
     "../../../../../../front_end/panels/elements/MarkerDecorator.ts",
     "../../../../../../front_end/panels/elements/MetricsSidebarPane.ts",
@@ -51,10 +54,12 @@
     "../../../../../../front_end/panels/elements/PropertiesWidget.ts",
     "../../../../../../front_end/panels/elements/PropertyNameCategories.ts",
     "../../../../../../front_end/panels/elements/StyleEditorWidget.ts",
+    "../../../../../../front_end/panels/elements/StylePropertiesSection.ts",
     "../../../../../../front_end/panels/elements/StylePropertyHighlighter.ts",
     "../../../../../../front_end/panels/elements/StylePropertyTreeElement.ts",
     "../../../../../../front_end/panels/elements/StylePropertyUtils.ts",
     "../../../../../../front_end/panels/elements/StylesSidebarPane.ts",
+    "../../../../../../front_end/panels/elements/TopLayerContainer.ts",
     "../../../../../../front_end/legacy/legacy-defs.d.ts",
     "../../../../../../front_end/global_typings/global_defs.d.ts",
     "../../../../../../front_end/global_typings/request_idle_callback.d.ts",
@@ -63,6 +68,9 @@
   "references": [
     {
       "path": "../../core/common/bundle-tsconfig.json"
+    },
+    {
+      "path": "../../core/host/bundle-tsconfig.json"
     },
     {
       "path": "../../core/i18n/bundle-tsconfig.json"
@@ -104,13 +112,13 @@
       "path": "../mobile_throttling/bundle-tsconfig.json"
     },
     {
+      "path": "../utils/bundle-tsconfig.json"
+    },
+    {
       "path": "../../ui/components/adorners/bundle-tsconfig.json"
     },
     {
       "path": "../../ui/components/code_highlighter/bundle-tsconfig.json"
-    },
-    {
-      "path": "../../ui/components/diff_view/bundle-tsconfig.json"
     },
     {
       "path": "../../ui/components/text_editor/bundle-tsconfig.json"

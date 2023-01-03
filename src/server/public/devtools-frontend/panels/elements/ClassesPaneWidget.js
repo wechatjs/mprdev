@@ -66,7 +66,7 @@ export class ClassesPaneWidget extends UI.Widget.Widget {
         return text.split(/[,\s]/).map(className => className.trim()).filter(className => className.length);
     }
     onKeyDown(event) {
-        if (!(event.key === 'Enter') && !isEscKey(event)) {
+        if (!(event.key === 'Enter') && !Platform.KeyboardUtilities.isEscKey(event)) {
             return;
         }
         if (event.key === 'Enter') {
@@ -77,7 +77,7 @@ export class ClassesPaneWidget extends UI.Widget.Widget {
         }
         const eventTarget = event.target;
         let text = eventTarget.textContent;
-        if (isEscKey(event)) {
+        if (Platform.KeyboardUtilities.isEscKey(event)) {
             if (!Platform.StringUtilities.isWhitespace(text)) {
                 event.consume(true);
             }
@@ -266,7 +266,7 @@ export class ClassNamePrompt extends UI.TextPrompt.TextPrompt {
             if (stylesheet.frameId !== this.selectedFrameId) {
                 continue;
             }
-            const cssPromise = cssModel.classNamesPromise(stylesheet.id).then(classes => {
+            const cssPromise = cssModel.getClassNames(stylesheet.id).then(classes => {
                 for (const className of classes) {
                     completions.add(className);
                 }

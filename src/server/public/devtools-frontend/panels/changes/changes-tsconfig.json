@@ -56,6 +56,9 @@
       "path": "../snippets/bundle-tsconfig.json"
     },
     {
+      "path": "../utils/bundle-tsconfig.json"
+    },
+    {
       "path": "../../third_party/diff/bundle-tsconfig.json"
     },
     {

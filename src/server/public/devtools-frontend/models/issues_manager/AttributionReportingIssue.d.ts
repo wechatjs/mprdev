@@ -1,23 +1,20 @@
 import type * as SDK from '../../core/sdk/sdk.js';
 import * as Protocol from '../../generated/protocol.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import type { MarkdownIssueDescription } from './MarkdownIssueDescription.js';
+import { type MarkdownIssueDescription } from './MarkdownIssueDescription.js';
 export declare const enum IssueCode {
     PermissionPolicyDisabled = "AttributionReportingIssue::PermissionPolicyDisabled",
-    InvalidAttributionSourceEventId = "AttributionReportingIssue::InvalidAttributionSourceEventId",
-    InvalidAttributionData = "AttributionReportingIssue::InvalidAttributionData",
-    MissingAttributionData = "AttributionReportingIssue::MissingAttributionData",
-    AttributionSourceUntrustworthyFrameOrigin = "AttributionReportingIssue::AttributionSourceUntrustworthyFrameOrigin",
-    AttributionSourceUntrustworthyOrigin = "AttributionReportingIssue::AttributionSourceUntrustworthyOrigin",
-    AttributionUntrustworthyFrameOrigin = "AttributionReportingIssue::AttributionUntrustworthyFrameOrigin",
-    AttributionUntrustworthyOrigin = "AttributionReportingIssue::AttributionUntrustworthyOrigin",
-    AttributionTriggerDataTooLarge = "AttributionReportingIssue::AttributionTriggerDataTooLarge",
-    AttributionEventSourceTriggerDataTooLarge = "AttributionReportingIssue::AttributionEventSourceTriggerDataTooLarge",
-    InvalidAttributionSourceExpiry = "AttributionReportingIssue::InvalidAttributionSourceExpiry",
-    InvalidAttributionSourcePriority = "AttributionReportingIssue::InvalidAttributionSourcePriority",
-    InvalidEventSourceTriggerData = "AttributionReportingIssue::InvalidEventSourceTriggerData",
-    InvalidTriggerPriority = "AttributionReportingIssue::InvalidTriggerPriority",
-    InvalidTriggerDedupKey = "AttributionReportingIssue::InvalidTriggerDedupKey"
+    PermissionPolicyNotDelegated = "AttributionReportingIssue::PermissionPolicyNotDelegated",
+    UntrustworthyReportingOrigin = "AttributionReportingIssue::UntrustworthyReportingOrigin",
+    InsecureContext = "AttributionReportingIssue::InsecureContext",
+    InvalidRegisterSourceHeader = "AttributionReportingIssue::InvalidRegisterSourceHeader",
+    InvalidRegisterTriggerHeader = "AttributionReportingIssue::InvalidRegisterTriggerHeader",
+    InvalidEligibleHeader = "AttributionReportingIssue::InvalidEligibleHeader",
+    TooManyConcurrentRequests = "AttributionReportingIssue::TooManyConcurrentRequests",
+    SourceAndTriggerHeaders = "AttributionReportingIssue::SourceAndTriggerHeaders",
+    SourceIgnored = "AttributionReportingIssue::SourceIgnored",
+    TriggerIgnored = "AttributionReportingIssue::TriggerIgnored",
+    Unknown = "AttributionReportingIssue::Unknown"
 }
 export declare class AttributionReportingIssue extends Issue<IssueCode> {
     issueDetails: Readonly<Protocol.Audits.AttributionReportingIssueDetails>;

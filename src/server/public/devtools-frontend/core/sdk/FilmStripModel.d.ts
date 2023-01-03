@@ -1,5 +1,4 @@
-import type { Event, ObjectSnapshot } from './TracingModel.js';
-import { TracingModel } from './TracingModel.js';
+import { TracingModel, type Event, type ObjectSnapshot } from './TracingModel.js';
 export declare class FilmStripModel {
     #private;
     constructor(tracingModel: TracingModel, zeroTime?: number);

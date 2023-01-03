@@ -1,4 +1,5 @@
 import * as Common from '../../../../core/common/common.js';
+import * as Platform from '../../../../core/platform/platform.js';
 import * as SDK from '../../../../core/sdk/sdk.js';
 import * as Bindings from '../../../../models/bindings/bindings.js';
 import * as TextUtils from '../../../../models/text_utils/text_utils.js';
@@ -18,19 +19,19 @@ export declare class Linkifier implements SDK.TargetManager.Observer {
     private static unbindUILocation;
     targetAdded(target: SDK.Target.Target): void;
     targetRemoved(target: SDK.Target.Target): void;
-    maybeLinkifyScriptLocation(target: SDK.Target.Target | null, scriptId: Protocol.Runtime.ScriptId | null, sourceURL: string, lineNumber: number | undefined, options?: LinkifyOptions): HTMLElement | null;
-    linkifyScriptLocation(target: SDK.Target.Target | null, scriptId: Protocol.Runtime.ScriptId | null, sourceURL: string, lineNumber: number | undefined, options?: LinkifyOptions): HTMLElement;
-    linkifyRawLocation(rawLocation: SDK.DebuggerModel.Location, fallbackUrl: string, className?: string): Element;
+    maybeLinkifyScriptLocation(target: SDK.Target.Target | null, scriptId: Protocol.Runtime.ScriptId | null, sourceURL: Platform.DevToolsPath.UrlString, lineNumber: number | undefined, options?: LinkifyOptions): HTMLElement | null;
+    linkifyScriptLocation(target: SDK.Target.Target | null, scriptId: Protocol.Runtime.ScriptId | null, sourceURL: Platform.DevToolsPath.UrlString, lineNumber: number | undefined, options?: LinkifyOptions): HTMLElement;
+    linkifyRawLocation(rawLocation: SDK.DebuggerModel.Location, fallbackUrl: Platform.DevToolsPath.UrlString, className?: string): Element;
     maybeLinkifyConsoleCallFrame(target: SDK.Target.Target | null, callFrame: Protocol.Runtime.CallFrame, options?: LinkifyOptions): HTMLElement | null;
-    linkifyStackTraceTopFrame(target: SDK.Target.Target, stackTrace: Protocol.Runtime.StackTrace, className?: string): HTMLElement;
+    linkifyStackTraceTopFrame(target: SDK.Target.Target | null, stackTrace: Protocol.Runtime.StackTrace, className?: string): HTMLElement;
     linkifyCSSLocation(rawLocation: SDK.CSSModel.CSSLocation, classes?: string): Element;
     reset(): void;
     dispose(): void;
     private updateAnchor;
     setLiveLocationUpdateCallback(callback: () => void): void;
     private static updateLinkDecorations;
-    static linkifyURL(url: string, options?: LinkifyURLOptions): HTMLElement;
-    static linkifyRevealable(revealable: Object, text: string | HTMLElement, fallbackHref?: string, title?: string, className?: string): HTMLElement;
+    static linkifyURL(url: Platform.DevToolsPath.UrlString, options?: LinkifyURLOptions): HTMLElement;
+    static linkifyRevealable(revealable: Object, text: string | HTMLElement, fallbackHref?: Platform.DevToolsPath.UrlString, title?: string, className?: string): HTMLElement;
     private static createLink;
     private static setTrimmedText;
     private static appendTextWithoutHashes;
@@ -88,7 +89,7 @@ export interface _LinkInfo {
     enableDecorator: boolean;
     uiLocation: Workspace.UISourceCode.UILocation | null;
     liveLocation: Bindings.LiveLocation.LiveLocation | null;
-    url: string | null;
+    url: Platform.DevToolsPath.UrlString | null;
     lineNumber: number | null;
     columnNumber: number | null;
     inlineFrameIndex: number;
@@ -117,7 +118,7 @@ export interface LinkifyOptions {
 export interface _CreateLinkOptions {
     maxLength?: number;
     title?: string;
-    href?: string;
+    href?: Platform.DevToolsPath.UrlString;
     preventClick?: boolean;
     tabStop?: boolean;
     bypassURLTrimming?: boolean;

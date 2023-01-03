@@ -1,3 +1,4 @@
+import * as Platform from '../../core/platform/platform.js';
 import type * as PublicAPI from '../../../extension-api/ExtensionAPI';
 import type * as HAR from '../har/har.js';
 export declare namespace PrivateAPI {
@@ -50,7 +51,12 @@ export declare namespace PrivateAPI {
         ShowPanel = "showPanel",
         Unsubscribe = "unsubscribe",
         UpdateButton = "updateButton",
-        RegisterLanguageExtensionPlugin = "registerLanguageExtensionPlugin"
+        RegisterLanguageExtensionPlugin = "registerLanguageExtensionPlugin",
+        GetWasmLinearMemory = "getWasmLinearMemory",
+        GetWasmLocal = "getWasmLocal",
+        GetWasmGlobal = "getWasmGlobal",
+        GetWasmOp = "getWasmOp",
+        RegisterRecorderExtensionPlugin = "registerRecorderExtensionPlugin"
     }
     export const enum LanguageExtensionPluginCommands {
         AddRawModule = "addRawModule",
@@ -65,10 +71,20 @@ export declare namespace PrivateAPI {
         GetFunctionInfo = "getFunctionInfo",
         GetInlinedFunctionRanges = "getInlinedFunctionRanges",
         GetInlinedCalleesRanges = "getInlinedCalleesRanges",
-        GetMappedLines = "getMappedLines"
+        GetMappedLines = "getMappedLines",
+        FormatValue = "formatValue",
+        GetProperties = "getProperties",
+        ReleaseObject = "releaseObject"
     }
     export const enum LanguageExtensionPluginEvents {
         UnregisteredLanguageExtensionPlugin = "unregisteredLanguageExtensionPlugin"
+    }
+    export const enum RecorderExtensionPluginCommands {
+        Stringify = "stringify",
+        StringifyStep = "stringifyStep"
+    }
+    export const enum RecorderExtensionPluginEvents {
+        UnregisteredRecorderExtensionPlugin = "unregisteredRecorderExtensionPlugin"
     }
     export interface EvaluateOptions {
         frameURL?: string;
@@ -80,6 +96,12 @@ export declare namespace PrivateAPI {
         pluginName: string;
         port: MessagePort;
         supportedScriptTypes: PublicAPI.Chrome.DevTools.SupportedScriptTypes;
+    };
+    type RegisterRecorderExtensionPluginRequest = {
+        command: Commands.RegisterRecorderExtensionPlugin;
+        pluginName: string;
+        mediaType: string;
+        port: MessagePort;
     };
     type SubscribeRequest = {
         command: Commands.Subscribe;
@@ -128,7 +150,7 @@ export declare namespace PrivateAPI {
     type CompleteTraceSessionRequest = {
         command: Commands.CompleteTraceSession;
         id: string;
-        url: string;
+        url: Platform.DevToolsPath.UrlString;
         timeOffset: number;
     };
     type CreateSidebarPaneRequest = {
@@ -157,7 +179,7 @@ export declare namespace PrivateAPI {
     };
     type OpenResourceRequest = {
         command: Commands.OpenResource;
-        url: string;
+        url: Platform.DevToolsPath.UrlString;
         lineNumber: number;
         columnNumber: number;
     };
@@ -214,7 +236,28 @@ export declare namespace PrivateAPI {
     type GetPageResourcesRequest = {
         command: Commands.GetPageResources;
     };
-    export type ServerRequests = RegisterLanguageExtensionPluginRequest | SubscribeRequest | UnsubscribeRequest | AddRequestHeadersRequest | ApplyStyleSheetRequest | CreatePanelRequest | ShowPanelRequest | CreateToolbarButtonRequest | UpdateButtonRequest | CompleteTraceSessionRequest | CreateSidebarPaneRequest | SetSidebarHeightRequest | SetSidebarContentRequest | SetSidebarPageRequest | OpenResourceRequest | SetOpenResourceHandlerRequest | SetThemeChangeHandlerRequest | ReloadRequest | EvaluateOnInspectedPageRequest | GetRequestContentRequest | GetResourceContentRequest | SetResourceContentRequest | AddTraceProviderRequest | ForwardKeyboardEventRequest | GetHARRequest | GetPageResourcesRequest;
+    type GetWasmLinearMemoryRequest = {
+        command: Commands.GetWasmLinearMemory;
+        offset: number;
+        length: number;
+        stopId: unknown;
+    };
+    type GetWasmLocalRequest = {
+        command: Commands.GetWasmLocal;
+        local: number;
+        stopId: unknown;
+    };
+    type GetWasmGlobalRequest = {
+        command: Commands.GetWasmGlobal;
+        global: number;
+        stopId: unknown;
+    };
+    type GetWasmOpRequest = {
+        command: Commands.GetWasmOp;
+        op: number;
+        stopId: unknown;
+    };
+    export type ServerRequests = RegisterRecorderExtensionPluginRequest | RegisterLanguageExtensionPluginRequest | SubscribeRequest | UnsubscribeRequest | AddRequestHeadersRequest | ApplyStyleSheetRequest | CreatePanelRequest | ShowPanelRequest | CreateToolbarButtonRequest | UpdateButtonRequest | CompleteTraceSessionRequest | CreateSidebarPaneRequest | SetSidebarHeightRequest | SetSidebarContentRequest | SetSidebarPageRequest | OpenResourceRequest | SetOpenResourceHandlerRequest | SetThemeChangeHandlerRequest | ReloadRequest | EvaluateOnInspectedPageRequest | GetRequestContentRequest | GetResourceContentRequest | SetResourceContentRequest | AddTraceProviderRequest | ForwardKeyboardEventRequest | GetHARRequest | GetPageResourcesRequest | GetWasmLinearMemoryRequest | GetWasmLocalRequest | GetWasmGlobalRequest | GetWasmOpRequest;
     export type ExtensionServerRequestMessage = PrivateAPI.ServerRequests & {
         requestId?: number;
     };
@@ -307,12 +350,45 @@ export declare namespace PrivateAPI {
             sourceFileURL: string;
         };
     };
-    export type LanguageExtensionRequests = AddRawModuleRequest | SourceLocationToRawLocationRequest | RawLocationToSourceLocationRequest | GetScopeInfoRequest | ListVariablesInScopeRequest | RemoveRawModuleRequest | GetTypeInfoRequest | GetFormatterRequest | GetInspectableAddressRequest | GetFunctionInfoRequest | GetInlinedFunctionRangesRequest | GetInlinedCalleesRangesRequest | GetMappedLinesRequest;
+    type FormatValueRequest = {
+        method: LanguageExtensionPluginCommands.FormatValue;
+        parameters: {
+            expression: string;
+            context: PublicAPI.Chrome.DevTools.RawLocation;
+            stopId: number;
+        };
+    };
+    type GetPropertiesRequest = {
+        method: LanguageExtensionPluginCommands.GetProperties;
+        parameters: {
+            objectId: PublicAPI.Chrome.DevTools.RemoteObjectId;
+        };
+    };
+    type ReleaseObjectRequest = {
+        method: LanguageExtensionPluginCommands.ReleaseObject;
+        parameters: {
+            objectId: PublicAPI.Chrome.DevTools.RemoteObjectId;
+        };
+    };
+    export type LanguageExtensionRequests = AddRawModuleRequest | SourceLocationToRawLocationRequest | RawLocationToSourceLocationRequest | GetScopeInfoRequest | ListVariablesInScopeRequest | RemoveRawModuleRequest | GetTypeInfoRequest | GetFormatterRequest | GetInspectableAddressRequest | GetFunctionInfoRequest | GetInlinedFunctionRangesRequest | GetInlinedCalleesRangesRequest | GetMappedLinesRequest | FormatValueRequest | GetPropertiesRequest | ReleaseObjectRequest;
+    type StringifyRequest = {
+        method: RecorderExtensionPluginCommands.Stringify;
+        parameters: {
+            recording: Record<string, unknown>;
+        };
+    };
+    type StringifyStepRequest = {
+        method: RecorderExtensionPluginCommands.StringifyStep;
+        parameters: {
+            step: Record<string, unknown>;
+        };
+    };
+    export type RecorderExtensionRequests = StringifyRequest | StringifyStepRequest;
     export {};
 }
 declare global {
     interface Window {
-        injectedExtensionAPI: (extensionInfo: ExtensionDescriptor, inspectedTabId: string, themeName: string, keysToForward: number[], testHook: (extensionServer: APIImpl.ExtensionServerClient, extensionAPI: APIImpl.InspectorExtensionAPI) => unknown, injectedScriptId: number) => void;
+        injectedExtensionAPI: (extensionInfo: ExtensionDescriptor, inspectedTabId: string, themeName: string, keysToForward: number[], testHook: (extensionServer: APIImpl.ExtensionServerClient, extensionAPI: APIImpl.InspectorExtensionAPI) => unknown, injectedScriptId: number, targetWindow?: Window) => void;
         buildExtensionAPIInjectedScript(extensionInfo: ExtensionDescriptor, inspectedTabId: string, themeName: string, keysToForward: number[], testHook: undefined | ((extensionServer: unknown, extensionAPI: unknown) => unknown)): string;
         chrome: PublicAPI.Chrome.DevTools.Chrome;
         webInspector?: APIImpl.InspectorExtensionAPI;
@@ -323,10 +399,12 @@ export declare type ExtensionDescriptor = {
     name: string;
     exposeExperimentalAPIs: boolean;
     exposeWebInspectorNamespace?: boolean;
+    allowFileAccess?: boolean;
 };
 declare namespace APIImpl {
     interface InspectorExtensionAPI {
         languageServices: PublicAPI.Chrome.DevTools.LanguageExtensions;
+        recorder: PublicAPI.Chrome.DevTools.RecorderExtensions;
         timeline: Timeline;
         network: PublicAPI.Chrome.DevTools.Network;
         panels: PublicAPI.Chrome.DevTools.Panels;
@@ -356,7 +434,7 @@ declare namespace APIImpl {
         }) => unknown): void;
         unregisterHandler(command: string): void;
         hasHandler(command: string): boolean;
-        sendRequest(request: PrivateAPI.ServerRequests, callback?: ((response: unknown) => unknown), transfers?: unknown[]): void;
+        sendRequest<ResponseT>(request: PrivateAPI.ServerRequests, callback?: ((response: ResponseT) => unknown), transfers?: unknown[]): void;
         nextObjectId(): string;
     }
     type Callable = (...args: any) => void;
@@ -398,6 +476,9 @@ declare namespace APIImpl {
     }
     interface LanguageExtensions extends PublicAPI.Chrome.DevTools.LanguageExtensions {
         _plugins: Map<PublicAPI.Chrome.DevTools.LanguageExtensionPlugin, MessagePort>;
+    }
+    interface RecorderExtensions extends PublicAPI.Chrome.DevTools.RecorderExtensions {
+        _plugins: Map<PublicAPI.Chrome.DevTools.RecorderExtensionPlugin, MessagePort>;
     }
     interface ExtensionPanel extends ExtensionView, PublicAPI.Chrome.DevTools.ExtensionPanel {
         show(): void;

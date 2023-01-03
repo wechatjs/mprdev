@@ -34,17 +34,17 @@ export class CSSOverviewPanel extends UI.Panel.Panel {
         this.element.classList.add('css-overview-panel');
         this.#controller = new OverviewController();
         this.#startView = new CSSOverviewComponents.CSSOverviewStartView.CSSOverviewStartView();
-        this.#startView.addEventListener('overviewstartrequested', () => this.#controller.dispatchEventToListeners("RequestOverviewStart" /* RequestOverviewStart */));
+        this.#startView.addEventListener('overviewstartrequested', () => this.#controller.dispatchEventToListeners("RequestOverviewStart" /* Events.RequestOverviewStart */));
         this.#processingView = new CSSOverviewProcessingView(this.#controller);
         this.#completedView = new CSSOverviewCompletedView(this.#controller);
         SDK.TargetManager.TargetManager.instance().observeTargets(this);
-        this.#controller.addEventListener("RequestOverviewStart" /* RequestOverviewStart */, _event => {
+        this.#controller.addEventListener("RequestOverviewStart" /* Events.RequestOverviewStart */, _event => {
             Host.userMetrics.actionTaken(Host.UserMetrics.Action.CaptureCssOverviewClicked);
             void this.#startOverview();
         }, this);
-        this.#controller.addEventListener("OverviewCompleted" /* OverviewCompleted */, this.#overviewCompleted, this);
-        this.#controller.addEventListener("Reset" /* Reset */, this.#reset, this);
-        this.#controller.addEventListener("RequestNodeHighlight" /* RequestNodeHighlight */, this.#requestNodeHighlight, this);
+        this.#controller.addEventListener("OverviewCompleted" /* Events.OverviewCompleted */, this.#overviewCompleted, this);
+        this.#controller.addEventListener("Reset" /* Events.Reset */, this.#reset, this);
+        this.#controller.addEventListener("RequestNodeHighlight" /* Events.RequestNodeHighlight */, this.#requestNodeHighlight, this);
         this.#reset();
     }
     static instance() {
@@ -166,7 +166,7 @@ export class CSSOverviewPanel extends UI.Panel.Panel {
         if (unusedDeclarations) {
             this.#unusedDeclarations = unusedDeclarations;
         }
-        this.#controller.dispatchEventToListeners("OverviewCompleted" /* OverviewCompleted */);
+        this.#controller.dispatchEventToListeners("OverviewCompleted" /* Events.OverviewCompleted */);
     }
     #overviewCompleted() {
         this.#renderOverviewCompletedView();

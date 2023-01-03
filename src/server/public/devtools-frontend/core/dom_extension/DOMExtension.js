@@ -449,14 +449,6 @@ Node.prototype.setTextContentTruncatedIfNeeded = function (text, placeholder) {
     this.textContent = text;
     return false;
 };
-Document.prototype.deepActiveElement = function () {
-    let activeElement = this.activeElement;
-    while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement) {
-        activeElement = activeElement.shadowRoot.activeElement;
-    }
-    return activeElement;
-};
-DocumentFragment.prototype.deepActiveElement = Document.prototype.deepActiveElement;
 Element.prototype.hasFocus = function () {
     const root = this.getComponentRoot();
     return Boolean(root) && this.isSelfOrAncestor(root.activeElement);
@@ -478,9 +470,6 @@ self.onInvokeElement = function (element, callback) {
 };
 self.isEnterOrSpaceKey = function (event) {
     return event.key === 'Enter' || event.key === ' ';
-};
-self.isEscKey = function (event) {
-    return event.keyCode === 27;
 };
 // DevTools front-end still assumes that
 //   classList.toggle('a', undefined) works as

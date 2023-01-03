@@ -3,7 +3,7 @@ import type * as ProtocolClient from '../protocol_client/protocol_client.js';
 import type * as Protocol from '../../generated/protocol.js';
 import { Type as TargetType } from './Target.js';
 import { Target } from './Target.js';
-import type { SDKModel } from './SDKModel.js';
+import { type SDKModel } from './SDKModel.js';
 export declare class TargetManager extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     #private;
     private constructor();
@@ -31,6 +31,7 @@ export declare class TargetManager extends Common.ObjectWrapper.ObjectWrapper<Ev
     targets(): Target[];
     targetById(id: string): Target | null;
     mainTarget(): Target | null;
+    mainFrameTarget(): Target | null;
     browserTarget(): Target | null;
     maybeAttachInitialTarget(): Promise<boolean>;
     clearAllTargetsForTest(): void;

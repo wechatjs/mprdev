@@ -1,7 +1,9 @@
 import * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as TextUtils from '../text_utils/text_utils.js';
-import type { Project } from './WorkspaceImpl.js';
+import { type Project } from './WorkspaceImpl.js';
 export declare class UISourceCode extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements TextUtils.ContentProvider.ContentProvider {
+    #private;
     private projectInternal;
     private urlInternal;
     private readonly originInternal;
@@ -21,22 +23,23 @@ export declare class UISourceCode extends Common.ObjectWrapper.ObjectWrapper<Eve
     private workingCopyGetter;
     private disableEditInternal;
     private contentEncodedInternal?;
-    constructor(project: Project, url: string, contentType: Common.ResourceType.ResourceType);
+    private isKnownThirdPartyInternal;
+    constructor(project: Project, url: Platform.DevToolsPath.UrlString, contentType: Common.ResourceType.ResourceType);
     requestMetadata(): Promise<UISourceCodeMetadata | null>;
     name(): string;
     mimeType(): string;
-    url(): string;
-    parentURL(): string;
-    origin(): string;
+    url(): Platform.DevToolsPath.UrlString;
+    canononicalScriptId(): string;
+    parentURL(): Platform.DevToolsPath.UrlString;
+    origin(): Platform.DevToolsPath.UrlString;
     fullDisplayName(): string;
     displayName(skipTrim?: boolean): string;
     canRename(): boolean;
-    rename(newName: string): Promise<boolean>;
+    rename(newName: Platform.DevToolsPath.RawPathString): Promise<boolean>;
     remove(): void;
     private updateName;
-    contentURL(): string;
+    contentURL(): Platform.DevToolsPath.UrlString;
     contentType(): Common.ResourceType.ResourceType;
-    contentEncoded(): Promise<boolean>;
     project(): Project;
     requestContent(): Promise<TextUtils.ContentProvider.DeferredContent>;
     private requestContentImpl;
@@ -56,6 +59,8 @@ export declare class UISourceCode extends Common.ObjectWrapper.ObjectWrapper<Eve
     removeWorkingCopyGetter(): void;
     commitWorkingCopy(): void;
     isDirty(): boolean;
+    isKnownThirdParty(): boolean;
+    markKnownThirdParty(): void;
     extension(): string;
     content(): string;
     loadError(): string | null;
@@ -99,6 +104,7 @@ export declare class UILocation {
     columnNumber: number | undefined;
     constructor(uiSourceCode: UISourceCode, lineNumber: number, columnNumber?: number);
     linkText(skipTrim?: boolean, showColumnNumber?: boolean): string;
+    lineAndColumnText(showColumnNumber?: boolean): string | undefined;
     id(): string;
     lineId(): string;
     toUIString(): string;

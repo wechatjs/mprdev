@@ -7,9 +7,9 @@ import { RegisteredFileStrings } from './localized-string-set.js';
  * Encapsulates the global state of the i18n runtime.
  */
 export class I18n {
-    defaultLocale;
     supportedLocales;
     localeData = new Map();
+    defaultLocale;
     constructor(supportedLocales = LOCALES, defaultLocale = DEFAULT_LOCALE) {
         this.defaultLocale = defaultLocale;
         this.supportedLocales = new Set(supportedLocales);

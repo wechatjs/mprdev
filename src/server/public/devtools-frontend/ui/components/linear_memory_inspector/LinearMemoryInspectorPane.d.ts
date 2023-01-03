@@ -1,6 +1,7 @@
 import * as Common from '../../../core/common/common.js';
 import * as UI from '../../legacy/legacy.js';
-import type { LazyUint8Array } from './LinearMemoryInspectorController.js';
+import { type Settings } from './LinearMemoryInspector.js';
+import { type LazyUint8Array } from './LinearMemoryInspectorController.js';
 export declare class Wrapper extends UI.Widget.VBox {
     view: LinearMemoryInspectorPaneImpl;
     private constructor();
@@ -21,6 +22,7 @@ export declare class LinearMemoryInspectorPaneImpl extends LinearMemoryInspector
     #private;
     constructor();
     static instance(): LinearMemoryInspectorPaneImpl;
+    getViewForTabId(tabId: string): LinearMemoryInspectorView;
     create(tabId: string, title: string, arrayWrapper: LazyUint8Array, address?: number): void;
     close(tabId: string): void;
     reveal(tabId: string, address?: number): void;
@@ -32,4 +34,13 @@ export declare const enum Events {
 export declare type EventTypes = {
     [Events.ViewClosed]: string;
 };
+declare class LinearMemoryInspectorView extends UI.Widget.VBox {
+    #private;
+    firstTimeOpen: boolean;
+    constructor(memoryWrapper: LazyUint8Array, address: number | undefined, tabId: string);
+    wasShown(): void;
+    saveSettings(settings: Settings): void;
+    updateAddress(address: number): void;
+    refreshData(): void;
+}
 export {};

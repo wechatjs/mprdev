@@ -44,7 +44,7 @@ export class LogManager {
         if (entry.networkRequestId) {
             NetworkLog.instance().associateConsoleMessageWithRequest(consoleMessage, entry.networkRequestId);
         }
-        if (consoleMessage.source === "worker" /* Worker */) {
+        if (consoleMessage.source === "worker" /* Protocol.Log.LogEntrySource.Worker */) {
             const workerId = consoleMessage.workerId || '';
             // We have a copy of worker messages reported through the page, so that
             // user can see messages from the worker which has been already destroyed.

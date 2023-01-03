@@ -1,4 +1,4 @@
-import type { Action } from './ActionRegistration.js';
+import { type Action } from './ActionRegistration.js';
 import { Context } from './Context.js';
 export declare class ActionRegistry {
     private readonly actionsById;

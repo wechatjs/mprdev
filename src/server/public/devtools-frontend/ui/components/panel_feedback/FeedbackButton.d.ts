@@ -1,5 +1,6 @@
+import * as Platform from '../../../core/platform/platform.js';
 export interface FeedbackButtonData {
-    feedbackUrl: string;
+    feedbackUrl: Platform.DevToolsPath.UrlString;
 }
 export declare class FeedbackButton extends HTMLElement {
     #private;

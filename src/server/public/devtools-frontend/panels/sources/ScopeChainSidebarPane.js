@@ -1,42 +1,15 @@
 // Copyright 2021 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-/*
- * Copyright (C) 2008 Apple Inc. All Rights Reserved.
- * Copyright (C) 2011 Google Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import * as Bindings from '../../models/bindings/bindings.js';
+import * as SourceMapScopes from '../../models/source_map_scopes/source_map_scopes.js';
 import * as LinearMemoryInspector from '../../ui/components/linear_memory_inspector/linear_memory_inspector.js';
 import * as ObjectUI from '../../ui/legacy/components/object_ui/object_ui.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import scopeChainSidebarPaneStyles from './scopeChainSidebarPane.css.js';
-import { resolveScopeChain, resolveScopeInObject, resolveThisObject } from './SourceMapNamesResolver.js';
 const UIStrings = {
     /**
     *@description Loading indicator in Scope Sidebar Pane of the Sources panel
@@ -71,10 +44,6 @@ const UIStrings = {
     *@description A context menu item in the Scope View of the Sources Panel
     */
     revealInMemoryInspectorPanel: 'Reveal in Memory Inspector panel',
-    /**
-    *@description Error message that shows up in the console if a buffer to be opened in the lienar memory inspector cannot be found.
-    */
-    couldNotOpenLinearMemory: 'Could not open linear memory inspector: failed locating buffer.',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/sources/ScopeChainSidebarPane.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -95,6 +64,7 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
         this.infoElement = document.createElement('div');
         this.infoElement.className = 'gray-info-message';
         this.infoElement.tabIndex = -1;
+        SDK.TargetManager.TargetManager.instance().addModelListener(SDK.DebuggerModel.DebuggerModel, SDK.DebuggerModel.Events.DebugInfoAttached, this.debugInfoAttached, this);
         void this.update();
     }
     static instance() {
@@ -133,6 +103,11 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
             this.#scopesScript.debuggerModel.sourceMapManager().addEventListener(SDK.SourceMapManager.Events.SourceMapAttached, this.sourceMapAttached, this);
         }
     }
+    debugInfoAttached(event) {
+        if (event.data === this.#scopesScript) {
+            void this.update();
+        }
+    }
     async update() {
         // The `resolveThisObject(callFrame)` and `resolveScopeChain(callFrame)` calls
         // below may take a while to complete, so indicate to the user that something
@@ -143,7 +118,10 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
         this.linkifier.reset();
         const callFrame = UI.Context.Context.instance().flavor(SDK.DebuggerModel.CallFrame);
         this.setScopeSourceMapSubscription(callFrame);
-        const [thisObject, scopeChain] = await Promise.all([resolveThisObject(callFrame), resolveScopeChain(callFrame)]);
+        const [thisObject, scopeChain] = await Promise.all([
+            SourceMapScopes.NamesResolver.resolveThisObject(callFrame),
+            SourceMapScopes.NamesResolver.resolveScopeChain(callFrame),
+        ]);
         // By now the developer might have moved on, and we don't want to show stale
         // scope information, so check again that we're still on the same CallFrame.
         if (callFrame === UI.Context.Context.instance().flavor(SDK.DebuggerModel.CallFrame)) {
@@ -159,14 +137,14 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
             for (let i = 0; i < scopeChain.length; ++i) {
                 const scope = scopeChain[i];
                 const extraProperties = this.extraPropertiesForScope(scope, details, callFrame, thisObject, i === 0);
-                if (scope.type() === "local" /* Local */) {
+                if (scope.type() === "local" /* Protocol.Debugger.ScopeType.Local */) {
                     foundLocalScope = true;
                 }
                 const section = this.createScopeSectionTreeElement(scope, extraProperties);
-                if (scope.type() === "global" /* Global */) {
+                if (scope.type() === "global" /* Protocol.Debugger.ScopeType.Global */) {
                     section.collapse();
                 }
-                else if (!foundLocalScope || scope.type() === "local" /* Local */) {
+                else if (!foundLocalScope || scope.type() === "local" /* Protocol.Debugger.ScopeType.Local */) {
                     section.expand();
                 }
                 this.treeOutline.appendChild(section);
@@ -179,11 +157,11 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
     }
     createScopeSectionTreeElement(scope, extraProperties) {
         let emptyPlaceholder = null;
-        if (scope.type() === "local" /* Local */ || "closure" /* Closure */) {
+        if (scope.type() === "local" /* Protocol.Debugger.ScopeType.Local */ || "closure" /* Protocol.Debugger.ScopeType.Closure */) {
             emptyPlaceholder = i18nString(UIStrings.noVariables);
         }
         let title = scope.typeName();
-        if (scope.type() === "closure" /* Closure */) {
+        if (scope.type() === "closure" /* Protocol.Debugger.ScopeType.Closure */) {
             const scopeName = scope.name();
             if (scopeName) {
                 title = i18nString(UIStrings.closureS, { PH1: UI.UIUtils.beautifyFunctionName(scopeName) });
@@ -208,7 +186,7 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
         }
         titleElement.createChild('div', 'scope-chain-sidebar-pane-section-subtitle').textContent = subtitle;
         titleElement.createChild('div', 'scope-chain-sidebar-pane-section-title').textContent = title;
-        const section = new ObjectUI.ObjectPropertiesSection.RootElement(resolveScopeInObject(scope), this.linkifier, emptyPlaceholder, 0 /* All */, extraProperties);
+        const section = new ObjectUI.ObjectPropertiesSection.RootElement(SourceMapScopes.NamesResolver.resolveScopeInObject(scope), this.linkifier, emptyPlaceholder, 0 /* ObjectUI.ObjectPropertiesSection.ObjectPropertiesMode.All */, extraProperties);
         section.title = titleElement;
         section.listItemElement.classList.add('scope-chain-sidebar-pane-section');
         section.listItemElement.setAttribute('aria-label', title);
@@ -216,7 +194,7 @@ export class ScopeChainSidebarPane extends UI.Widget.VBox {
         return section;
     }
     extraPropertiesForScope(scope, details, callFrame, thisObject, isFirstScope) {
-        if (scope.type() !== "local" /* Local */ || callFrame.script.isWasm()) {
+        if (scope.type() !== "local" /* Protocol.Debugger.ScopeType.Local */ || callFrame.script.isWasm()) {
             return [];
         }
         const extraProperties = [];
@@ -254,46 +232,19 @@ export class OpenLinearMemoryInspector extends UI.Widget.VBox {
         }
         return openLinearMemoryInspectorInstance;
     }
-    isMemoryObjectProperty(obj) {
-        const isWasmMemory = obj.type === 'object' && obj.subtype &&
-            LinearMemoryInspector.LinearMemoryInspectorController.ACCEPTED_MEMORY_TYPES.includes(obj.subtype);
-        if (isWasmMemory) {
-            return true;
-        }
-        if (obj instanceof Bindings.DebuggerLanguagePlugins.ValueNode) {
-            return obj.inspectableAddress !== undefined;
-        }
-        return false;
-    }
     appendApplicableItems(event, contextMenu, target) {
         if (target instanceof ObjectUI.ObjectPropertiesSection.ObjectPropertyTreeElement) {
-            if (target.property && target.property.value && this.isMemoryObjectProperty(target.property.value)) {
-                contextMenu.debugSection().appendItem(i18nString(UIStrings.revealInMemoryInspectorPanel), this.openMemoryInspector.bind(this, target.property.value));
+            if (target.property && target.property.value &&
+                LinearMemoryInspector.LinearMemoryInspectorController.isMemoryObjectProperty(target.property.value)) {
+                const expression = target.path();
+                contextMenu.debugSection().appendItem(i18nString(UIStrings.revealInMemoryInspectorPanel), this.openMemoryInspector.bind(this, expression, target.property.value));
             }
         }
     }
-    async openMemoryInspector(obj) {
+    async openMemoryInspector(expression, obj) {
         const controller = LinearMemoryInspector.LinearMemoryInspectorController.LinearMemoryInspectorController.instance();
-        let address = 0;
-        let memoryObj = obj;
-        if (obj instanceof Bindings.DebuggerLanguagePlugins.ValueNode) {
-            const valueNode = obj;
-            address = valueNode.inspectableAddress || 0;
-            const callFrame = valueNode.callFrame;
-            const response = await obj.debuggerModel().agent.invoke_evaluateOnCallFrame({
-                callFrameId: callFrame.id,
-                expression: 'memories[0]',
-            });
-            const error = response.getError();
-            if (error) {
-                console.error(error);
-                Common.Console.Console.instance().error(i18nString(UIStrings.couldNotOpenLinearMemory));
-            }
-            const runtimeModel = obj.debuggerModel().runtimeModel();
-            memoryObj = runtimeModel.createRemoteObject(response.result);
-        }
         Host.userMetrics.linearMemoryInspectorRevealedFrom(Host.UserMetrics.LinearMemoryInspectorRevealedFrom.ContextMenu);
-        void controller.openInspectorView(memoryObj, address);
+        void controller.openInspectorView(obj, /* address */ undefined, expression);
     }
 }
 //# sourceMappingURL=ScopeChainSidebarPane.js.map

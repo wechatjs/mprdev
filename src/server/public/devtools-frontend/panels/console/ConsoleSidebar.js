@@ -64,12 +64,12 @@ export class ConsoleSidebar extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
                 negative: false,
                 regex: undefined,
             }];
-        this.appendGroup("message" /* All */, [], ConsoleFilter.allLevelsFilterValue(), UI.Icon.Icon.create('mediumicon-list'), selectedFilterSetting);
-        this.appendGroup("user message" /* ConsoleAPI */, consoleAPIParsedFilters, ConsoleFilter.allLevelsFilterValue(), UI.Icon.Icon.create('mediumicon-account-circle'), selectedFilterSetting);
-        this.appendGroup("error" /* Error */, [], ConsoleFilter.singleLevelMask("error" /* Error */), UI.Icon.Icon.create('mediumicon-error-circle'), selectedFilterSetting);
-        this.appendGroup("warning" /* Warning */, [], ConsoleFilter.singleLevelMask("warning" /* Warning */), UI.Icon.Icon.create('mediumicon-warning-triangle'), selectedFilterSetting);
-        this.appendGroup("info" /* Info */, [], ConsoleFilter.singleLevelMask("info" /* Info */), UI.Icon.Icon.create('mediumicon-info-circle'), selectedFilterSetting);
-        this.appendGroup("verbose" /* Verbose */, [], ConsoleFilter.singleLevelMask("verbose" /* Verbose */), UI.Icon.Icon.create('mediumicon-bug'), selectedFilterSetting);
+        this.appendGroup("message" /* GroupName.All */, [], ConsoleFilter.allLevelsFilterValue(), UI.Icon.Icon.create('mediumicon-list'), selectedFilterSetting);
+        this.appendGroup("user message" /* GroupName.ConsoleAPI */, consoleAPIParsedFilters, ConsoleFilter.allLevelsFilterValue(), UI.Icon.Icon.create('mediumicon-account-circle'), selectedFilterSetting);
+        this.appendGroup("error" /* GroupName.Error */, [], ConsoleFilter.singleLevelMask("error" /* Protocol.Log.LogEntryLevel.Error */), UI.Icon.Icon.create('mediumicon-error-circle'), selectedFilterSetting);
+        this.appendGroup("warning" /* GroupName.Warning */, [], ConsoleFilter.singleLevelMask("warning" /* Protocol.Log.LogEntryLevel.Warning */), UI.Icon.Icon.create('mediumicon-warning-triangle'), selectedFilterSetting);
+        this.appendGroup("info" /* GroupName.Info */, [], ConsoleFilter.singleLevelMask("info" /* Protocol.Log.LogEntryLevel.Info */), UI.Icon.Icon.create('mediumicon-info-circle'), selectedFilterSetting);
+        this.appendGroup("verbose" /* GroupName.Verbose */, [], ConsoleFilter.singleLevelMask("verbose" /* Protocol.Log.LogEntryLevel.Verbose */), UI.Icon.Icon.create('mediumicon-bug'), selectedFilterSetting);
         const selectedTreeElementName = selectedFilterSetting.get();
         const defaultTreeElement = this.treeElements.find(x => x.name() === selectedTreeElementName) || this.treeElements[0];
         defaultTreeElement.select();
@@ -98,7 +98,7 @@ export class ConsoleSidebar extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
     }
     selectionChanged(event) {
         this.selectedTreeElement = event.data;
-        this.dispatchEventToListeners("FilterSelected" /* FilterSelected */);
+        this.dispatchEventToListeners("FilterSelected" /* Events.FilterSelected */);
     }
     wasShown() {
         super.wasShown();
@@ -136,12 +136,12 @@ export class URLGroupTreeElement extends ConsoleSidebarTreeElement {
  * construct a filter or get a new message.
  */
 const stringForFilterSidebarItemMap = new Map([
-    ["user message" /* ConsoleAPI */, UIStrings.dUserMessages],
-    ["message" /* All */, UIStrings.dMessages],
-    ["error" /* Error */, UIStrings.dErrors],
-    ["warning" /* Warning */, UIStrings.dWarnings],
-    ["info" /* Info */, UIStrings.dInfo],
-    ["verbose" /* Verbose */, UIStrings.dVerbose],
+    ["user message" /* GroupName.ConsoleAPI */, UIStrings.dUserMessages],
+    ["message" /* GroupName.All */, UIStrings.dMessages],
+    ["error" /* GroupName.Error */, UIStrings.dErrors],
+    ["warning" /* GroupName.Warning */, UIStrings.dWarnings],
+    ["info" /* GroupName.Info */, UIStrings.dInfo],
+    ["verbose" /* GroupName.Verbose */, UIStrings.dVerbose],
 ]);
 export class FilterTreeElement extends ConsoleSidebarTreeElement {
     selectedFilterSetting;

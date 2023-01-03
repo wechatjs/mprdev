@@ -91,7 +91,7 @@ export class FilterBar extends Common.ObjectWrapper.eventMixin(HBox) {
     addFilter(filter) {
         this.filters.push(filter);
         this.element.appendChild(filter.element());
-        filter.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged, this);
+        filter.addEventListener("FilterChanged" /* FilterUIEvents.FilterChanged */, this.filterChanged, this);
         this.updateFilterButton();
     }
     setEnabled(enabled) {
@@ -108,7 +108,7 @@ export class FilterBar extends Common.ObjectWrapper.eventMixin(HBox) {
     }
     filterChanged() {
         this.updateFilterButton();
-        this.dispatchEventToListeners("Changed" /* Changed */);
+        this.dispatchEventToListeners("Changed" /* FilterBarEvents.Changed */);
     }
     wasShown() {
         super.wasShown();
@@ -211,7 +211,7 @@ export class TextFilterUI extends Common.ObjectWrapper.ObjectWrapper {
         this.suggestionProvider = suggestionProvider;
     }
     valueChanged() {
-        this.dispatchEventToListeners("FilterChanged" /* FilterChanged */);
+        this.dispatchEventToListeners("FilterChanged" /* FilterUIEvents.FilterChanged */);
         this.updateEmptyStyles();
     }
     updateEmptyStyles() {
@@ -288,7 +288,7 @@ export class NamedBitSetFilterUI extends Common.ObjectWrapper.ObjectWrapper {
             element.classList.toggle('selected', active);
             ARIAUtils.setSelected(element, active);
         }
-        this.dispatchEventToListeners("FilterChanged" /* FilterChanged */);
+        this.dispatchEventToListeners("FilterChanged" /* FilterUIEvents.FilterChanged */);
     }
     addBit(name, label, title) {
         const typeFilterElement = this.filtersElement.createChild('span', name);
@@ -417,7 +417,7 @@ export class CheckboxFilterUI extends Common.ObjectWrapper.ObjectWrapper {
         return this.label;
     }
     fireUpdated() {
-        this.dispatchEventToListeners("FilterChanged" /* FilterChanged */);
+        this.dispatchEventToListeners("FilterChanged" /* FilterUIEvents.FilterChanged */);
     }
     setColor(backgroundColor, borderColor) {
         this.label.backgroundColor = backgroundColor;

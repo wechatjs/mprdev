@@ -11,24 +11,18 @@ let frameManagerInstance = null;
  * without needing to know their target.
  */
 export class FrameManager extends Common.ObjectWrapper.ObjectWrapper {
-    #eventListeners;
-    #frames;
-    #framesForTarget;
-    #topFrame;
-    #creationStackTraceDataForTransferringFrame;
+    #eventListeners = new WeakMap();
+    // Maps frameIds to #frames and a count of how many ResourceTreeModels contain this frame.
+    // (OOPIFs are usually first attached to a new target and then detached from their old target,
+    // therefore being contained in 2 models for a short period of time.)
+    #frames = new Map();
+    #framesForTarget = new Map();
+    #topFrame = null;
+    #transferringFramesDataCache = new Map();
     #awaitedFrames = new Map();
     constructor() {
         super();
-        this.#eventListeners = new WeakMap();
         TargetManager.instance().observeModels(ResourceTreeModel, this);
-        // Maps frameIds to #frames and a count of how many ResourceTreeModels contain this frame.
-        // (OOPIFs are usually first attached to a new target and then detached from their old target,
-        // therefore being contained in 2 models for a short period of time.)
-        this.#frames = new Map();
-        // Maps targetIds to a set of frameIds.
-        this.#framesForTarget = new Map();
-        this.#topFrame = null;
-        this.#creationStackTraceDataForTransferringFrame = new Map();
     }
     static instance({ forceNew } = { forceNew: false }) {
         if (!frameManagerInstance || forceNew) {
@@ -65,20 +59,31 @@ export class FrameManager extends Common.ObjectWrapper.ObjectWrapper {
         const frameData = this.#frames.get(frame.id);
         // If the frame is already in the map, increase its count, otherwise add it to the map.
         if (frameData) {
-            // In order to not lose frame creation stack trace information during
-            // an OOPIF transfer we need to copy it to the new frame
+            // In order to not lose the following attributes of a frame during
+            // an OOPIF transfer we need to copy them to the new frame
             frame.setCreationStackTrace(frameData.frame.getCreationStackTraceData());
+            frame.setAdScriptId(frameData.frame.getAdScriptId());
+            frame.setDebuggerId(frameData.frame.getDebuggerId());
             this.#frames.set(frame.id, { frame, count: frameData.count + 1 });
         }
         else {
             // If the transferring frame's detached event is received before its frame added
-            // event in the new target, the persisted frame creation stacktrace is reassigned.
-            const traceData = this.#creationStackTraceDataForTransferringFrame.get(frame.id);
-            if (traceData && traceData.creationStackTrace) {
-                frame.setCreationStackTrace(traceData);
+            // event in the new target, the frame's cached attributes are reassigned.
+            const cachedFrameAttributes = this.#transferringFramesDataCache.get(frame.id);
+            if (cachedFrameAttributes?.creationStackTrace && cachedFrameAttributes?.creationStackTraceTarget) {
+                frame.setCreationStackTrace({
+                    creationStackTrace: cachedFrameAttributes.creationStackTrace,
+                    creationStackTraceTarget: cachedFrameAttributes.creationStackTraceTarget,
+                });
+            }
+            if (cachedFrameAttributes?.adScriptId) {
+                frame.setAdScriptId(cachedFrameAttributes.adScriptId);
+            }
+            if (cachedFrameAttributes?.debuggerId) {
+                frame.setDebuggerId(cachedFrameAttributes.debuggerId);
             }
             this.#frames.set(frame.id, { frame, count: 1 });
-            this.#creationStackTraceDataForTransferringFrame.delete(frame.id);
+            this.#transferringFramesDataCache.delete(frame.id);
         }
         this.resetTopFrame();
         // Add the frameId to the the targetId's set of frameIds.
@@ -94,13 +99,19 @@ export class FrameManager extends Common.ObjectWrapper.ObjectWrapper {
         // Decrease the frame's count or remove it entirely from the map.
         this.decreaseOrRemoveFrame(frame.id);
         // If the transferring frame's detached event is received before its frame
-        // added event in the new target, we persist the frame creation stacktrace here
-        // so that later on the frame added event in the new target it can be reassigned.
+        // added event in the new target, we persist some attributes of the frame here
+        // so that later on the frame added event in the new target they can be reassigned.
         if (isSwap && !this.#frames.get(frame.id)) {
             const traceData = frame.getCreationStackTraceData();
-            if (traceData.creationStackTrace) {
-                this.#creationStackTraceDataForTransferringFrame.set(frame.id, traceData);
-            }
+            const adScriptId = frame.getAdScriptId();
+            const debuggerId = frame.getDebuggerId();
+            const cachedFrameAttributes = {
+                ...(traceData.creationStackTrace && { creationStackTrace: traceData.creationStackTrace }),
+                ...(traceData.creationStackTrace && { creationStackTraceTarget: traceData.creationStackTraceTarget }),
+                ...(adScriptId && { adScriptId }),
+                ...(debuggerId && { debuggerId }),
+            };
+            this.#transferringFramesDataCache.set(frame.id, cachedFrameAttributes);
         }
         // Remove the frameId from the target's set of frameIds.
         const frameSet = this.#framesForTarget.get(frame.resourceTreeModel().target().id());

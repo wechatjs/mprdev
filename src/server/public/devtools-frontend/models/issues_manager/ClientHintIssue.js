@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { resolveLazyDescription } from './MarkdownIssueDescription.js';
+import { resolveLazyDescription, } from './MarkdownIssueDescription.js';
 const UIStrings = {
     /**
     *@description Title for Client Hint specification url link
@@ -16,8 +16,8 @@ export class ClientHintIssue extends Issue {
     issueDetails;
     constructor(issueDetails, issuesModel) {
         super({
-            code: "ClientHintIssue" /* ClientHintIssue */,
-            umaCode: ["ClientHintIssue" /* ClientHintIssue */, issueDetails.clientHintIssueReason].join('::'),
+            code: "ClientHintIssue" /* Protocol.Audits.InspectorIssueCode.ClientHintIssue */,
+            umaCode: ["ClientHintIssue" /* Protocol.Audits.InspectorIssueCode.ClientHintIssue */, issueDetails.clientHintIssueReason].join('::'),
         }, issuesModel);
         this.issueDetails = issueDetails;
     }
@@ -54,7 +54,7 @@ export class ClientHintIssue extends Issue {
 }
 const issueDescriptions = new Map([
     [
-        "MetaTagAllowListInvalidOrigin" /* MetaTagAllowListInvalidOrigin */,
+        "MetaTagAllowListInvalidOrigin" /* Protocol.Audits.ClientHintIssueReason.MetaTagAllowListInvalidOrigin */,
         {
             file: 'clientHintMetaTagAllowListInvalidOrigin.md',
             links: [{
@@ -64,7 +64,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "MetaTagModifiedHTML" /* MetaTagModifiedHTML */,
+        "MetaTagModifiedHTML" /* Protocol.Audits.ClientHintIssueReason.MetaTagModifiedHTML */,
         {
             file: 'clientHintMetaTagModifiedHTML.md',
             links: [{

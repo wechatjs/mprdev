@@ -42,7 +42,7 @@ export class WarningErrorCounter {
         const countersWrapper = document.createElement('div');
         this.toolbarItem = new UI.Toolbar.ToolbarItemWithCompactLayout(countersWrapper);
         this.toolbarItem.setVisible(false);
-        this.toolbarItem.addEventListener("CompactLayoutUpdated" /* CompactLayoutUpdated */, this.onSetCompactLayout, this);
+        this.toolbarItem.addEventListener("CompactLayoutUpdated" /* UI.Toolbar.ToolbarItemWithCompactLayoutEvents.CompactLayoutUpdated */, this.onSetCompactLayout, this);
         this.consoleCounter = new IconButton.IconButton.IconButton();
         countersWrapper.appendChild(this.consoleCounter);
         this.consoleCounter.data = {
@@ -58,13 +58,13 @@ export class WarningErrorCounter {
                 void UI.ViewManager.ViewManager.instance().showView('issues-pane');
             },
             issuesManager,
-            displayMode: "OnlyMostImportant" /* OnlyMostImportant */,
+            displayMode: "OnlyMostImportant" /* IssueCounter.IssueCounter.DisplayMode.OnlyMostImportant */,
         };
         this.throttler = new Common.Throttler.Throttler(100);
         SDK.ConsoleModel.ConsoleModel.instance().addEventListener(SDK.ConsoleModel.Events.ConsoleCleared, this.update, this);
         SDK.ConsoleModel.ConsoleModel.instance().addEventListener(SDK.ConsoleModel.Events.MessageAdded, this.update, this);
         SDK.ConsoleModel.ConsoleModel.instance().addEventListener(SDK.ConsoleModel.Events.MessageUpdated, this.update, this);
-        issuesManager.addEventListener("IssuesCountUpdated" /* IssuesCountUpdated */, this.update, this);
+        issuesManager.addEventListener("IssuesCountUpdated" /* IssuesManager.IssuesManager.Events.IssuesCountUpdated */, this.update, this);
         this.update();
     }
     onSetCompactLayout(event) {

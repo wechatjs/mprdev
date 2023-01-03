@@ -1,3 +1,4 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import type * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -14,7 +15,7 @@ export declare class ProfileDataGridNode extends DataGrid.DataGrid.DataGridNode<
     total: number;
     functionName: string;
     readonly deoptReason: string;
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     linkElement: Element | null;
     populated: boolean;
     savedSelf?: number;

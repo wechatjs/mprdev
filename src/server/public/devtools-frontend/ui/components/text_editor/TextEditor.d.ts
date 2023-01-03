@@ -12,6 +12,7 @@ export declare class TextEditor extends HTMLElement {
     dispatch(spec: CodeMirror.TransactionSpec): void;
     get state(): CodeMirror.EditorState;
     set state(state: CodeMirror.EditorState);
+    scrollEventHandledToSaveScrollPositionForTest(): void;
     connectedCallback(): void;
     disconnectedCallback(): void;
     focus(): void;

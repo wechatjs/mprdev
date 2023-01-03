@@ -3,12 +3,51 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import * as SDK from '../../core/sdk/sdk.js';
+/**
+ * @overview
+                                                   ┌────────────┐
+                                                   │CDP Backend │
+                                                   └────────────┘
+                                                        │ ▲
+                                                        │ │ parallelConnection
+                          ┌┐                            ▼ │                     ┌┐
+                          ││   dispatchProtocolMessage     sendProtocolMessage  ││
+                          ││                     │          ▲                   ││
+          ProtocolService ││                     |          │                   ││
+                          ││    sendWithResponse ▼          │                   ││
+                          ││              │    send          onWorkerMessage    ││
+                          └┘              │    │                 ▲              └┘
+          worker boundary - - - - - - - - ┼ - -│- - - - - - - - -│- - - - - - - - - - - -
+                          ┌┐              ▼    ▼                 │                    ┌┐
+                          ││   onFrontendMessage      notifyFrontendViaWorkerMessage  ││
+                          ││                   │       ▲                              ││
+                          ││                   ▼       │                              ││
+LighthouseWorkerService   ││          Either ConnectionProxy or LegacyPort            ││
+                          ││                           │ ▲                            ││
+                          ││     ┌─────────────────────┼─┼───────────────────────┐    ││
+                          ││     │  Lighthouse    ┌────▼──────┐                  │    ││
+                          ││     │                │connection │                  │    ││
+                          ││     │                └───────────┘                  │    ││
+                          └┘     └───────────────────────────────────────────────┘    └┘
+
+ * All messages traversing the worker boundary are action-wrapped.
+ * All messages over the parallelConnection speak pure CDP.
+ * All messages within ConnectionProxy/LegacyPort speak pure CDP.
+ * The foundational CDP connection is `parallelConnection`.
+ * All connections within the worker are not actual ParallelConnection's.
+*/
 let lastId = 1;
+/**
+ * ProtocolService manages a connection between the frontend (Lighthouse panel) and the Lighthouse worker.
+ */
 export class ProtocolService {
-    targetInfo;
-    rawConnection;
+    mainSessionId;
+    mainFrameId;
+    targetInfos;
+    parallelConnection;
     lighthouseWorkerPromise;
     lighthouseMessageUpdateCallback;
+    configForTesting;
     async attach() {
         await SDK.TargetManager.TargetManager.instance().suspendAllTargets();
         const mainTarget = SDK.TargetManager.TargetManager.instance().mainTarget();
@@ -33,46 +72,64 @@ export class ProtocolService {
             }
             this.dispatchProtocolMessage(message);
         });
-        this.rawConnection = connection;
-        this.targetInfo = {
-            mainTargetId: await childTargetManager.getParentTargetId(),
-            mainFrameId: mainFrame.id,
-            mainSessionId: sessionId,
-        };
+        this.parallelConnection = connection;
+        this.targetInfos = childTargetManager.targetInfos();
+        this.mainFrameId = mainFrame.id;
+        this.mainSessionId = sessionId;
     }
     getLocales() {
         return [i18n.DevToolsLocale.DevToolsLocale.instance().locale];
     }
-    async startLighthouse(auditURL, categoryIDs, flags) {
-        if (!this.targetInfo) {
+    async startTimespan(currentLighthouseRun) {
+        const { inspectedURL, categoryIDs, flags } = currentLighthouseRun;
+        if (!this.mainFrameId || !this.mainSessionId || !this.targetInfos) {
+            throw new Error('Unable to get target info required for Lighthouse');
+        }
+        await this.sendWithResponse('startTimespan', {
+            url: inspectedURL,
+            categoryIDs,
+            flags,
+            config: this.configForTesting,
+            locales: this.getLocales(),
+            mainSessionId: this.mainSessionId,
+            mainFrameId: this.mainFrameId,
+            targetInfos: this.targetInfos,
+        });
+    }
+    async collectLighthouseResults(currentLighthouseRun) {
+        const { inspectedURL, categoryIDs, flags } = currentLighthouseRun;
+        if (!this.mainFrameId || !this.mainSessionId || !this.targetInfos) {
             throw new Error('Unable to get target info required for Lighthouse');
         }
         let mode = flags.mode;
-        if (mode === 'navigation' && flags.legacyNavigation) {
-            mode = 'legacyNavigation';
+        if (mode === 'timespan') {
+            mode = 'endTimespan';
         }
         return this.sendWithResponse(mode, {
-            url: auditURL,
+            url: inspectedURL,
             categoryIDs,
             flags,
+            config: this.configForTesting,
             locales: this.getLocales(),
-            target: this.targetInfo,
+            mainSessionId: this.mainSessionId,
+            mainFrameId: this.mainFrameId,
+            targetInfos: this.targetInfos,
         });
     }
     async detach() {
         const oldLighthouseWorker = this.lighthouseWorkerPromise;
-        const oldRawConnection = this.rawConnection;
+        const oldParallelConnection = this.parallelConnection;
         // When detaching, make sure that we remove the old promises, before we
         // perform any async cleanups. That way, if there is a message coming from
         // lighthouse while we are in the process of cleaning up, we shouldn't deliver
         // them to the backend.
         this.lighthouseWorkerPromise = undefined;
-        this.rawConnection = undefined;
+        this.parallelConnection = undefined;
         if (oldLighthouseWorker) {
             (await oldLighthouseWorker).terminate();
         }
-        if (oldRawConnection) {
-            await oldRawConnection.disconnect();
+        if (oldParallelConnection) {
+            await oldParallelConnection.disconnect();
         }
         await SDK.TargetManager.TargetManager.instance().resumeAllTargets();
     }
@@ -91,7 +148,7 @@ export class ProtocolService {
         //     (to kickstart autoAttach in LH).
         const protocolMessage = message;
         if (protocolMessage.sessionId || (protocolMessage.method && protocolMessage.method.startsWith('Target'))) {
-            void this.sendWithoutResponse('dispatchProtocolMessage', { message: JSON.stringify(message) });
+            void this.send('dispatchProtocolMessage', { message });
         }
     }
     initWorker() {
@@ -108,18 +165,7 @@ export class ProtocolService {
                     resolve(worker);
                     return;
                 }
-                const lighthouseMessage = JSON.parse(event.data);
-                if (lighthouseMessage.method === 'statusUpdate') {
-                    if (this.lighthouseMessageUpdateCallback && lighthouseMessage.params &&
-                        'message' in lighthouseMessage.params) {
-                        this.lighthouseMessageUpdateCallback(lighthouseMessage.params.message);
-                    }
-                }
-                else if (lighthouseMessage.method === 'sendProtocolMessage') {
-                    if (lighthouseMessage.params && 'message' in lighthouseMessage.params) {
-                        this.sendProtocolMessage(lighthouseMessage.params.message);
-                    }
-                }
+                this.onWorkerMessage(event);
             });
         });
         return this.lighthouseWorkerPromise;
@@ -134,22 +180,36 @@ export class ProtocolService {
         }
         return worker;
     }
-    sendProtocolMessage(message) {
-        if (this.rawConnection) {
-            this.rawConnection.sendRawMessage(message);
+    onWorkerMessage(event) {
+        const lighthouseMessage = event.data;
+        if (lighthouseMessage.action === 'statusUpdate') {
+            if (this.lighthouseMessageUpdateCallback && lighthouseMessage.args && 'message' in lighthouseMessage.args) {
+                this.lighthouseMessageUpdateCallback(lighthouseMessage.args.message);
+            }
+        }
+        else if (lighthouseMessage.action === 'sendProtocolMessage') {
+            if (lighthouseMessage.args && 'message' in lighthouseMessage.args) {
+                this.sendProtocolMessage(lighthouseMessage.args.message);
+            }
         }
     }
-    async sendWithoutResponse(method, params = {}) {
+    sendProtocolMessage(message) {
+        if (this.parallelConnection) {
+            this.parallelConnection.sendRawMessage(message);
+        }
+    }
+    async send(action, args = {}) {
         const worker = await this.ensureWorkerExists();
         const messageId = lastId++;
-        worker.postMessage(JSON.stringify({ id: messageId, method, params: { ...params, id: messageId } }));
+        worker.postMessage({ id: messageId, action, args: { ...args, id: messageId } });
     }
-    async sendWithResponse(method, params = {}) {
+    /** sendWithResponse currently only handles the original startLighthouse request and LHR-filled response. */
+    async sendWithResponse(action, args = {}) {
         const worker = await this.ensureWorkerExists();
         const messageId = lastId++;
         const messageResult = new Promise(resolve => {
             const workerListener = (event) => {
-                const lighthouseMessage = JSON.parse(event.data);
+                const lighthouseMessage = event.data;
                 if (lighthouseMessage.id === messageId) {
                     worker.removeEventListener('message', workerListener);
                     resolve(lighthouseMessage.result);
@@ -157,7 +217,7 @@ export class ProtocolService {
             };
             worker.addEventListener('message', workerListener);
         });
-        worker.postMessage(JSON.stringify({ id: messageId, method, params: { ...params, id: messageId } }));
+        worker.postMessage({ id: messageId, action, args: { ...args, id: messageId } });
         return messageResult;
     }
 }

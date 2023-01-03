@@ -30,12 +30,14 @@
 import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Persistence from '../../models/persistence/persistence.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import * as Snippets from '../snippets/snippets.js';
 import { NavigatorView } from './NavigatorView.js';
+import sourcesNavigatorStyles from './sourcesNavigator.css.js';
 const UIStrings = {
     /**
     *@description Text in Sources Navigator of the Sources panel
@@ -101,10 +103,14 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 let networkNavigatorViewInstance;
 export class NetworkNavigatorView extends NavigatorView {
     constructor() {
-        super();
+        super(true);
         SDK.TargetManager.TargetManager.instance().addEventListener(SDK.TargetManager.Events.InspectedURLChanged, this.inspectedURLChanged, this);
         // Record the sources tool load time after the file navigator has loaded.
         Host.userMetrics.panelLoaded('sources', 'DevTools.Launch.Sources');
+    }
+    wasShown() {
+        this.registerCSSFiles([sourcesNavigatorStyles]);
+        super.wasShown();
     }
     static instance(opts = { forceNew: null }) {
         const { forceNew } = opts;
@@ -315,8 +321,11 @@ export class SnippetsNavigatorView extends NavigatorView {
     async handleSaveAs(uiSourceCode) {
         uiSourceCode.commitWorkingCopy();
         const { content } = await uiSourceCode.requestContent();
-        void Workspace.FileManager.FileManager.instance().save(uiSourceCode.url(), content || '', true);
+        void Workspace.FileManager.FileManager.instance().save(this.addJSExtension(uiSourceCode.url()), content || '', true);
         Workspace.FileManager.FileManager.instance().close(uiSourceCode.url());
+    }
+    addJSExtension(url) {
+        return Common.ParsedURL.ParsedURL.concatenate(url, '.js');
     }
 }
 let actionDelegateInstance;
@@ -332,7 +341,7 @@ export class ActionDelegate {
         switch (actionId) {
             case 'sources.create-snippet':
                 void Snippets.ScriptSnippetFileSystem.findSnippetsProject()
-                    .createFile('', null, '')
+                    .createFile(Platform.DevToolsPath.EmptyEncodedPathString, null, '')
                     .then(uiSourceCode => Common.Revealer.reveal(uiSourceCode));
                 return true;
             case 'sources.add-folder-to-workspace':

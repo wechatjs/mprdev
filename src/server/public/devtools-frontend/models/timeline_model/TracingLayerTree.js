@@ -280,13 +280,13 @@ export class TracingLayer {
             nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.non_fast_scrollable_region, 'NonFastScrollable'));
         }
         if (payload.touch_event_handler_region) {
-            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.touch_event_handler_region, "TouchEventHandler" /* TouchEventHandler */));
+            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.touch_event_handler_region, "TouchEventHandler" /* Protocol.LayerTree.ScrollRectType.TouchEventHandler */));
         }
         if (payload.wheel_event_handler_region) {
-            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.wheel_event_handler_region, "WheelEventHandler" /* WheelEventHandler */));
+            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.wheel_event_handler_region, "WheelEventHandler" /* Protocol.LayerTree.ScrollRectType.WheelEventHandler */));
         }
         if (payload.scroll_event_handler_region) {
-            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.scroll_event_handler_region, "RepaintsOnScroll" /* RepaintsOnScroll */));
+            nonPayloadScrollRects.push(this.scrollRectsFromParams(payload.scroll_event_handler_region, "RepaintsOnScroll" /* Protocol.LayerTree.ScrollRectType.RepaintsOnScroll */));
         }
         // SDK.LayerBaseTree.Layer.ScrollRectType and Protocol.LayerTree.ScrollRectType are the
         // same type, but we need to use the indirection of the nonPayloadScrollRects since

@@ -174,13 +174,13 @@ export class TracingModel {
             // If we received a timestamp for tracing start, use that for minimumRecordTime.
             this.#minimumRecordTimeInternal = timestamp;
         }
-        // Track only main thread navigation start items. This is done by tracking isLoadingMainFrame,
-        // and whether documentLoaderURL is set.
+        // Track only main thread navigation start items. This is done by tracking
+        // isOutermostMainFrame, and whether documentLoaderURL is set.
         if (payload.name === 'navigationStart') {
             const data = payload.args.data;
             if (data) {
-                const { isLoadingMainFrame, documentLoaderURL, navigationId } = data;
-                if (isLoadingMainFrame && documentLoaderURL !== '') {
+                const { isLoadingMainFrame, documentLoaderURL, navigationId, isOutermostMainFrame } = data;
+                if ((isOutermostMainFrame ?? isLoadingMainFrame) && documentLoaderURL !== '') {
                     const thread = process.threadById(payload.tid);
                     const navStartEvent = Event.fromPayload(payload, thread);
                     this.#mainFrameNavStartTimes.set(navigationId, navStartEvent);
@@ -265,13 +265,6 @@ export class TracingModel {
     getThreadByName(processName, threadName) {
         const process = this.getProcessByName(processName);
         return process && process.threadByName(threadName);
-    }
-    extractEventsFromThreadByName(processName, threadName, eventName) {
-        const thread = this.getThreadByName(processName, threadName);
-        if (!thread) {
-            return [];
-        }
-        return thread.removeEventsByName(eventName);
     }
     processPendingAsyncEvents() {
         this.#asyncEvents.sort(Event.compareStartTime);

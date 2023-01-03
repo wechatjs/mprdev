@@ -30,6 +30,14 @@ export default {
   background-color: var(--override-infobar-warning-background);
 }
 
+.infobar-error {
+  --override-infobar-error-background: var(--color-error-background);
+  --override-infobar-error-text: var(--color-error-text);
+
+  background-color: var(--override-infobar-error-background);
+  color: var(--override-infobar-error-text);
+}
+
 .-theme-with-dark-background .infobar-warning,
 :host-context(.-theme-with-dark-background) .infobar-warning {
   --override-infobar-warning-background: rgb(63 52 2);
@@ -81,6 +89,10 @@ export default {
   margin: 4px;
 }
 
+.infobar-selectable {
+  user-select: text;
+}
+
 .infobar-button {
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -97,6 +109,11 @@ export default {
 
   -webkit-mask-image: var(--image-file-ic_warning_black_18dp);
   background-color: var(--override-warning-icon-color);
+}
+
+.error-icon {
+  background-image: var(--image-file-error_icon);
+  background-size: contain;
 }
 
 .-theme-with-dark-background .warning-icon,

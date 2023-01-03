@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as i18n from '../../../core/i18n/i18n.js';
+import * as Platform from '../../../core/platform/platform.js';
 import * as ComponentHelpers from '../../components/helpers/helpers.js';
 import * as LitHtml from '../../lit-html/lit-html.js';
 import * as IconButton from '../icon_button/icon_button.js';
@@ -33,8 +34,8 @@ export class PanelFeedback extends HTMLElement {
     #shadow = this.attachShadow({ mode: 'open' });
     #boundRender = this.#render.bind(this);
     #props = {
-        feedbackUrl: '',
-        quickStartUrl: '',
+        feedbackUrl: Platform.DevToolsPath.EmptyUrlString,
+        quickStartUrl: Platform.DevToolsPath.EmptyUrlString,
         quickStartLinkText: '',
     };
     connectedCallback() {

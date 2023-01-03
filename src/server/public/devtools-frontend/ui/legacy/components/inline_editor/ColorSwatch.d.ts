@@ -22,6 +22,7 @@ export declare class ColorSwatch extends HTMLElement {
     static isColorSwatch(element: Element): element is ColorSwatch;
     getColor(): Common.Color.Color | null;
     getFormat(): string | null;
+    getText(): string | null;
     get anchorBox(): AnchorBox | null;
     /**
      * Render this swatch given a color object or text to be parsed as a color.

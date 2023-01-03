@@ -32,7 +32,6 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
     lastSnippetIdentifierSetting;
     snippetsSetting;
     constructor() {
-        // TODO(crbug.com/1253323): Cast to UrlString will be removed when migration to branded types is complete.
         super('snippet://', 'snippets');
         this.lastSnippetIdentifierSetting =
             Common.Settings.Settings.instance().createSetting('scriptSnippets_lastIdentifier', 0);
@@ -52,7 +51,7 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
         return escapeSnippetName(snippetName);
     }
     async deleteFile(path) {
-        const name = unescapeSnippetName(path.substring(1));
+        const name = unescapeSnippetName(Common.ParsedURL.ParsedURL.substring(path, 1));
         const allSnippets = this.snippetsSetting.get();
         const snippets = allSnippets.filter(snippet => snippet.name !== name);
         if (allSnippets.length !== snippets.length) {
@@ -62,7 +61,7 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
         return false;
     }
     async requestFileContent(path) {
-        const name = unescapeSnippetName(path.substring(1));
+        const name = unescapeSnippetName(Common.ParsedURL.ParsedURL.substring(path, 1));
         const snippets = this.snippetsSetting.get();
         const snippet = snippets.find(snippet => snippet.name === name);
         if (snippet) {
@@ -71,7 +70,7 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
         return { content: null, isEncoded: false, error: `A snippet with name '${name}' was not found` };
     }
     async setFileContent(path, content, _isBase64) {
-        const name = unescapeSnippetName(path.substring(1));
+        const name = unescapeSnippetName(Common.ParsedURL.ParsedURL.substring(path, 1));
         const snippets = this.snippetsSetting.get();
         const snippet = snippets.find(snippet => snippet.name === name);
         if (snippet) {
@@ -82,10 +81,10 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
         return false;
     }
     renameFile(path, newName, callback) {
-        const name = unescapeSnippetName(path.substring(1));
+        const name = unescapeSnippetName(Common.ParsedURL.ParsedURL.substring(path, 1));
         const snippets = this.snippetsSetting.get();
         const snippet = snippets.find(snippet => snippet.name === name);
-        newName = newName.trim();
+        newName = Common.ParsedURL.ParsedURL.trim(newName);
         if (!snippet || newName.length === 0 || snippets.find(snippet => snippet.name === newName)) {
             callback(false);
             return;
@@ -107,7 +106,7 @@ export class SnippetFileSystem extends Persistence.PlatformFileSystem.PlatformFi
         return Common.ResourceType.resourceTypes.Script;
     }
     tooltipForURL(url) {
-        return i18nString(UIStrings.linkedTo, { PH1: unescapeSnippetName(url.substring(this.path().length)) });
+        return i18nString(UIStrings.linkedTo, { PH1: unescapeSnippetName(Common.ParsedURL.ParsedURL.sliceUrlToEncodedPathString(url, this.path().length)) });
     }
     supportsAutomapping() {
         return true;
@@ -135,7 +134,7 @@ export async function evaluateScriptSnippet(uiSourceCode) {
         returnByValue: false,
         generatePreview: true,
         replMode: true,
-    }, false, true);
+    }, true, true);
     if ('exceptionDetails' in result && result.exceptionDetails) {
         SDK.ConsoleModel.ConsoleModel.instance().addMessage(SDK.ConsoleModel.ConsoleMessage.fromException(runtimeModel, result.exceptionDetails, /* messageType */ undefined, /* timestamp */ undefined, url));
         return;
@@ -155,7 +154,7 @@ export async function evaluateScriptSnippet(uiSourceCode) {
         executionContextId: executionContext.id,
         scriptId,
     };
-    SDK.ConsoleModel.ConsoleModel.instance().addMessage(new SDK.ConsoleModel.ConsoleMessage(runtimeModel, "javascript" /* Javascript */, "info" /* Info */, '', details));
+    SDK.ConsoleModel.ConsoleModel.instance().addMessage(new SDK.ConsoleModel.ConsoleMessage(runtimeModel, "javascript" /* Protocol.Log.LogEntrySource.Javascript */, "info" /* Protocol.Log.LogEntryLevel.Info */, '', details));
 }
 export function isSnippetsUISourceCode(uiSourceCode) {
     return uiSourceCode.url().startsWith('snippet://');

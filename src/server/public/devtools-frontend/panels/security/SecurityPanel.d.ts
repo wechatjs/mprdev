@@ -1,8 +1,8 @@
+import type * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Protocol from '../../generated/protocol.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { PageVisibleSecurityState } from './SecurityModel.js';
-import { SecurityModel } from './SecurityModel.js';
+import { SecurityModel, type PageVisibleSecurityState } from './SecurityModel.js';
 export declare class SecurityPanel extends UI.Panel.PanelWithSidebar implements SDK.TargetManager.SDKModelObserver<SecurityModel> {
     private readonly mainView;
     private readonly sidebarMainViewElement;
@@ -19,11 +19,11 @@ export declare class SecurityPanel extends UI.Panel.PanelWithSidebar implements 
     }): SecurityPanel;
     static createCertificateViewerButtonForOrigin(text: string, origin: string): Element;
     static createCertificateViewerButtonForCert(text: string, names: string[]): Element;
-    static createHighlightedUrl(url: string, securityState: string): Element;
+    static createHighlightedUrl(url: Platform.DevToolsPath.UrlString, securityState: string): Element;
     private updateVisibleSecurityState;
     private onVisibleSecurityStateChanged;
     selectAndSwitchToMainView(): void;
-    showOrigin(origin: string): void;
+    showOrigin(origin: Platform.DevToolsPath.UrlString): void;
     wasShown(): void;
     focus(): void;
     private setVisibleView;
@@ -50,7 +50,7 @@ export declare class SecurityPanelSidebarTree extends UI.TreeOutline.TreeOutline
     private originGroupElement;
     private createOriginGroupElement;
     toggleOriginsList(hidden: boolean): void;
-    addOrigin(origin: string, securityState: Protocol.Security.SecurityState): void;
+    addOrigin(origin: Platform.DevToolsPath.UrlString, securityState: Protocol.Security.SecurityState): void;
     setMainOrigin(origin: string): void;
     updateOrigin(origin: string, securityState: Protocol.Security.SecurityState): void;
     private clearOriginGroups;
@@ -100,7 +100,7 @@ export declare class SecurityMainView extends UI.Widget.VBox {
 export declare class SecurityOriginView extends UI.Widget.VBox {
     private readonly panel;
     private readonly originLockIcon;
-    constructor(panel: SecurityPanel, origin: string, originState: OriginState);
+    constructor(panel: SecurityPanel, origin: Platform.DevToolsPath.UrlString, originState: OriginState);
     private createSanDiv;
     setSecurityState(newSecurityState: Protocol.Security.SecurityState): void;
     wasShown(): void;
@@ -117,4 +117,4 @@ export interface OriginState {
     loadedFromCache: boolean;
     originView?: SecurityOriginView | null;
 }
-export declare type Origin = string;
+export declare type Origin = Platform.DevToolsPath.UrlString;

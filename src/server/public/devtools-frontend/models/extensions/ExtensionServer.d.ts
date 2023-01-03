@@ -1,9 +1,10 @@
 import * as Common from '../../core/common/common.js';
+import * as Host from '../../core/host/host.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import type * as TextUtils from '../text_utils/text_utils.js';
 import { ExtensionSidebarPane } from './ExtensionPanel.js';
-import type { TracingSession } from './ExtensionTraceProvider.js';
-import { ExtensionTraceProvider } from './ExtensionTraceProvider.js';
+import { ExtensionTraceProvider, type TracingSession } from './ExtensionTraceProvider.js';
 import { PrivateAPI } from './ExtensionAPI.js';
 declare global {
     interface Window {
@@ -43,6 +44,12 @@ export declare class ExtensionServer extends Common.ObjectWrapper.ObjectWrapper<
     notifyViewHidden(identifier: string): void;
     notifyButtonClicked(identifier: string): void;
     private registerLanguageExtensionEndpoint;
+    private loadWasmValue;
+    private onGetWasmLinearMemory;
+    private onGetWasmGlobal;
+    private onGetWasmLocal;
+    private onGetWasmOp;
+    private registerRecorderExtensionEndpoint;
     private inspectedURLChanged;
     startTraceRecording(providerId: string, sessionId: string, session: TracingSession): void;
     stopTraceRecording(providerId: string): void;
@@ -87,8 +94,9 @@ export declare class ExtensionServer extends Common.ObjectWrapper.ObjectWrapper<
     private notifyUISourceCodeContentCommitted;
     private notifyRequestFinished;
     private notifyElementsSelectionChanged;
-    sourceSelectionChanged(url: string, range: TextUtils.TextRange.TextRange): void;
+    sourceSelectionChanged(url: Platform.DevToolsPath.UrlString, range: TextUtils.TextRange.TextRange): void;
     private setInspectedTabId;
+    addExtensionForTest(extensionInfo: Host.InspectorFrontendHostAPI.ExtensionDescriptor, origin: string): boolean | undefined;
     private addExtension;
     private registerExtension;
     private onWindowMessage;
@@ -98,7 +106,7 @@ export declare class ExtensionServer extends Common.ObjectWrapper.ObjectWrapper<
     private registerAutosubscriptionHandler;
     private registerAutosubscriptionTargetManagerHandler;
     private registerResourceContentCommittedHandler;
-    private expandResourcePath;
+    static expandResourcePath(extensionOrigin: Platform.DevToolsPath.UrlString, resourcePath: string): Platform.DevToolsPath.UrlString | undefined;
     evaluate(expression: string, exposeCommandLineAPI: boolean, returnByValue: boolean, options: PrivateAPI.EvaluateOptions | undefined, securityOrigin: string, callback: (arg0: string | null, arg1: SDK.RemoteObject.RemoteObject | null, arg2: boolean) => unknown): Record | undefined;
     private canInspectURL;
     private disableExtensions;

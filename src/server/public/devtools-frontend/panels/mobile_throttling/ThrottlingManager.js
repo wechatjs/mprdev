@@ -8,7 +8,7 @@ import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import { MobileThrottlingSelector } from './MobileThrottlingSelector.js';
 import { NetworkThrottlingSelector } from './NetworkThrottlingSelector.js';
-import { ThrottlingPresets } from './ThrottlingPresets.js';
+import { ThrottlingPresets, } from './ThrottlingPresets.js';
 const UIStrings = {
     /**
     *@description Text with two placeholders separated by a colon
@@ -54,6 +54,26 @@ const UIStrings = {
     *@example {2} PH1
     */
     dSlowdown: '{PH1}× slowdown',
+    /**
+    *@description Tooltip text in Throttling Manager of the Performance panel
+    */
+    excessConcurrency: 'Exceeding the default value may degrade system performance.',
+    /**
+    *@description Tooltip text in Throttling Manager of the Performance panel
+    */
+    resetConcurrency: 'Reset to the default value',
+    /**
+    *@description Screen reader label for an check box that neables overriding navigator.hardwareConcurrency
+    */
+    hardwareConcurrency: 'Hardware concurrency',
+    /**
+    *@description Screen reader label for an input box that overrides navigator.hardwareConcurrency
+    */
+    hardwareConcurrencyValue: 'Value of navigator.hardwareConcurrency',
+    /**
+    *@description Icon title in Throttling Manager of the Performance panel
+    */
+    hardwareConcurrencyIsEnabled: 'Hardware concurrency override is enabled',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/mobile_throttling/ThrottlingManager.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -65,6 +85,10 @@ export class ThrottlingManager {
     currentNetworkThrottlingConditionsSetting;
     lastNetworkThrottlingConditions;
     cpuThrottlingManager;
+    #hardwareConcurrencyOverrideEnabled = false;
+    get hardwareConcurrencyOverrideEnabled() {
+        return this.#hardwareConcurrencyOverrideEnabled;
+    }
     constructor() {
         this.cpuThrottlingManager = SDK.CPUThrottlingManager.CPUThrottlingManager.instance();
         this.cpuThrottlingControls = new Set();
@@ -194,19 +218,34 @@ export class ThrottlingManager {
             }
         }
     }
+    updatePanelIcon() {
+        const cpuRate = this.cpuThrottlingManager.cpuThrottlingRate();
+        if (cpuRate === SDK.CPUThrottlingManager.CPUThrottlingRates.NoThrottling &&
+            !this.hardwareConcurrencyOverrideEnabled) {
+            UI.InspectorView.InspectorView.instance().setPanelIcon('timeline', null);
+            return;
+        }
+        const icon = UI.Icon.Icon.create('smallicon-warning');
+        const tooltips = [];
+        if (cpuRate !== SDK.CPUThrottlingManager.CPUThrottlingRates.NoThrottling) {
+            tooltips.push(i18nString(UIStrings.cpuThrottlingIsEnabled));
+        }
+        if (this.hardwareConcurrencyOverrideEnabled) {
+            tooltips.push(i18nString(UIStrings.hardwareConcurrencyIsEnabled));
+        }
+        icon.title = tooltips.join('\n');
+        UI.InspectorView.InspectorView.instance().setPanelIcon('timeline', icon);
+    }
     setCPUThrottlingRate(rate) {
         this.cpuThrottlingManager.setCPUThrottlingRate(rate);
-        let icon = null;
         if (rate !== SDK.CPUThrottlingManager.CPUThrottlingRates.NoThrottling) {
             Host.userMetrics.actionTaken(Host.UserMetrics.Action.CpuThrottlingEnabled);
-            icon = UI.Icon.Icon.create('smallicon-warning');
-            UI.Tooltip.Tooltip.install(icon, i18nString(UIStrings.cpuThrottlingIsEnabled));
         }
         const index = this.cpuThrottlingRates.indexOf(rate);
         for (const control of this.cpuThrottlingControls) {
             control.setSelectedIndex(index);
         }
-        UI.InspectorView.InspectorView.instance().setPanelIcon('timeline', icon);
+        this.updatePanelIcon();
     }
     createCPUThrottlingSelector() {
         const control = new UI.Toolbar.ToolbarComboBox(event => this.setCPUThrottlingRate(this.cpuThrottlingRates[event.target.selectedIndex]), i18nString(UIStrings.cpuThrottling));
@@ -222,6 +261,60 @@ export class ThrottlingManager {
             }
         }
         return control;
+    }
+    createHardwareConcurrencySelector() {
+        const input = new UI.Toolbar.ToolbarItem(UI.UIUtils.createInput('devtools-text-input', 'number'));
+        input.setTitle(i18nString(UIStrings.hardwareConcurrencyValue));
+        const inputElement = input.element;
+        inputElement.min = '1';
+        input.setEnabled(false);
+        const toggle = new UI.Toolbar.ToolbarCheckbox(i18nString(UIStrings.hardwareConcurrency));
+        const reset = new UI.Toolbar.ToolbarButton('Reset concurrency', 'largeicon-undo');
+        reset.setTitle(i18nString(UIStrings.resetConcurrency));
+        const warning = new UI.Toolbar.ToolbarItem(UI.Icon.Icon.create('smallicon-warning'));
+        warning.setTitle(i18nString(UIStrings.excessConcurrency));
+        toggle.inputElement.disabled = true; // Prevent modification while still wiring things up asynchronously below
+        reset.element.classList.add('timeline-concurrency-hidden');
+        warning.element.classList.add('timeline-concurrency-hidden');
+        void this.cpuThrottlingManager.getHardwareConcurrency().then(defaultValue => {
+            if (defaultValue === undefined) {
+                return;
+            }
+            const setHardwareConcurrency = (value) => {
+                if (value >= 1) {
+                    this.cpuThrottlingManager.setHardwareConcurrency(value);
+                }
+                if (value > defaultValue) {
+                    warning.element.classList.remove('timeline-concurrency-hidden');
+                }
+                else {
+                    warning.element.classList.add('timeline-concurrency-hidden');
+                }
+                if (value === defaultValue) {
+                    reset.element.classList.add('timeline-concurrency-hidden');
+                }
+                else {
+                    reset.element.classList.remove('timeline-concurrency-hidden');
+                }
+            };
+            inputElement.value = `${defaultValue}`;
+            inputElement.oninput = () => setHardwareConcurrency(Number(inputElement.value));
+            toggle.inputElement.disabled = false;
+            toggle.inputElement.addEventListener('change', () => {
+                this.#hardwareConcurrencyOverrideEnabled = toggle.checked();
+                this.updatePanelIcon();
+                input.setEnabled(this.hardwareConcurrencyOverrideEnabled);
+                setHardwareConcurrency(this.hardwareConcurrencyOverrideEnabled ? Number(inputElement.value) : defaultValue);
+            });
+            reset.addEventListener(UI.Toolbar.ToolbarButton.Events.Click, () => {
+                inputElement.value = `${defaultValue}`;
+                setHardwareConcurrency(defaultValue);
+            });
+        });
+        return { input, reset, warning, toggle };
+    }
+    setHardwareConcurrency(concurrency) {
+        this.cpuThrottlingManager.setHardwareConcurrency(concurrency);
     }
     isDirty() {
         const networkConditions = SDK.NetworkManager.MultitargetNetworkManager.instance().networkConditions();

@@ -145,12 +145,12 @@ function maybeRetrieveContextTypes(getClassCallBack) {
     return getClassCallBack(loadedElementsModule);
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'elements',
     commandPrompt: i18nLazyString(UIStrings.showElements),
     title: i18nLazyString(UIStrings.elements),
     order: 10,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     hasToolbar: false,
     async loadView() {
         const Elements = await loadElementsModule();
@@ -158,25 +158,25 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     id: 'elements.eventListeners',
     commandPrompt: i18nLazyString(UIStrings.showEventListeners),
     title: i18nLazyString(UIStrings.eventListeners),
     order: 5,
     hasToolbar: true,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Elements = await loadElementsModule();
         return Elements.EventListenersWidget.EventListenersWidget.instance();
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     id: 'elements.domProperties',
     commandPrompt: i18nLazyString(UIStrings.showProperties),
     title: i18nLazyString(UIStrings.properties),
     order: 7,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Elements = await loadElementsModule();
         return Elements.PropertiesWidget.PropertiesWidget.instance();
@@ -184,24 +184,24 @@ UI.ViewManager.registerViewExtension({
 });
 UI.ViewManager.registerViewExtension({
     experiment: Root.Runtime.ExperimentName.CAPTURE_NODE_CREATION_STACKS,
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     id: 'elements.domCreation',
     commandPrompt: i18nLazyString(UIStrings.showStackTrace),
     title: i18nLazyString(UIStrings.stackTrace),
     order: 10,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Elements = await loadElementsModule();
         return Elements.NodeStackTraceWidget.NodeStackTraceWidget.instance();
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     id: 'elements.layout',
     commandPrompt: i18nLazyString(UIStrings.showLayout),
     title: i18nLazyString(UIStrings.layout),
     order: 4,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Elements = await loadElementsModule();
         return Elements.LayoutSidebarPane.LayoutSidebarPane.instance();
@@ -272,11 +272,11 @@ UI.ActionRegistration.registerActionExtension({
     bindings: [
         {
             shortcut: 'Ctrl+Alt+C',
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
         },
         {
             shortcut: 'Meta+Alt+C',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -294,11 +294,11 @@ UI.ActionRegistration.registerActionExtension({
     bindings: [
         {
             shortcut: 'Ctrl+Z',
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
         },
         {
             shortcut: 'Meta+Z',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -316,11 +316,11 @@ UI.ActionRegistration.registerActionExtension({
     bindings: [
         {
             shortcut: 'Ctrl+Y',
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
         },
         {
             shortcut: 'Meta+Shift+Z',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -343,15 +343,15 @@ UI.ActionRegistration.registerActionExtension({
         return Elements.InspectElementModeController.ToggleSearchActionDelegate.instance();
     },
     title: i18nLazyString(UIStrings.selectAnElementInThePageTo),
-    iconClass: "largeicon-node-search" /* LARGEICON_NODE_SEARCH */,
+    iconClass: "largeicon-node-search" /* UI.ActionRegistration.IconClass.LARGEICON_NODE_SEARCH */,
     bindings: [
         {
             shortcut: 'Ctrl+Shift+C',
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
         },
         {
             shortcut: 'Meta+Shift+C',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -447,7 +447,7 @@ UI.ContextMenu.registerProvider({
     experiment: undefined,
 });
 UI.ViewManager.registerLocationResolver({
-    name: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    name: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     category: UI.ViewManager.ViewLocationCategoryValues.ELEMENTS,
     async loadResolver() {
         const Elements = await loadElementsModule();
@@ -483,7 +483,7 @@ Common.Revealer.registerRevealer({
 UI.Toolbar.registerToolbarItem({
     async loadItem() {
         const Elements = await loadElementsModule();
-        return Elements.ElementStatePaneWidget.ButtonProvider.instance();
+        return Elements.LayersWidget.ButtonProvider.instance();
     },
     order: 1,
     location: UI.Toolbar.ToolbarItemLocation.STYLES_SIDEBARPANE_TOOLBAR,
@@ -495,9 +495,21 @@ UI.Toolbar.registerToolbarItem({
 UI.Toolbar.registerToolbarItem({
     async loadItem() {
         const Elements = await loadElementsModule();
-        return Elements.ClassesPaneWidget.ButtonProvider.instance();
+        return Elements.ElementStatePaneWidget.ButtonProvider.instance();
     },
     order: 2,
+    location: UI.Toolbar.ToolbarItemLocation.STYLES_SIDEBARPANE_TOOLBAR,
+    showLabel: undefined,
+    condition: undefined,
+    separator: undefined,
+    actionId: undefined,
+});
+UI.Toolbar.registerToolbarItem({
+    async loadItem() {
+        const Elements = await loadElementsModule();
+        return Elements.ClassesPaneWidget.ButtonProvider.instance();
+    },
+    order: 3,
     location: UI.Toolbar.ToolbarItemLocation.STYLES_SIDEBARPANE_TOOLBAR,
     showLabel: undefined,
     condition: undefined,

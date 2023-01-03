@@ -79,7 +79,7 @@ export class SuggestBox {
         this.element.addEventListener('mousedown', event => event.preventDefault(), true);
         this.element.addEventListener('click', this.onClick.bind(this), false);
         this.glassPane = new GlassPane();
-        this.glassPane.setAnchorBehavior("PreferBottom" /* PreferBottom */);
+        this.glassPane.setAnchorBehavior("PreferBottom" /* AnchorBehavior.PreferBottom */);
         this.glassPane.setOutsideClickCallback(this.hide.bind(this));
         const shadowRoot = Utils.createShadowRootWithCoreStyles(this.glassPane.contentElement, { cssFile: suggestBoxStyles, delegatesFocus: undefined });
         shadowRoot.appendChild(this.element);

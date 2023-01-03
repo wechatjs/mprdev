@@ -28,6 +28,7 @@
   "files": [
     "../../../../../../front_end/panels/sources/AddSourceMapURLDialog.ts",
     "../../../../../../front_end/panels/sources/BreakpointEditDialog.ts",
+    "../../../../../../front_end/panels/sources/BreakpointsSidebarPane.ts",
     "../../../../../../front_end/panels/sources/CSSPlugin.ts",
     "../../../../../../front_end/panels/sources/CallStackSidebarPane.ts",
     "../../../../../../front_end/panels/sources/CoveragePlugin.ts",
@@ -50,7 +51,6 @@
     "../../../../../../front_end/panels/sources/ScriptOriginPlugin.ts",
     "../../../../../../front_end/panels/sources/SearchSourcesView.ts",
     "../../../../../../front_end/panels/sources/SnippetsPlugin.ts",
-    "../../../../../../front_end/panels/sources/SourceMapNamesResolver.ts",
     "../../../../../../front_end/panels/sources/SourcesNavigator.ts",
     "../../../../../../front_end/panels/sources/SourcesPanel.ts",
     "../../../../../../front_end/panels/sources/SourcesSearchScope.ts",
@@ -94,6 +94,9 @@
     },
     {
       "path": "../../models/persistence/bundle-tsconfig.json"
+    },
+    {
+      "path": "../../models/source_map_scopes/bundle-tsconfig.json"
     },
     {
       "path": "../../models/text_utils/bundle-tsconfig.json"
@@ -151,6 +154,9 @@
     },
     {
       "path": "../../ui/legacy/components/utils/bundle-tsconfig.json"
+    },
+    {
+      "path": "components/bundle-tsconfig.json"
     }
   ]
 }

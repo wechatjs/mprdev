@@ -21,13 +21,13 @@ export class RemoteObject {
         return remoteObject.type;
     }
     static isNullOrUndefined(remoteObject) {
-        if (remoteObject === null || remoteObject === undefined) {
+        if (remoteObject === undefined) {
             return true;
         }
         switch (remoteObject.type) {
-            case "object" /* Object */:
-                return remoteObject.subtype === "null" /* Null */;
-            case "undefined" /* Undefined */:
+            case "object" /* Protocol.Runtime.RemoteObjectType.Object */:
+                return remoteObject.subtype === "null" /* Protocol.Runtime.RemoteObjectSubtype.Null */;
+            case "undefined" /* Protocol.Runtime.RemoteObjectType.Undefined */:
                 return true;
             default:
                 return false;
@@ -62,14 +62,14 @@ export class RemoteObject {
             if (object === 0 && 1 / object < 0) {
                 // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                 // @ts-expect-error
-                return "-0" /* Negative0 */;
+                return "-0" /* UnserializableNumber.Negative0 */;
             }
             // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
             // @ts-expect-error
-            if (description === "NaN" /* NaN */ || description === "Infinity" /* Infinity */ ||
+            if (description === "NaN" /* UnserializableNumber.NaN */ || description === "Infinity" /* UnserializableNumber.Infinity */ ||
                 // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                 // @ts-expect-error
-                description === "-Infinity" /* NegativeInfinity */) {
+                description === "-Infinity" /* UnserializableNumber.NegativeInfinity */) {
                 return description;
             }
         }
@@ -228,6 +228,7 @@ export class RemoteObject {
     isNode() {
         return false;
     }
+    webIdl;
 }
 export class RemoteObjectImpl extends RemoteObject {
     runtimeModelInternal;
@@ -273,16 +274,16 @@ export class RemoteObjectImpl extends RemoteObject {
                 this.#unserializableValueInternal = unserializableValue;
                 // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                 // @ts-expect-error
-                if (unserializableValue === "Infinity" /* Infinity */ ||
+                if (unserializableValue === "Infinity" /* UnserializableNumber.Infinity */ ||
                     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                     // @ts-expect-error
-                    unserializableValue === "-Infinity" /* NegativeInfinity */ ||
+                    unserializableValue === "-Infinity" /* UnserializableNumber.NegativeInfinity */ ||
                     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                     // @ts-expect-error
-                    unserializableValue === "-0" /* Negative0 */ ||
+                    unserializableValue === "-0" /* UnserializableNumber.Negative0 */ ||
                     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
                     // @ts-expect-error
-                    unserializableValue === "NaN" /* NaN */) {
+                    unserializableValue === "NaN" /* UnserializableNumber.NaN */) {
                     this.#valueInternal = Number(unserializableValue);
                 }
                 else if (type === 'bigint' && unserializableValue.endsWith('n')) {
@@ -378,8 +379,16 @@ export class RemoteObjectImpl extends RemoteObject {
             result.push(remoteProperty);
         }
         for (const property of privateProperties) {
-            const propertyValue = this.runtimeModelInternal.createRemoteObject(property.value);
+            const propertyValue = property.value ? this.runtimeModelInternal.createRemoteObject(property.value) : null;
             const remoteProperty = new RemoteObjectProperty(property.name, propertyValue, true, true, true, false, undefined, false, undefined, true);
+            if (typeof property.value === 'undefined') {
+                if (property.get && property.get.type !== 'undefined') {
+                    remoteProperty.getter = this.runtimeModelInternal.createRemoteObject(property.get);
+                }
+                if (property.set && property.set.type !== 'undefined') {
+                    remoteProperty.setter = this.runtimeModelInternal.createRemoteObject(property.set);
+                }
+            }
             result.push(remoteProperty);
         }
         const internalPropertiesResult = [];
@@ -565,11 +574,10 @@ export class RemoteObjectProperty {
     private;
     getter;
     setter;
+    webIdl;
     constructor(name, value, enumerable, writable, isOwn, wasThrown, symbol, synthetic, syntheticSetter, isPrivate) {
         this.name = name;
-        if (value !== null) {
-            this.value = value;
-        }
+        this.value = value !== null ? value : undefined;
         this.enumerable = typeof enumerable !== 'undefined' ? enumerable : true;
         const isNonSyntheticOrSyntheticWritable = !synthetic || Boolean(syntheticSetter);
         this.writable = typeof writable !== 'undefined' ? writable : isNonSyntheticOrSyntheticWritable;
@@ -596,6 +604,19 @@ export class RemoteObjectProperty {
     }
     isAccessorProperty() {
         return Boolean(this.getter || this.setter);
+    }
+    match({ includeNullOrUndefinedValues, regex }) {
+        if (regex !== null) {
+            if (!regex.test(this.name) && !regex.test(this.value?.description ?? '')) {
+                return false;
+            }
+        }
+        if (!includeNullOrUndefinedValues) {
+            if (!this.isAccessorProperty() && RemoteObject.isNullOrUndefined(this.value)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 // Below is a wrapper around a local object that implements the RemoteObject interface,

@@ -1,7 +1,8 @@
+import type * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { NameValue } from './NetworkRequest.js';
-import type { Target } from './Target.js';
+import { type NameValue } from './NetworkRequest.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class ServiceWorkerCacheModel extends SDKModel<EventTypes> implements ProtocolProxyApi.StorageDispatcher {
     #private;
@@ -63,5 +64,5 @@ export declare class Cache {
     constructor(model: ServiceWorkerCacheModel, securityOrigin: string, cacheName: string, cacheId: Protocol.CacheStorage.CacheId);
     equals(cache: Cache): boolean;
     toString(): string;
-    requestCachedResponse(url: string, requestHeaders: NameValue[]): Promise<Protocol.CacheStorage.CachedResponse | null>;
+    requestCachedResponse(url: Platform.DevToolsPath.UrlString, requestHeaders: NameValue[]): Promise<Protocol.CacheStorage.CachedResponse | null>;
 }

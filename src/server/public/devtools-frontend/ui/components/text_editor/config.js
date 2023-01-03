@@ -6,6 +6,7 @@ import * as i18n from '../../../core/i18n/i18n.js';
 import * as WindowBoundsService from '../../../services/window_bounds/window_bounds.js';
 import * as CM from '../../../third_party/codemirror.next/codemirror.next.js';
 import * as CodeHighlighter from '../code_highlighter/code_highlighter.js';
+import * as Icon from '../icon_button/icon_button.js';
 import { editorTheme } from './theme.js';
 const LINES_TO_SCAN_FOR_INDENTATION_GUESSING = 1000;
 const UIStrings = {
@@ -64,7 +65,22 @@ export const autocompletion = [
 ];
 export const sourcesAutocompletion = DynamicSetting.bool('textEditorAutocompletion', autocompletion);
 export const bracketMatching = DynamicSetting.bool('textEditorBracketMatching', CM.bracketMatching());
-export const codeFolding = DynamicSetting.bool('textEditorCodeFolding', [CM.foldGutter(), CM.keymap.of(CM.foldKeymap)]);
+export const codeFolding = DynamicSetting.bool('textEditorCodeFolding', [
+    CM.foldGutter({
+        markerDOM(open) {
+            const iconName = open ? 'triangle-expanded' : 'triangle-collapsed';
+            const icon = new Icon.Icon.Icon();
+            icon.data = {
+                iconName,
+                color: 'var(--color-text-secondary)',
+                width: '12px',
+                height: '12px',
+            };
+            return icon;
+        },
+    }),
+    CM.keymap.of(CM.foldKeymap),
+]);
 export function guessIndent(doc) {
     const values = Object.create(null);
     let scanned = 0;
@@ -183,20 +199,20 @@ export function baseConfiguration(text) {
     return [
         theme(),
         CM.highlightSpecialChars(),
+        CM.highlightSelectionMatches(),
         CM.history(),
         CM.drawSelection(),
         CM.EditorState.allowMultipleSelections.of(true),
         CM.indentOnInput(),
-        CodeHighlighter.CodeHighlighter.highlightStyle,
+        CM.syntaxHighlighting(CodeHighlighter.CodeHighlighter.highlightStyle),
         baseKeymap,
+        CM.EditorView.clickAddsSelectionRange.of(mouseEvent => mouseEvent.altKey || mouseEvent.ctrlKey),
         tabMovesFocus.instance(),
         bracketMatching.instance(),
         indentUnit.instance(),
         CM.Prec.lowest(CM.EditorView.contentAttributes.of({ 'aria-label': i18nString(UIStrings.codeEditor) })),
-        detectLineSeparator(text),
-        autocompletion,
+        text instanceof CM.Text ? [] : detectLineSeparator(text),
         CM.tooltips({
-            parent: getTooltipHost(),
             tooltipSpace: getTooltipSpace,
         }),
     ];
@@ -205,37 +221,6 @@ export const closeBrackets = [
     CM.closeBrackets(),
     CM.keymap.of(CM.closeBracketsKeymap),
 ];
-// Root editor tooltips at the top of the document, creating a special
-// element with the editor styles mounted in it for them. This is
-// annoying, but necessary because a scrollable parent node clips them
-// otherwise, `position: fixed` doesn't work due to `contain` styles,
-// and appending them directly to `document.body` doesn't work because
-// the necessary style sheets aren't available there.
-let tooltipHost = null;
-function getTooltipHost() {
-    if (!tooltipHost) {
-        const styleModules = CM.EditorState
-            .create({
-            extensions: [
-                editorTheme,
-                themeIsDark() ? dummyDarkTheme : [],
-                CodeHighlighter.CodeHighlighter.highlightStyle,
-                CM.showTooltip.of({
-                    pos: 0,
-                    create() {
-                        return { dom: document.createElement('div') };
-                    },
-                }),
-            ],
-        })
-            .facet(CM.EditorView.styleModule);
-        const host = document.body.appendChild(document.createElement('div'));
-        host.className = 'editor-tooltip-host';
-        tooltipHost = host.attachShadow({ mode: 'open' });
-        CM.StyleModule.mount(tooltipHost, styleModules);
-    }
-    return tooltipHost;
-}
 class CompletionHint extends CM.WidgetType {
     text;
     constructor(text) {

@@ -176,7 +176,7 @@ export class PlayerListView extends UI.Widget.VBox {
         // title from the FrameUrl though, since the page location itself might not
         // have any relevance to the video being played, and would be shared by all
         // videos on the page.
-        if (property.name === "kFrameUrl" /* FrameUrl */) {
+        if (property.name === "kFrameUrl" /* PlayerPropertyKeys.FrameUrl */) {
             const frameTitle = new URL(property.value).hostname;
             this.formatAndEvaluate(playerID, this.setMediaElementFrameTitle, frameTitle, 1, 20);
             return;
@@ -187,7 +187,7 @@ export class PlayerListView extends UI.Widget.VBox {
         // junk, or it might be super long. If it's empty, or 1 character, It's
         // preferable to just drop it. Titles longer than 20 will have the first
         // 17 characters kept and an elipsis appended.
-        if (property.name === "kFrameTitle" /* FrameTitle */ && property.value) {
+        if (property.name === "kFrameTitle" /* PlayerPropertyKeys.FrameTitle */ && property.value) {
             this.formatAndEvaluate(playerID, this.setMediaElementFrameTitle, property.value, 1, 20);
             return;
         }

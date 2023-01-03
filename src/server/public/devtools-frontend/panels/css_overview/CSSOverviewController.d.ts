@@ -1,7 +1,7 @@
 import * as Common from '../../core/common/common.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { ContrastIssue } from './CSSOverviewCompletedView.js';
-import type { UnusedDeclaration } from './CSSOverviewUnusedDeclarations.js';
+import { type ContrastIssue } from './CSSOverviewCompletedView.js';
+import { type UnusedDeclaration } from './CSSOverviewUnusedDeclarations.js';
 export declare class OverviewController extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     #private;
     currentUrl: string;

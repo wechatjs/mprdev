@@ -36,13 +36,13 @@ const str_ = i18n.i18n.registerUIStrings('core/sdk/EventBreakpointsModel.ts', UI
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 function getTitleForInstrumentationName(instrumentationName) {
     switch (instrumentationName) {
-        case "beforeBidderWorkletBiddingStart" /* BeforeBidderWorkletBiddingStart */:
+        case "beforeBidderWorkletBiddingStart" /* InstrumentationNames.BeforeBidderWorkletBiddingStart */:
             return i18nString(UIStrings.beforeBidderWorkletBiddingStart);
-        case "beforeBidderWorkletReportingStart" /* BeforeBidderWorkletReportingStart */:
+        case "beforeBidderWorkletReportingStart" /* InstrumentationNames.BeforeBidderWorkletReportingStart */:
             return i18nString(UIStrings.beforeBidderWorkletReportingStart);
-        case "beforeSellerWorkletScoringStart" /* BeforeSellerWorkletScoringStart */:
+        case "beforeSellerWorkletScoringStart" /* InstrumentationNames.BeforeSellerWorkletScoringStart */:
             return i18nString(UIStrings.beforeSellerWorkletScoringStart);
-        case "beforeSellerWorkletReportingStart" /* BeforeSellerWorkletReportingStart */:
+        case "beforeSellerWorkletReportingStart" /* InstrumentationNames.BeforeSellerWorkletReportingStart */:
             return i18nString(UIStrings.beforeSellerWorkletReportingStart);
     }
 }
@@ -85,10 +85,10 @@ export class EventBreakpointsManager {
     #eventListenerBreakpointsInternal = [];
     constructor() {
         this.createInstrumentationBreakpoints(i18nString(UIStrings.auctionWorklet), [
-            "beforeBidderWorkletBiddingStart" /* BeforeBidderWorkletBiddingStart */,
-            "beforeBidderWorkletReportingStart" /* BeforeBidderWorkletReportingStart */,
-            "beforeSellerWorkletScoringStart" /* BeforeSellerWorkletScoringStart */,
-            "beforeSellerWorkletReportingStart" /* BeforeSellerWorkletReportingStart */,
+            "beforeBidderWorkletBiddingStart" /* InstrumentationNames.BeforeBidderWorkletBiddingStart */,
+            "beforeBidderWorkletReportingStart" /* InstrumentationNames.BeforeBidderWorkletReportingStart */,
+            "beforeSellerWorkletScoringStart" /* InstrumentationNames.BeforeSellerWorkletScoringStart */,
+            "beforeSellerWorkletReportingStart" /* InstrumentationNames.BeforeSellerWorkletReportingStart */,
         ]);
         TargetManager.instance().observeModels(EventBreakpointsModel, this);
     }

@@ -22,8 +22,8 @@ export class CSSOverviewModel extends SDK.SDKModel.SDKModel {
         const highlightConfig = {
             contentColor: Common.Color.PageHighlight.Content.toProtocolRGBA(),
             showInfo: true,
-            contrastAlgorithm: Root.Runtime.experiments.isEnabled('APCA') ? "apca" /* Apca */ :
-                "aa" /* Aa */,
+            contrastAlgorithm: Root.Runtime.experiments.isEnabled('APCA') ? "apca" /* Protocol.Overlay.ContrastAlgorithm.Apca */ :
+                "aa" /* Protocol.Overlay.ContrastAlgorithm.Aa */,
         };
         void this.#overlayAgent.invoke_hideHighlight();
         void this.#overlayAgent.invoke_highlightNode({ backendNodeId: node, highlightConfig });

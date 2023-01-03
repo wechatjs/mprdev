@@ -1,4 +1,4 @@
-import type { LocalizedString } from './UIString.js';
+import { type LocalizedString } from './UIString.js';
 /**
  * Represents an error that might become visible to the user. Where errors
  * might be surfaced to the user (such as by displaying the message to the

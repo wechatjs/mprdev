@@ -7,14 +7,14 @@
  */
 self.SourcesTestRunner = self.SourcesTestRunner || {};
 
-SourcesTestRunner.startDebuggerTest = function(callback, quiet) {
+SourcesTestRunner.startDebuggerTest = async function(callback, quiet) {
   console.assert(TestRunner.debuggerModel.debuggerEnabled(), 'Debugger has to be enabled');
 
   if (quiet !== undefined) {
     SourcesTestRunner.quiet = quiet;
   }
 
-  self.UI.viewManager.showView('sources');
+  await TestRunner.showPanel('sources');
   TestRunner.addSniffer(SDK.DebuggerModel.prototype, 'pausedScript', SourcesTestRunner.pausedScript, true);
   TestRunner.addSniffer(SDK.DebuggerModel.prototype, 'resumedScript', SourcesTestRunner.resumedScript, true);
   TestRunner.safeWrap(callback)();
@@ -291,7 +291,7 @@ SourcesTestRunner.captureStackTraceIntoString = async function(callFrames, async
       const script = location.script();
       const uiLocation = await self.Bindings.debuggerWorkspaceBinding.rawLocationToUILocation(location);
       const isFramework =
-          uiLocation ? self.Bindings.ignoreListManager.isIgnoreListedUISourceCode(uiLocation.uiSourceCode) : false;
+          uiLocation ? self.Bindings.ignoreListManager.isUserIgnoreListedURL(uiLocation.uiSourceCode.url()) : false;
 
       if (options.dropFrameworkCallFrames && isFramework) {
         continue;
@@ -355,10 +355,11 @@ SourcesTestRunner.captureStackTraceIntoString = async function(callFrames, async
 
 SourcesTestRunner.dumpSourceFrameContents = function(sourceFrame) {
   TestRunner.addResult('==Source frame contents start==');
-  const textEditor = sourceFrame.textEditor;
+  const {baseDoc} = sourceFrame;
 
-  for (let i = 0; i < textEditor.linesCount; ++i) {
-    TestRunner.addResult(textEditor.line(i));
+  for (let i = 1; i <= baseDoc.lines; ++i) {
+    const {text} = baseDoc.line(i);
+    TestRunner.addResult(text);
   }
 
   TestRunner.addResult('==Source frame contents end==');

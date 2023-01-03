@@ -1,5 +1,4 @@
-import type { ValueType, ValueTypeMode } from './ValueInterpreterDisplayUtils.js';
-import { Endianness } from './ValueInterpreterDisplayUtils.js';
+import { Endianness, type ValueType, type ValueTypeMode } from './ValueInterpreterDisplayUtils.js';
 export declare class EndiannessChangedEvent extends Event {
     static readonly eventName = "endiannesschanged";
     data: Endianness;

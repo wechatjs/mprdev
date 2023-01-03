@@ -39,7 +39,7 @@ export class MediaQueryInspector extends UI.Widget.Widget {
         this.elementsToMediaQueryModel = new WeakMap();
         this.elementsToCSSLocations = new WeakMap();
         SDK.TargetManager.TargetManager.instance().observeModels(SDK.CSSModel.CSSModel, this);
-        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomChanged */, this.renderMediaQueries.bind(this), this);
+        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* UI.ZoomManager.Events.ZoomChanged */, this.renderMediaQueries.bind(this), this);
     }
     modelAdded(cssModel) {
         // FIXME: adapt this to multiple targets.
@@ -80,11 +80,11 @@ export class MediaQueryInspector extends UI.Widget.Widget {
         }
         const modelMaxWidth = model.maxWidthExpression();
         const modelMinWidth = model.minWidthExpression();
-        if (model.section() === 0 /* Max */) {
+        if (model.section() === 0 /* Section.Max */) {
             this.setWidthCallback(modelMaxWidth ? modelMaxWidth.computedLength() || 0 : 0);
             return;
         }
-        if (model.section() === 2 /* Min */) {
+        if (model.section() === 2 /* Section.Min */) {
             this.setWidthCallback(modelMinWidth ? modelMinWidth.computedLength() || 0 : 0);
             return;
         }
@@ -138,7 +138,7 @@ export class MediaQueryInspector extends UI.Widget.Widget {
         if (!this.isShowing() || !this.cssModel) {
             return Promise.resolve();
         }
-        return this.cssModel.mediaQueriesPromise().then(this.rebuildMediaQueries.bind(this));
+        return this.cssModel.getMediaQueries().then(this.rebuildMediaQueries.bind(this));
     }
     squashAdjacentEqual(models) {
         const filtered = [];
@@ -236,7 +236,7 @@ export class MediaQueryInspector extends UI.Widget.Widget {
         const maxWidthValue = maxWidthExpression ? (maxWidthExpression.computedLength() || 0) / zoomFactor : 0;
         const result = document.createElement('div');
         result.classList.add('media-inspector-bar');
-        if (model.section() === 0 /* Max */) {
+        if (model.section() === 0 /* Section.Max */) {
             result.createChild('div', 'media-inspector-marker-spacer');
             const markerElement = result.createChild('div', 'media-inspector-marker media-inspector-marker-max-width');
             markerElement.style.width = maxWidthValue + 'px';
@@ -245,7 +245,7 @@ export class MediaQueryInspector extends UI.Widget.Widget {
             appendLabel(markerElement, model.maxWidthExpression(), true, true);
             result.createChild('div', 'media-inspector-marker-spacer');
         }
-        if (model.section() === 1 /* MinMax */) {
+        if (model.section() === 1 /* Section.MinMax */) {
             result.createChild('div', 'media-inspector-marker-spacer');
             const leftElement = result.createChild('div', 'media-inspector-marker media-inspector-marker-min-max-width');
             leftElement.style.width = (maxWidthValue - minWidthValue) * 0.5 + 'px';
@@ -260,7 +260,7 @@ export class MediaQueryInspector extends UI.Widget.Widget {
             appendLabel(rightElement, model.maxWidthExpression(), false, true);
             result.createChild('div', 'media-inspector-marker-spacer');
         }
-        if (model.section() === 2 /* Min */) {
+        if (model.section() === 2 /* Section.Min */) {
             const leftElement = result.createChild('div', 'media-inspector-marker media-inspector-marker-min-width media-inspector-marker-min-width-left');
             UI.Tooltip.Tooltip.install(leftElement, model.mediaText());
             appendLabel(leftElement, model.minWidthExpression(), false, false);
@@ -297,13 +297,13 @@ export class MediaQueryUIModel {
         this.maxWidthExpressionInternal = maxWidthExpression;
         this.activeInternal = active;
         if (maxWidthExpression && !minWidthExpression) {
-            this.sectionInternal = 0 /* Max */;
+            this.sectionInternal = 0 /* Section.Max */;
         }
         else if (minWidthExpression && maxWidthExpression) {
-            this.sectionInternal = 1 /* MinMax */;
+            this.sectionInternal = 1 /* Section.MinMax */;
         }
         else {
-            this.sectionInternal = 2 /* Min */;
+            this.sectionInternal = 2 /* Section.Min */;
         }
     }
     static createFromMediaQuery(cssMedia, mediaQuery) {
@@ -388,10 +388,10 @@ export class MediaQueryUIModel {
         const otherMinWidthExpression = other.minWidthExpression();
         const thisMinLength = thisMinWidthExpression ? thisMinWidthExpression.computedLength() || 0 : 0;
         const otherMinLength = otherMinWidthExpression ? otherMinWidthExpression.computedLength() || 0 : 0;
-        if (this.section() === 0 /* Max */) {
+        if (this.section() === 0 /* Section.Max */) {
             return otherMaxLength - thisMaxLength;
         }
-        if (this.section() === 2 /* Min */) {
+        if (this.section() === 2 /* Section.Min */) {
             return thisMinLength - otherMinLength;
         }
         return thisMinLength - otherMinLength || otherMaxLength - thisMaxLength;

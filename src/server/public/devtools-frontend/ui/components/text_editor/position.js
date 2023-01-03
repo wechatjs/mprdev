@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 export function toOffset(doc, { lineNumber, columnNumber }) {
+    // DevTools history items are 0-based, but CodeMirror is 1-based, so we have to increment the
+    // line we want to scroll to by 1.
     const line = doc.line(Math.max(1, Math.min(doc.lines, lineNumber + 1)));
     return Math.max(line.from, Math.min(line.to, line.from + columnNumber));
 }

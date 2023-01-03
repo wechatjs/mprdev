@@ -21,3 +21,7 @@ export declare const format: (fmt: string, args: SDK.RemoteObject.RemoteObject[]
     tokens: FormatToken[];
     args: SDK.RemoteObject.RemoteObject[];
 };
+export declare const updateStyle: (currentStyle: Map<string, {
+    value: string;
+    priority: string;
+}>, styleToAdd: string) => void;

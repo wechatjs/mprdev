@@ -5,8 +5,8 @@ import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { OverviewController, PopulateNodesEventNodes, PopulateNodesEventNodeTypes } from './CSSOverviewController.js';
-import type { UnusedDeclaration } from './CSSOverviewUnusedDeclarations.js';
+import { type OverviewController, type PopulateNodesEventNodes, type PopulateNodesEventNodeTypes } from './CSSOverviewController.js';
+import { type UnusedDeclaration } from './CSSOverviewUnusedDeclarations.js';
 export declare type NodeStyleStats = Map<string, Set<number>>;
 export interface ContrastIssue {
     nodeId: Protocol.DOM.BackendNodeId;
@@ -55,7 +55,9 @@ export declare class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar 
 declare const DetailsView_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends Events.TabClosed>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;
-    once<T_1 extends Events.TabClosed>(eventType: T_1): Promise<EventTypes[T_1]>;
+    once<T_1 extends Events.TabClosed>(eventType: T_1): Promise<EventTypes[T_1]>; /**
+    *@description Label to denote unused declarations in the target page
+    */
     removeEventListener<T_2 extends Events.TabClosed>(eventType: T_2, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T_2]>) => void, thisObject?: Object | undefined): void;
     hasEventListeners(eventType: Events.TabClosed): boolean;
     dispatchEventToListeners<T_3 extends Events.TabClosed>(eventType: Platform.TypeScriptUtilities.NoUnion<T_3>, ...eventData: Common.EventTarget.EventPayloadToRestParameters<EventTypes, T_3>): void;

@@ -1,4 +1,4 @@
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class SecurityOriginManager extends SDKModel<EventTypes> {
     #private;

@@ -3,11 +3,14 @@ import * as Protocol from '../../generated/protocol.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 export declare class IndexedDBModel extends SDK.SDKModel.SDKModel<EventTypes> implements ProtocolProxyApi.StorageDispatcher {
     private readonly securityOriginManager;
+    private readonly storageKeyManager;
     private readonly indexedDBAgent;
     private readonly storageAgent;
     private readonly databasesInternal;
     private databaseNamesBySecurityOrigin;
+    private databaseNamesByStorageKey;
     private readonly originsUpdated;
+    private readonly updatedStorageKeys;
     private readonly throttler;
     private enabled?;
     constructor(target: SDK.Target.Target);
@@ -17,29 +20,40 @@ export declare class IndexedDBModel extends SDK.SDKModel.SDKModel<EventTypes> im
     static keyPathStringFromIDBKeyPath(idbKeyPath: string | string[] | null | undefined): string | null;
     enable(): void;
     clearForOrigin(origin: string): void;
+    clearForStorageKey(storageKey: string): void;
     deleteDatabase(databaseId: DatabaseId): Promise<void>;
     refreshDatabaseNames(): Promise<void>;
     refreshDatabase(databaseId: DatabaseId): void;
     clearObjectStore(databaseId: DatabaseId, objectStoreName: string): Promise<void>;
     deleteEntries(databaseId: DatabaseId, objectStoreName: string, idbKeyRange: IDBKeyRange): Promise<void>;
     private securityOriginAdded;
+    private storageKeyAdded;
     private securityOriginRemoved;
+    private storageKeyRemoved;
     private addOrigin;
+    private addStorageKey;
     private removeOrigin;
+    private removeStorageKey;
     private isValidSecurityOrigin;
     private updateOriginDatabaseNames;
+    private updateStorageKeyDatabaseNames;
+    hasDuplicateWithSecurityOrigin(storageKey: string, databaseName: string): boolean;
     databases(): DatabaseId[];
     private databaseAdded;
+    private databaseAddedForStorageKey;
     private databaseRemoved;
+    private databaseRemovedForStorageKey;
     private loadDatabaseNames;
+    private loadDatabaseNamesByStorageKey;
     private loadDatabase;
     loadObjectStoreData(databaseId: DatabaseId, objectStoreName: string, idbKeyRange: IDBKeyRange | null, skipCount: number, pageSize: number, callback: (arg0: Array<Entry>, arg1: boolean) => void): void;
     loadIndexData(databaseId: DatabaseId, objectStoreName: string, indexName: string, idbKeyRange: IDBKeyRange | null, skipCount: number, pageSize: number, callback: (arg0: Array<Entry>, arg1: boolean) => void): void;
     private requestData;
     getMetadata(databaseId: DatabaseId, objectStore: ObjectStore): Promise<ObjectStoreMetadata | null>;
     private refreshDatabaseList;
-    indexedDBListUpdated({ origin: securityOrigin }: Protocol.Storage.IndexedDBListUpdatedEvent): void;
-    indexedDBContentUpdated({ origin: securityOrigin, databaseName, objectStoreName }: Protocol.Storage.IndexedDBContentUpdatedEvent): void;
+    private refreshDatabaseListForStorageKey;
+    indexedDBListUpdated({ origin: securityOrigin, storageKey: storageKey }: Protocol.Storage.IndexedDBListUpdatedEvent): void;
+    indexedDBContentUpdated({ origin: securityOrigin, storageKey, databaseName, objectStoreName }: Protocol.Storage.IndexedDBContentUpdatedEvent): void;
     cacheStorageListUpdated(_event: Protocol.Storage.CacheStorageListUpdatedEvent): void;
     cacheStorageContentUpdated(_event: Protocol.Storage.CacheStorageContentUpdatedEvent): void;
     interestGroupAccessed(_event: Protocol.Storage.InterestGroupAccessedEvent): void;
@@ -79,9 +93,11 @@ export declare class Entry {
     constructor(key: SDK.RemoteObject.RemoteObject, primaryKey: SDK.RemoteObject.RemoteObject, value: SDK.RemoteObject.RemoteObject);
 }
 export declare class DatabaseId {
-    securityOrigin: string;
+    readonly securityOrigin?: string;
+    readonly storageKey?: string;
     name: string;
-    constructor(securityOrigin: string, name: string);
+    constructor(securityOrigin: string | undefined, storageKey: string | undefined, name: string);
+    getOriginOrStorageKey(): string;
     equals(databaseId: DatabaseId): boolean;
 }
 export declare class Database {

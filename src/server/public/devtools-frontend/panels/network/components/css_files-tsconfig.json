@@ -4,7 +4,11 @@
         "outDir": "."
     },
     "files": [
+        "HeaderSectionRow.css.js",
+        "RequestHeaderSection.css.js",
+        "RequestHeadersView.css.js",
         "RequestTrustTokensView.css.js",
+        "ResponseHeaderSection.css.js",
         "WebBundleInfoView.css.js"
     ]
 }

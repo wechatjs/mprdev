@@ -27,11 +27,11 @@ async function loadWebAudioModule() {
     return loadedWebAudioModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'web-audio',
     title: i18nLazyString(UIStrings.webaudio),
     commandPrompt: i18nLazyString(UIStrings.showWebaudio),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 100,
     async loadView() {
         const WebAudio = await loadWebAudioModule();

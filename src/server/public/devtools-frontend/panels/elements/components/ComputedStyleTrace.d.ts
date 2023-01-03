@@ -2,6 +2,7 @@ export interface ComputedStyleTraceData {
     selector: string;
     active: boolean;
     onNavigateToSource: (event?: Event) => void;
+    ruleOriginNode?: Node;
 }
 export declare class ComputedStyleTrace extends HTMLElement {
     #private;

@@ -10,7 +10,7 @@ export class InspectedPagePlaceholder extends Common.ObjectWrapper.eventMixin(UI
     constructor() {
         super(true);
         this.registerRequiredCSS(inspectedPagePlaceholderStyles);
-        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomChanged */, this.onResize, this);
+        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* UI.ZoomManager.Events.ZoomChanged */, this.onResize, this);
         this.restoreMinimumSize();
     }
     static instance(opts = { forceNew: null }) {
@@ -54,10 +54,10 @@ export class InspectedPagePlaceholder extends Common.ObjectWrapper.eventMixin(UI
         if (force) {
             // Short term fix for Lighthouse interop.
             --bounds.height;
-            this.dispatchEventToListeners("Update" /* Update */, bounds);
+            this.dispatchEventToListeners("Update" /* Events.Update */, bounds);
             ++bounds.height;
         }
-        this.dispatchEventToListeners("Update" /* Update */, bounds);
+        this.dispatchEventToListeners("Update" /* Events.Update */, bounds);
     }
 }
 //# sourceMappingURL=InspectedPagePlaceholder.js.map

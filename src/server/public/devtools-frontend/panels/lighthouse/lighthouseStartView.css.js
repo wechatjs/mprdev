@@ -12,7 +12,8 @@ styles.replaceSync(
  */
 /* <3 */
 
-.lighthouse-start-view {
+.lighthouse-start-view,
+.lighthouse-start-view-fr {
   font-family: Roboto, sans-serif;
   font-size: var(--font-size);
   line-height: 18px;
@@ -23,11 +24,26 @@ styles.replaceSync(
   --report-font-family: roboto, helvetica, arial, sans-serif;
 }
 
+.lighthouse-start-view-fr {
+  padding: 24px;
+  overflow: auto;
+  height: 100%;
+}
+
 .lighthouse-start-view header {
   flex: 2 1;
   padding: 16px;
   display: grid;
   justify-items: center;
+}
+
+.lighthouse-start-view-fr header {
+  display: flex;
+  font-size: 18px;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 16px;
+  margin-bottom: 16px;
 }
 
 .lighthouse-logo {
@@ -37,6 +53,11 @@ styles.replaceSync(
   background-repeat: no-repeat;
   background-size: contain;
   background-image: var(--image-file-lighthouse_logo);
+}
+
+.lighthouse-start-view-fr .lighthouse-logo {
+  width: 45px;
+  height: 45px;
 }
 
 .lighthouse-start-view-text {
@@ -72,6 +93,10 @@ styles.replaceSync(
   top: -4px;
 }
 
+.lighthouse-form-section-label .lighthouse-learn-more {
+  padding: 20px;
+}
+
 .lighthouse-radio {
   display: flex;
   align-items: center;
@@ -93,8 +118,16 @@ input[type="radio"]:focus {
   align-items: center;
 }
 
+.lighthouse-start-view-fr header.hbox .lighthouse-start-button-container {
+  margin-left: auto;
+}
+
+.lighthouse-start-view-fr header.vbox .lighthouse-title {
+  text-align: center;
+}
+
 .lighthouse-start-button-container button {
-  margin: 8px auto;
+  margin: 16px auto;
   font-family: var(--report-font-family);
   font-weight: 500;
   font-size: var(--font-size);
@@ -142,6 +175,22 @@ input[type="radio"]:focus {
 .lighthouse-warning-text::before {
   content: "⚠";
   margin-right: 10px;
+}
+
+.lighthouse-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+}
+
+.lighthouse-options.narrow {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+}
+
+.lighthouse-options.wide {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto;
 }
 
 /*# sourceURL=lighthouseStartView.css */

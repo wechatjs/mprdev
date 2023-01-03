@@ -89,12 +89,32 @@ const UIStrings = {
     */
     doNotAutoOpen: 'Do not auto-open DevTools for popups',
     /**
+    * @description A command available in the command menu to perform searches, for example in the
+    * elements panel, as user types, rather than only when they press Enter.
+     */
+    searchAsYouTypeSetting: 'Search as you type',
+    /**
+    * @description A command available in the command menu to perform searches, for example in the
+    * elements panel, as user types, rather than only when they press Enter.
+     */
+    searchAsYouTypeCommand: 'Enable search as you type',
+    /**
+    * @description A command available in the command menu to perform searches, for example in the
+    * elements panel, only when the user presses Enter.
+    */
+    searchOnEnterCommand: 'Disable search as you type (press Enter to search)',
+    /**
     * @description Title of a setting under the Appearance category in Settings. When the webpage is
     * paused by devtools, an overlay is shown on top of the page to indicate that it is paused. The
     * overlay is a pause/unpause button and some text, which appears on top of the paused page. This
     * setting turns off this overlay.
     */
     disablePaused: 'Disable paused state overlay',
+    /**
+    * @description Title of an action that toggle
+    * "forces CSS prefers-color-scheme" color
+    */
+    toggleCssPrefersColorSchemeMedia: 'Toggle CSS media feature prefers-color-scheme',
 };
 const str_ = i18n.i18n.registerUIStrings('entrypoints/inspector_main/inspector_main-meta.ts', UIStrings);
 const i18nLazyString = i18n.i18n.getLazilyComputedLocalizedString.bind(undefined, str_);
@@ -106,11 +126,11 @@ async function loadInspectorMainModule() {
     return loadedInspectorMainModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'rendering',
     title: i18nLazyString(UIStrings.rendering),
     commandPrompt: i18nLazyString(UIStrings.showRendering),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 50,
     async loadView() {
         const InspectorMain = await loadInspectorMainModule();
@@ -133,19 +153,19 @@ UI.ActionRegistration.registerActionExtension({
         const InspectorMain = await loadInspectorMainModule();
         return InspectorMain.InspectorMain.ReloadActionDelegate.instance();
     },
-    iconClass: "largeicon-refresh" /* LARGEICON_REFRESH */,
+    iconClass: "largeicon-refresh" /* UI.ActionRegistration.IconClass.LARGEICON_REFRESH */,
     title: i18nLazyString(UIStrings.reloadPage),
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+R',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'F5',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+R',
         },
     ],
@@ -160,26 +180,35 @@ UI.ActionRegistration.registerActionExtension({
     title: i18nLazyString(UIStrings.hardReloadPage),
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Shift+Ctrl+R',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Shift+F5',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+F5',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+F5',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Shift+Meta+R',
         },
     ],
+});
+UI.ActionRegistration.registerActionExtension({
+    actionId: 'rendering.toggle-prefers-color-scheme',
+    category: UI.ActionRegistration.ActionCategory.RENDERING,
+    title: i18nLazyString(UIStrings.toggleCssPrefersColorSchemeMedia),
+    async loadActionDelegate() {
+        const InspectorMain = await loadInspectorMainModule();
+        return InspectorMain.RenderingOptions.ReloadActionDelegate.instance();
+    },
 });
 Common.Settings.registerSettingExtension({
     category: Common.Settings.SettingCategory.NETWORK,
@@ -215,6 +244,25 @@ Common.Settings.registerSettingExtension({
         {
             value: false,
             title: i18nLazyString(UIStrings.doNotAutoOpen),
+        },
+    ],
+});
+Common.Settings.registerSettingExtension({
+    category: Common.Settings.SettingCategory.GLOBAL,
+    storageType: Common.Settings.SettingStorageType.Local,
+    title: i18nLazyString(UIStrings.searchAsYouTypeSetting),
+    settingName: 'searchAsYouType',
+    settingType: Common.Settings.SettingType.BOOLEAN,
+    order: 3,
+    defaultValue: true,
+    options: [
+        {
+            value: true,
+            title: i18nLazyString(UIStrings.searchAsYouTypeCommand),
+        },
+        {
+            value: false,
+            title: i18nLazyString(UIStrings.searchOnEnterCommand),
         },
     ],
 });

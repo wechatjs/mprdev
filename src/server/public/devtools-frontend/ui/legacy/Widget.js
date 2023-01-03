@@ -27,6 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import * as DOMExtension from '../../core/dom_extension/dom_extension.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as Helpers from '../components/helpers/helpers.js';
 import { Constraints, Size } from './Geometry.js';
 import * as ThemeSupport from './theme_support/theme_support.js';
@@ -590,7 +591,7 @@ export class WidgetFocusRestorer {
     previous;
     constructor(widget) {
         this.widget = widget;
-        this.previous = widget.element.ownerDocument.deepActiveElement();
+        this.previous = Platform.DOMUtilities.deepActiveElement(widget.element.ownerDocument);
         widget.focus();
     }
     restore() {

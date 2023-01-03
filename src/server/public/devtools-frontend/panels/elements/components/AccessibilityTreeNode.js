@@ -26,10 +26,10 @@ function truncateTextIfNeeded(text) {
 }
 function isPrintable(valueType) {
     switch (valueType) {
-        case "boolean" /* Boolean */:
-        case "booleanOrUndefined" /* BooleanOrUndefined */:
-        case "string" /* String */:
-        case "number" /* Number */:
+        case "boolean" /* Protocol.Accessibility.AXValueType.Boolean */:
+        case "booleanOrUndefined" /* Protocol.Accessibility.AXValueType.BooleanOrUndefined */:
+        case "string" /* Protocol.Accessibility.AXValueType.String */:
+        case "number" /* Protocol.Accessibility.AXValueType.Number */:
             return true;
         default:
             return false;
@@ -56,13 +56,13 @@ export class AccessibilityTreeNode extends HTMLElement {
         const role = LitHtml.html `<span class='role-value'>${truncateTextIfNeeded(this.#role)}</span>`;
         const name = LitHtml.html `"<span class='attribute-value'>${this.#name}</span>"`;
         const properties = this.#properties.map(({ name, value }) => isPrintable(value.type) ?
-            LitHtml.html `&nbsp<span class='attribute-name'>${name}</span>:&nbsp<span class='attribute-value'>${value.value}</span>` :
+            LitHtml.html ` <span class='attribute-name'>${name}</span>:&nbsp;<span class='attribute-value'>${value.value}</span>` :
             LitHtml.nothing);
+        const content = this.#ignored ? LitHtml.html `<span>${i18nString(UIStrings.ignored)}</span>` :
+            LitHtml.html `${role}&nbsp;${name}${properties}`;
         await Coordinator.RenderCoordinator.RenderCoordinator.instance().write('Accessibility node render', () => {
             // clang-format off
-            LitHtml.render(this.#ignored ?
-                LitHtml.html `<span>${i18nString(UIStrings.ignored)}</span>` :
-                LitHtml.html `${role}&nbsp${name}${properties}`, this.#shadow, { host: this });
+            LitHtml.render(LitHtml.html `<div class='container'>${content}</div>`, this.#shadow, { host: this });
             // clang-format on
         });
     }

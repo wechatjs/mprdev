@@ -1,3 +1,4 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as TimelineModel from '../../models/timeline_model/timeline_model.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
@@ -9,7 +10,7 @@ export declare class TimelineUIUtils {
     static inputEventDisplayName(inputEventType: TimelineModel.TimelineIRModel.InputEvents): string | null;
     static frameDisplayName(frame: Protocol.Runtime.CallFrame): string;
     static testContentMatching(traceEvent: SDK.TracingModel.Event, regExp: RegExp): boolean;
-    static eventURL(event: SDK.TracingModel.Event): string | null;
+    static eventURL(event: SDK.TracingModel.Event): Platform.DevToolsPath.UrlString | null;
     static eventStyle(event: SDK.TracingModel.Event): TimelineRecordStyle;
     static eventColor(event: SDK.TracingModel.Event): string;
     static eventColorByProduct(model: TimelineModel.TimelineModel.TimelineModelImpl, urlToColorCache: Map<string, string>, event: SDK.TracingModel.Event): string;
@@ -20,7 +21,7 @@ export declare class TimelineUIUtils {
     static isUserFrame(frame: Protocol.Runtime.CallFrame): boolean;
     static networkRequestCategory(request: TimelineModel.TimelineModel.NetworkRequest): NetworkCategory;
     static networkCategoryColor(category: NetworkCategory): string;
-    static buildDetailsTextForTraceEvent(event: SDK.TracingModel.Event, target: SDK.Target.Target | null): Promise<string | null>;
+    static buildDetailsTextForTraceEvent(event: SDK.TracingModel.Event): Promise<string | null>;
     static buildDetailsNodeForTraceEvent(event: SDK.TracingModel.Event, target: SDK.Target.Target | null, linkifier: Components.Linkifier.Linkifier): Promise<Node | null>;
     static buildDetailsNodeForPerformanceEvent(event: SDK.TracingModel.Event): Element;
     static buildConsumeCacheDetails(eventData: any, contentHelper: TimelineDetailsContentHelper): void;
@@ -58,7 +59,6 @@ export declare class TimelineUIUtils {
     static eventDispatchDesciptors(): EventDispatchTypeDescriptor[];
     static markerShortTitle(event: SDK.TracingModel.Event): string | null;
     static markerStyleForEvent(event: SDK.TracingModel.Event): TimelineMarkerStyle;
-    static markerStyleForFrame(): TimelineMarkerStyle;
     static colorForId(id: string): string;
     static eventWarning(event: SDK.TracingModel.Event, warningType?: string): Element | null;
     static displayNameForFrame(frame: TimelineModel.TimelineModel.PageFrame, trimAt?: number): any;
@@ -118,7 +118,7 @@ export declare class TimelineDetailsContentHelper {
     appendTextRow(title: string, value: string | number | boolean): void;
     appendElementRow(title: string, content: string | Node, isWarning?: boolean, isStacked?: boolean): void;
     appendLocationRow(title: string, url: string, startLine: number, startColumn?: number): void;
-    appendLocationRange(title: string, url: string, startLine: number, endLine?: number): void;
+    appendLocationRange(title: string, url: Platform.DevToolsPath.UrlString, startLine: number, endLine?: number): void;
     appendStackTrace(title: string, stackTrace: Protocol.Runtime.StackTrace): void;
     createChildStackTraceElement(parentElement: Element, stackTrace: Protocol.Runtime.StackTrace): void;
     appendWarningRow(event: SDK.TracingModel.Event, warningType?: string): void;

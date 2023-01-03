@@ -1,5 +1,5 @@
 import * as acorn from './package/dist/acorn.mjs';
-import type * as ESTree from './estree-legacy';
+import type * as ESTree from './estree-legacy.js';
 export { ESTree };
 export { type Comment, defaultOptions, getLineInfo, isNewLine, lineBreak, lineBreakG, Node, SourceLocation, Token, tokTypes, tokContexts } from './package/dist/acorn.mjs';
 export declare const Parser: typeof acorn.Parser;

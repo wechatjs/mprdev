@@ -30,6 +30,7 @@
 import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as Root from '../../core/root/root.js';
 import * as Utils from './utils/utils.js';
 import { ActionRegistry } from './ActionRegistry.js';
@@ -51,6 +52,10 @@ const UIStrings = {
     *@description Announced screen reader message for ToolbarSettingToggle when the setting is toggled off.
     */
     notPressed: 'not pressed',
+    /**
+    *@description Tooltip shown when the user hovers over the clear icon to empty the text input.
+    */
+    clearInput: 'Clear input',
 };
 const str_ = i18n.i18n.registerUIStrings('ui/legacy/Toolbar.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -94,7 +99,7 @@ export class Toolbar {
         let longClickController = null;
         let longClickButtons = null;
         let longClickGlyph = null;
-        action.addEventListener("Toggled" /* Toggled */, updateOptions);
+        action.addEventListener("Toggled" /* ActionEvents.Toggled */, updateOptions);
         updateOptions();
         return button;
         function updateOptions() {
@@ -125,7 +130,7 @@ export class Toolbar {
             const document = button.element.ownerDocument;
             document.documentElement.addEventListener('mouseup', mouseUp, false);
             const optionsGlassPane = new GlassPane();
-            optionsGlassPane.setPointerEventsBehavior("BlockedByGlassPane" /* BlockedByGlassPane */);
+            optionsGlassPane.setPointerEventsBehavior("BlockedByGlassPane" /* PointerEventsBehavior.BlockedByGlassPane */);
             optionsGlassPane.show(document);
             const optionsBar = new Toolbar('fill', optionsGlassPane.contentElement);
             optionsBar.contentElement.classList.add('floating');
@@ -200,7 +205,7 @@ export class Toolbar {
             };
         }
         button.addEventListener(ToolbarButton.Events.Click, handler, action);
-        action.addEventListener("Enabled" /* Enabled */, enabledChanged);
+        action.addEventListener("Enabled" /* ActionEvents.Enabled */, enabledChanged);
         button.setEnabled(action.enabled());
         return button;
         function makeButton() {
@@ -213,7 +218,7 @@ export class Toolbar {
         function makeToggle() {
             const toggleButton = new ToolbarToggle(action.title(), action.icon(), action.toggledIcon());
             toggleButton.setToggleWithRedColor(action.toggleWithRedColor());
-            action.addEventListener("Toggled" /* Toggled */, toggled);
+            action.addEventListener("Toggled" /* ActionEvents.Toggled */, toggled);
             toggled();
             return toggleButton;
             function toggled() {
@@ -280,6 +285,18 @@ export class Toolbar {
     }
     appendText(text) {
         this.appendToolbarItem(new ToolbarText(text));
+    }
+    removeToolbarItem(itemToRemove) {
+        const updatedItems = [];
+        for (const item of this.items) {
+            if (item === itemToRemove) {
+                item.element.remove();
+            }
+            else {
+                updatedItems.push(item);
+            }
+        }
+        this.items = updatedItems;
     }
     removeToolbarItems() {
         for (const item of this.items) {
@@ -427,7 +444,7 @@ export class ToolbarItemWithCompactLayout extends ToolbarItem {
         super(element);
     }
     setCompactLayout(enable) {
-        this.dispatchEventToListeners("CompactLayoutUpdated" /* CompactLayoutUpdated */, enable);
+        this.dispatchEventToListeners("CompactLayoutUpdated" /* ToolbarItemWithCompactLayoutEvents.CompactLayoutUpdated */, enable);
     }
 }
 export class ToolbarText extends ToolbarItem {
@@ -450,6 +467,7 @@ export class ToolbarButton extends ToolbarItem {
     textElement;
     text;
     glyph;
+    icon;
     /**
      * TODO(crbug.com/1126026): remove glyph parameter in favor of icon.
      */
@@ -463,12 +481,8 @@ export class ToolbarButton extends ToolbarItem {
         this.element.appendChild(this.glyphElement);
         this.textElement = this.element.createChild('div', 'toolbar-text hidden');
         this.setTitle(title);
-        if (glyphOrIcon instanceof HTMLElement) {
-            glyphOrIcon.classList.add('toolbar-icon');
-            this.element.append(glyphOrIcon);
-        }
-        else if (glyphOrIcon) {
-            this.setGlyph(glyphOrIcon);
+        if (glyphOrIcon) {
+            this.setGlyphOrIcon(glyphOrIcon);
         }
         this.setText(text || '');
         this.title = '';
@@ -483,6 +497,21 @@ export class ToolbarButton extends ToolbarItem {
         this.textElement.textContent = text;
         this.textElement.classList.toggle('hidden', !text);
         this.text = text;
+    }
+    setGlyphOrIcon(glyphOrIcon) {
+        if (glyphOrIcon instanceof HTMLElement) {
+            glyphOrIcon.classList.add('toolbar-icon');
+            if (this.icon) {
+                this.icon.replaceWith(glyphOrIcon);
+            }
+            else {
+                this.element.appendChild(glyphOrIcon);
+            }
+            this.icon = glyphOrIcon;
+        }
+        else if (glyphOrIcon) {
+            this.setGlyph(glyphOrIcon);
+        }
     }
     setGlyph(glyph) {
         if (this.glyph === glyph) {
@@ -561,6 +590,7 @@ export class ToolbarInput extends ToolbarItem {
             this.element.style.flexShrink = String(shrinkFactor);
         }
         const clearButton = this.element.createChild('div', 'toolbar-input-clear-button');
+        clearButton.title = UIStrings.clearInput;
         clearButton.appendChild(Icon.create('mediumicon-gray-cross-active', 'search-cancel-button'));
         clearButton.addEventListener('click', () => {
             this.setValue('', true);
@@ -585,7 +615,7 @@ export class ToolbarInput extends ToolbarItem {
         if (event.key === 'Enter' && this.prompt.text()) {
             this.dispatchEventToListeners(ToolbarInput.Event.EnterPressed, this.prompt.text());
         }
-        if (!isEscKey(event) || !this.prompt.text()) {
+        if (!Platform.KeyboardUtilities.isEscKey(event) || !this.prompt.text()) {
             return;
         }
         this.setValue('', true);
@@ -610,13 +640,13 @@ export class ToolbarInput extends ToolbarItem {
 })(ToolbarInput || (ToolbarInput = {}));
 export class ToolbarToggle extends ToolbarButton {
     toggledInternal;
-    untoggledGlyph;
-    toggledGlyph;
-    constructor(title, glyph, toggledGlyph) {
-        super(title, glyph, '');
+    untoggledGlyphOrIcon;
+    toggledGlyphOrIcon;
+    constructor(title, glyphOrIcon, toggledGlyphOrIcon) {
+        super(title, glyphOrIcon, '');
         this.toggledInternal = false;
-        this.untoggledGlyph = glyph;
-        this.toggledGlyph = toggledGlyph;
+        this.untoggledGlyphOrIcon = glyphOrIcon;
+        this.toggledGlyphOrIcon = toggledGlyphOrIcon;
         this.element.classList.add('toolbar-state-off');
         ARIAUtils.setPressed(this.element, false);
     }
@@ -631,8 +661,8 @@ export class ToolbarToggle extends ToolbarButton {
         this.element.classList.toggle('toolbar-state-on', toggled);
         this.element.classList.toggle('toolbar-state-off', !toggled);
         ARIAUtils.setPressed(this.element, toggled);
-        if (this.toggledGlyph && this.untoggledGlyph) {
-            this.setGlyph(toggled ? this.toggledGlyph : this.untoggledGlyph);
+        if (this.toggledGlyphOrIcon && this.untoggledGlyphOrIcon) {
+            this.setGlyphOrIcon(toggled ? this.toggledGlyphOrIcon : this.untoggledGlyphOrIcon);
         }
     }
     setDefaultWithRedColor(withRedColor) {
@@ -640,6 +670,9 @@ export class ToolbarToggle extends ToolbarButton {
     }
     setToggleWithRedColor(toggleWithRedColor) {
         this.element.classList.toggle('toolbar-toggle-with-red-color', toggleWithRedColor);
+    }
+    setToggleWithDot(toggleWithDot) {
+        this.element.classList.toggle('toolbar-toggle-with-dot', toggleWithDot);
     }
 }
 export class ToolbarMenuButton extends ToolbarButton {
@@ -864,6 +897,9 @@ export class ToolbarCheckbox extends ToolbarItem {
     applyEnabledState(enabled) {
         super.applyEnabledState(enabled);
         this.inputElement.disabled = !enabled;
+    }
+    setIndeterminate(indeterminate) {
+        this.inputElement.indeterminate = indeterminate;
     }
 }
 export class ToolbarSettingCheckbox extends ToolbarCheckbox {

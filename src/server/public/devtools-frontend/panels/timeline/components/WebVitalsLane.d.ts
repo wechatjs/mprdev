@@ -1,6 +1,5 @@
 import type * as LitHtml from '../../../ui/lit-html/lit-html.js';
-import type { Event, Marker, Timebox, WebVitalsTimeline } from './WebVitalsTimeline.js';
-import { MarkerType } from './WebVitalsTimeline.js';
+import { MarkerType, type Event, type Marker, type Timebox, type WebVitalsTimeline } from './WebVitalsTimeline.js';
 declare type GetMarkerTypeCallback = (event: Event) => MarkerType;
 declare type GetMarkerOverlayCallback = (marker: Marker) => LitHtml.TemplateResult;
 declare type GetTimeboxOverlayCallback = (marker: Timebox) => LitHtml.TemplateResult;

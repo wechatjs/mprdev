@@ -1,4 +1,4 @@
-import type { LocalizedMessages, UIStrings } from './i18n-impl.js';
+import { type LocalizedMessages, type UIStrings } from './i18n-impl.js';
 import * as IntlMessageFormat from '../intl-messageformat/intl-messageformat.js';
 /**
  * This class is usually created at module instantiation time and

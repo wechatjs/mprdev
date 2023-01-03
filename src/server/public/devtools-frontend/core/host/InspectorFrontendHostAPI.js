@@ -100,7 +100,11 @@ export var EnumeratedHistogram;
     EnumeratedHistogram["RecordingEdited"] = "DevTools.RecordingEdited";
     EnumeratedHistogram["RecordingExported"] = "DevTools.RecordingExported";
     EnumeratedHistogram["RecordingReplayFinished"] = "DevTools.RecordingReplayFinished";
+    EnumeratedHistogram["RecordingReplaySpeed"] = "DevTools.RecordingReplaySpeed";
     EnumeratedHistogram["RecordingReplayStarted"] = "DevTools.RecordingReplayStarted";
     EnumeratedHistogram["RecordingToggled"] = "DevTools.RecordingToggled";
+    EnumeratedHistogram["StyleTextCopied"] = "DevTools.StyleTextCopied";
+    EnumeratedHistogram["ManifestSectionSelected"] = "DevTools.ManifestSectionSelected";
+    EnumeratedHistogram["CSSHintShown"] = "DevTools.CSSHintShown";
 })(EnumeratedHistogram || (EnumeratedHistogram = {}));
 //# sourceMappingURL=InspectorFrontendHostAPI.js.map

@@ -70,6 +70,7 @@ export declare const ActionCategory: {
     SETTINGS: string;
     DEBUGGER: string;
     SOURCES: string;
+    RENDERING: string;
 };
 declare type ActionCategory = typeof ActionCategory[keyof typeof ActionCategory];
 export declare const enum IconClass {

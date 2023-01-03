@@ -69,6 +69,14 @@ styles.replaceSync(
   margin: 0 4px;
 }
 
+.selectable-text {
+  user-select: text;
+}
+
+.selectable-text::selection {
+  background-color: var(--legacy-item-selection-bg-color);
+}
+
 /*# sourceURL=valueInterpreterDisplay.css */
 `);
 export default styles;

@@ -207,7 +207,7 @@ export class NetworkPanel extends UI.Panel.Panel {
         this.rightToolbar = new UI.Toolbar.Toolbar('', networkToolbarContainer);
         this.filterBar = new UI.FilterBar.FilterBar('networkPanel', true);
         this.filterBar.show(panel.contentElement);
-        this.filterBar.addEventListener("Changed" /* Changed */, this.handleFilterChanged.bind(this));
+        this.filterBar.addEventListener("Changed" /* UI.FilterBar.FilterBarEvents.Changed */, this.handleFilterChanged.bind(this));
         this.settingsPane = new UI.Widget.HBox();
         this.settingsPane.element.classList.add('network-settings-pane');
         this.settingsPane.show(panel.contentElement);

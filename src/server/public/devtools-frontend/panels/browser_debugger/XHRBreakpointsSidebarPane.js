@@ -127,12 +127,12 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
     isItemSelectable(_item) {
         return true;
     }
-    setBreakpoint(url) {
-        if (this.#breakpoints.indexOf(url) !== -1) {
-            this.#list.refreshItem(url);
+    setBreakpoint(breakKeyword) {
+        if (this.#breakpoints.indexOf(breakKeyword) !== -1) {
+            this.#list.refreshItem(breakKeyword);
         }
         else {
-            this.#breakpoints.insertWithComparator(url, (a, b) => {
+            this.#breakpoints.insertWithComparator(breakKeyword, (a, b) => {
                 if (a > b) {
                     return 1;
                 }
@@ -219,12 +219,12 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
     updateSelectedItemARIA(_fromElement, _toElement) {
         return true;
     }
-    removeBreakpoint(url) {
-        const index = this.#breakpoints.indexOf(url);
+    removeBreakpoint(breakKeyword) {
+        const index = this.#breakpoints.indexOf(breakKeyword);
         if (index >= 0) {
             this.#breakpoints.remove(index);
         }
-        this.#breakpointElements.delete(url);
+        this.#breakpointElements.delete(breakKeyword);
         this.update();
     }
     addListElement(element, beforeNode) {
@@ -239,11 +239,11 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
             this.#list.element.classList.add('hidden');
         }
     }
-    contextMenu(url, event) {
+    contextMenu(breakKeyword, event) {
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
         function removeBreakpoint() {
-            SDK.DOMDebuggerModel.DOMDebuggerManager.instance().removeXHRBreakpoint(url);
-            this.removeBreakpoint(url);
+            SDK.DOMDebuggerModel.DOMDebuggerManager.instance().removeXHRBreakpoint(breakKeyword);
+            this.removeBreakpoint(breakKeyword);
         }
         function removeAllBreakpoints() {
             for (const url of this.#breakpointElements.keys()) {
@@ -258,20 +258,20 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
         contextMenu.defaultSection().appendItem(removeAllTitle, removeAllBreakpoints.bind(this));
         void contextMenu.show();
     }
-    checkboxClicked(url, checked) {
+    checkboxClicked(breakKeyword, checked) {
         const hadFocus = this.hasFocus();
-        SDK.DOMDebuggerModel.DOMDebuggerManager.instance().toggleXHRBreakpoint(url, !checked);
-        this.#list.refreshItem(url);
-        this.#list.selectItem(url);
+        SDK.DOMDebuggerModel.DOMDebuggerManager.instance().toggleXHRBreakpoint(breakKeyword, !checked);
+        this.#list.refreshItem(breakKeyword);
+        this.#list.selectItem(breakKeyword);
         if (hadFocus) {
             this.focus();
         }
     }
-    labelClicked(url) {
-        const element = this.#breakpointElements.get(url);
+    labelClicked(breakKeyword) {
+        const element = this.#breakpointElements.get(breakKeyword);
         const inputElement = document.createElement('span');
         inputElement.classList.add('breakpoint-condition');
-        inputElement.textContent = url;
+        inputElement.textContent = breakKeyword;
         if (element) {
             this.#list.element.insertBefore(inputElement, element);
             element.classList.add('hidden');
@@ -279,8 +279,8 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
         function finishEditing(accept, e, text) {
             this.removeListElement(inputElement);
             if (accept) {
-                SDK.DOMDebuggerModel.DOMDebuggerManager.instance().removeXHRBreakpoint(url);
-                this.removeBreakpoint(url);
+                SDK.DOMDebuggerModel.DOMDebuggerManager.instance().removeXHRBreakpoint(breakKeyword);
+                this.removeBreakpoint(breakKeyword);
                 let enabled = true;
                 if (element) {
                     const breakpointEntryElement = containerToBreakpointEntry.get(element);
@@ -311,7 +311,7 @@ export class XHRBreakpointsSidebarPane extends UI.Widget.VBox {
         this.#list.element.classList.toggle('hidden', isEmpty);
         this.#emptyElement.classList.toggle('hidden', !isEmpty);
         const details = UI.Context.Context.instance().flavor(SDK.DebuggerModel.DebuggerPausedDetails);
-        if (!details || details.reason !== "XHR" /* XHR */) {
+        if (!details || details.reason !== "XHR" /* Protocol.Debugger.PausedEventReason.XHR */) {
             if (this.#hitBreakpoint) {
                 const oldHitBreakpoint = this.#hitBreakpoint;
                 this.#hitBreakpoint = undefined;

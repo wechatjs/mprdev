@@ -32,6 +32,9 @@ export class ReportView extends VBox {
         ARIAUtils.markAsHeading(this.titleElement, 1);
         this.sectionList = this.contentBox.createChild('div', 'vbox');
     }
+    getHeaderElement() {
+        return this.headerElement;
+    }
     setTitle(title) {
         if (this.titleElement.textContent === title) {
             return;
@@ -106,6 +109,15 @@ export class Section extends VBox {
     }
     title() {
         return this.titleElement.textContent || '';
+    }
+    getTitleElement() {
+        return this.titleElement;
+    }
+    getFieldElement() {
+        return this.fieldList;
+    }
+    appendFieldWithCustomView(customElement) {
+        this.fieldList.append(customElement);
     }
     setTitle(title, tooltip) {
         if (this.titleElement.textContent !== title) {

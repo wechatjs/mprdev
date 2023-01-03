@@ -18,7 +18,10 @@ export declare enum RegisteredAdorners {
     FLEX = "flex",
     AD = "ad",
     SCROLL_SNAP = "scroll-snap",
-    CONTAINER = "container"
+    CONTAINER = "container",
+    SLOT = "slot",
+    TOP_LAYER = "top-layer",
+    REVEAL = "reveal"
 }
 export declare function getRegisteredAdorner(which: RegisteredAdorners): RegisteredAdorner;
 export declare const DefaultAdornerSettings: AdornerSetting[];

@@ -31,22 +31,28 @@ import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
 export class IndexedDBModel extends SDK.SDKModel.SDKModel {
     securityOriginManager;
+    storageKeyManager;
     indexedDBAgent;
     storageAgent;
     databasesInternal;
     databaseNamesBySecurityOrigin;
+    databaseNamesByStorageKey;
     originsUpdated;
+    updatedStorageKeys;
     throttler;
     enabled;
     constructor(target) {
         super(target);
         target.registerStorageDispatcher(this);
         this.securityOriginManager = target.model(SDK.SecurityOriginManager.SecurityOriginManager);
+        this.storageKeyManager = target.model(SDK.StorageKeyManager.StorageKeyManager);
         this.indexedDBAgent = target.indexedDBAgent();
         this.storageAgent = target.storageAgent();
         this.databasesInternal = new Map();
-        this.databaseNamesBySecurityOrigin = {};
+        this.databaseNamesBySecurityOrigin = new Map();
+        this.databaseNamesByStorageKey = new Map();
         this.originsUpdated = new Set();
+        this.updatedStorageKeys = new Set();
         this.throttler = new Common.Throttler.Throttler(1000);
     }
     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration)
@@ -59,20 +65,20 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
         switch (typeof (idbKey)) {
             case 'number':
                 key = {
-                    type: "number" /* Number */,
+                    type: "number" /* Protocol.IndexedDB.KeyType.Number */,
                     number: idbKey,
                 };
                 break;
             case 'string':
                 key = {
-                    type: "string" /* String */,
+                    type: "string" /* Protocol.IndexedDB.KeyType.String */,
                     string: idbKey,
                 };
                 break;
             case 'object':
                 if (idbKey instanceof Date) {
                     key = {
-                        type: "date" /* Date */,
+                        type: "date" /* Protocol.IndexedDB.KeyType.Date */,
                         date: idbKey.getTime(),
                     };
                 }
@@ -85,7 +91,7 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
                         }
                     }
                     key = {
-                        type: "array" /* Array */,
+                        type: "array" /* Protocol.IndexedDB.KeyType.Array */,
                         array,
                     };
                 }
@@ -109,13 +115,13 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
     static idbKeyPathFromKeyPath(keyPath) {
         let idbKeyPath;
         switch (keyPath.type) {
-            case "null" /* Null */:
+            case "null" /* Protocol.IndexedDB.KeyPathType.Null */:
                 idbKeyPath = null;
                 break;
-            case "string" /* String */:
+            case "string" /* Protocol.IndexedDB.KeyPathType.String */:
                 idbKeyPath = keyPath.string;
                 break;
-            case "array" /* Array */:
+            case "array" /* Protocol.IndexedDB.KeyPathType.Array */:
                 idbKeyPath = keyPath.array;
                 break;
         }
@@ -142,25 +148,49 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
                 this.addOrigin(securityOrigin);
             }
         }
+        if (this.storageKeyManager) {
+            this.storageKeyManager.addEventListener(SDK.StorageKeyManager.Events.StorageKeyAdded, this.storageKeyAdded, this);
+            this.storageKeyManager.addEventListener(SDK.StorageKeyManager.Events.StorageKeyRemoved, this.storageKeyRemoved, this);
+            for (const storageKey of this.storageKeyManager.storageKeys()) {
+                this.addStorageKey(storageKey);
+            }
+        }
         this.enabled = true;
     }
     clearForOrigin(origin) {
-        if (!this.enabled || !this.databaseNamesBySecurityOrigin[origin]) {
+        if (!this.enabled || !this.databaseNamesBySecurityOrigin.has(origin)) {
             return;
         }
         this.removeOrigin(origin);
         this.addOrigin(origin);
     }
+    clearForStorageKey(storageKey) {
+        if (!this.enabled || !this.databaseNamesByStorageKey.has(storageKey)) {
+            return;
+        }
+        this.removeStorageKey(storageKey);
+        this.addStorageKey(storageKey);
+    }
     async deleteDatabase(databaseId) {
         if (!this.enabled) {
             return;
         }
-        await this.indexedDBAgent.invoke_deleteDatabase({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name });
-        void this.loadDatabaseNames(databaseId.securityOrigin);
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            await this.indexedDBAgent.invoke_deleteDatabase({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name });
+            void this.loadDatabaseNames(databaseId.securityOrigin);
+        }
+        else if (databaseId.storageKey) {
+            await this.indexedDBAgent.invoke_deleteDatabase({ storageKey: databaseId.storageKey, databaseName: databaseId.name });
+            void this.loadDatabaseNamesByStorageKey(databaseId.storageKey);
+        }
     }
     async refreshDatabaseNames() {
-        for (const securityOrigin in this.databaseNamesBySecurityOrigin) {
+        for (const securityOrigin of this.databaseNamesBySecurityOrigin.keys()) {
             await this.loadDatabaseNames(securityOrigin);
+        }
+        for (const storageKey of this.databaseNamesByStorageKey.keys()) {
+            await this.loadDatabaseNamesByStorageKey(storageKey);
         }
         this.dispatchEventToListeners(Events.DatabaseNamesRefreshed);
     }
@@ -168,35 +198,67 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
         void this.loadDatabase(databaseId, true);
     }
     async clearObjectStore(databaseId, objectStoreName) {
-        await this.indexedDBAgent.invoke_clearObjectStore({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name, objectStoreName });
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            await this.indexedDBAgent.invoke_clearObjectStore({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name, objectStoreName });
+        }
+        else if (databaseId.storageKey) {
+            await this.indexedDBAgent.invoke_clearObjectStore({ storageKey: databaseId.storageKey, databaseName: databaseId.name, objectStoreName });
+        }
     }
     async deleteEntries(databaseId, objectStoreName, idbKeyRange) {
         const keyRange = IndexedDBModel.keyRangeFromIDBKeyRange(idbKeyRange);
-        await this.indexedDBAgent.invoke_deleteObjectStoreEntries({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name, objectStoreName, keyRange });
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            await this.indexedDBAgent.invoke_deleteObjectStoreEntries({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name, objectStoreName, keyRange });
+        }
+        else if (databaseId.storageKey) {
+            await this.indexedDBAgent.invoke_deleteObjectStoreEntries({ storageKey: databaseId.storageKey, databaseName: databaseId.name, objectStoreName, keyRange });
+        }
     }
     securityOriginAdded(event) {
         this.addOrigin(event.data);
     }
+    storageKeyAdded(event) {
+        this.addStorageKey(event.data);
+    }
     securityOriginRemoved(event) {
         this.removeOrigin(event.data);
     }
+    storageKeyRemoved(event) {
+        this.removeStorageKey(event.data);
+    }
     addOrigin(securityOrigin) {
-        console.assert(!this.databaseNamesBySecurityOrigin[securityOrigin]);
-        this.databaseNamesBySecurityOrigin[securityOrigin] = [];
+        console.assert(!this.databaseNamesBySecurityOrigin.has(securityOrigin));
+        this.databaseNamesBySecurityOrigin.set(securityOrigin, new Set());
         void this.loadDatabaseNames(securityOrigin);
         if (this.isValidSecurityOrigin(securityOrigin)) {
             void this.storageAgent.invoke_trackIndexedDBForOrigin({ origin: securityOrigin });
         }
     }
+    addStorageKey(storageKey) {
+        console.assert(!this.databaseNamesByStorageKey.has(storageKey));
+        this.databaseNamesByStorageKey.set(storageKey, new Set());
+        void this.loadDatabaseNamesByStorageKey(storageKey);
+        void this.storageAgent.invoke_trackIndexedDBForStorageKey({ storageKey });
+    }
     removeOrigin(securityOrigin) {
-        console.assert(Boolean(this.databaseNamesBySecurityOrigin[securityOrigin]));
-        for (let i = 0; i < this.databaseNamesBySecurityOrigin[securityOrigin].length; ++i) {
-            this.databaseRemoved(securityOrigin, this.databaseNamesBySecurityOrigin[securityOrigin][i]);
+        console.assert(this.databaseNamesBySecurityOrigin.has(securityOrigin));
+        for (const item of this.databaseNamesBySecurityOrigin.get(securityOrigin) || []) {
+            this.databaseRemoved(securityOrigin, item);
         }
-        delete this.databaseNamesBySecurityOrigin[securityOrigin];
+        this.databaseNamesBySecurityOrigin.delete(securityOrigin);
         if (this.isValidSecurityOrigin(securityOrigin)) {
             void this.storageAgent.invoke_untrackIndexedDBForOrigin({ origin: securityOrigin });
         }
+    }
+    removeStorageKey(storageKey) {
+        console.assert(this.databaseNamesByStorageKey.has(storageKey));
+        for (const name of this.databaseNamesByStorageKey.get(storageKey) || []) {
+            this.databaseRemovedForStorageKey(storageKey, name);
+        }
+        this.databaseNamesByStorageKey.delete(storageKey);
+        void this.storageAgent.invoke_untrackIndexedDBForStorageKey({ storageKey });
     }
     isValidSecurityOrigin(securityOrigin) {
         const parsedURL = Common.ParsedURL.ParsedURL.fromString(securityOrigin);
@@ -204,8 +266,8 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
     }
     updateOriginDatabaseNames(securityOrigin, databaseNames) {
         const newDatabaseNames = new Set(databaseNames);
-        const oldDatabaseNames = new Set(this.databaseNamesBySecurityOrigin[securityOrigin]);
-        this.databaseNamesBySecurityOrigin[securityOrigin] = databaseNames;
+        const oldDatabaseNames = new Set(this.databaseNamesBySecurityOrigin.get(securityOrigin));
+        this.databaseNamesBySecurityOrigin.set(securityOrigin, newDatabaseNames);
         for (const databaseName of oldDatabaseNames) {
             if (!newDatabaseNames.has(databaseName)) {
                 this.databaseRemoved(securityOrigin, databaseName);
@@ -217,22 +279,55 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
             }
         }
     }
+    updateStorageKeyDatabaseNames(storageKey, databaseNames) {
+        const newDatabaseNames = new Set(databaseNames);
+        const oldDatabaseNames = new Set(this.databaseNamesByStorageKey.get(storageKey));
+        this.databaseNamesByStorageKey.set(storageKey, newDatabaseNames);
+        for (const databaseName of oldDatabaseNames) {
+            if (!newDatabaseNames.has(databaseName)) {
+                this.databaseRemovedForStorageKey(storageKey, databaseName);
+            }
+        }
+        for (const databaseName of newDatabaseNames) {
+            if (!oldDatabaseNames.has(databaseName) && !this.hasDuplicateWithSecurityOrigin(storageKey, databaseName)) {
+                this.databaseAddedForStorageKey(storageKey, databaseName);
+            }
+        }
+    }
+    // TODO(crbug.com/1360001) Remove deduplication once we stop supporting security origin
+    hasDuplicateWithSecurityOrigin(storageKey, databaseName) {
+        const securityOrigin = storageKey.slice(0, -1);
+        const databaseNames = this.databaseNamesBySecurityOrigin.get(securityOrigin);
+        return Boolean(databaseNames?.has(databaseName));
+    }
     databases() {
         const result = [];
-        for (const securityOrigin in this.databaseNamesBySecurityOrigin) {
-            const databaseNames = this.databaseNamesBySecurityOrigin[securityOrigin];
-            for (let i = 0; i < databaseNames.length; ++i) {
-                result.push(new DatabaseId(securityOrigin, databaseNames[i]));
+        for (const [securityOrigin, databaseNames] of this.databaseNamesBySecurityOrigin) {
+            for (const databaseName of databaseNames) {
+                result.push(new DatabaseId(securityOrigin, undefined, databaseName));
+            }
+        }
+        for (const [storageKey, databaseNames] of this.databaseNamesByStorageKey) {
+            for (const name of databaseNames) {
+                result.push(new DatabaseId(undefined, storageKey, name));
             }
         }
         return result;
     }
     databaseAdded(securityOrigin, databaseName) {
-        const databaseId = new DatabaseId(securityOrigin, databaseName);
+        const databaseId = new DatabaseId(securityOrigin, undefined, databaseName);
+        this.dispatchEventToListeners(Events.DatabaseAdded, { model: this, databaseId: databaseId });
+    }
+    databaseAddedForStorageKey(storageKey, databaseName) {
+        const databaseId = new DatabaseId(undefined, storageKey, databaseName);
         this.dispatchEventToListeners(Events.DatabaseAdded, { model: this, databaseId: databaseId });
     }
     databaseRemoved(securityOrigin, databaseName) {
-        const databaseId = new DatabaseId(securityOrigin, databaseName);
+        const databaseId = new DatabaseId(securityOrigin, undefined, databaseName);
+        this.dispatchEventToListeners(Events.DatabaseRemoved, { model: this, databaseId: databaseId });
+    }
+    databaseRemovedForStorageKey(storageKey, databaseName) {
+        const databaseId = new DatabaseId(undefined, storageKey, databaseName);
         this.dispatchEventToListeners(Events.DatabaseRemoved, { model: this, databaseId: databaseId });
     }
     async loadDatabaseNames(securityOrigin) {
@@ -240,18 +335,45 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
         if (!databaseNames) {
             return [];
         }
-        if (!this.databaseNamesBySecurityOrigin[securityOrigin]) {
+        if (!this.databaseNamesBySecurityOrigin.has(securityOrigin)) {
             return [];
         }
         this.updateOriginDatabaseNames(securityOrigin, databaseNames);
         return databaseNames;
     }
-    async loadDatabase(databaseId, entriesUpdated) {
-        const { databaseWithObjectStores } = await this.indexedDBAgent.invoke_requestDatabase({ securityOrigin: databaseId.securityOrigin, databaseName: databaseId.name });
-        if (!databaseWithObjectStores) {
-            return;
+    async loadDatabaseNamesByStorageKey(storageKey) {
+        const { databaseNames } = await this.indexedDBAgent.invoke_requestDatabaseNames({ storageKey });
+        if (!databaseNames) {
+            return [];
         }
-        if (!this.databaseNamesBySecurityOrigin[databaseId.securityOrigin]) {
+        if (!this.databaseNamesByStorageKey.has(storageKey)) {
+            return [];
+        }
+        this.updateStorageKeyDatabaseNames(storageKey, databaseNames);
+        return databaseNames;
+    }
+    async loadDatabase(databaseId, entriesUpdated) {
+        let databaseWithObjectStores = null;
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            databaseWithObjectStores = (await this.indexedDBAgent.invoke_requestDatabase({
+                securityOrigin: databaseId.securityOrigin,
+                databaseName: databaseId.name,
+            })).databaseWithObjectStores;
+            if (!this.databaseNamesBySecurityOrigin.has(databaseId.securityOrigin)) {
+                return;
+            }
+        }
+        else if (databaseId.storageKey) {
+            databaseWithObjectStores = (await this.indexedDBAgent.invoke_requestDatabase({
+                storageKey: databaseId.storageKey,
+                databaseName: databaseId.name,
+            })).databaseWithObjectStores;
+            if (!this.databaseNamesByStorageKey.has(databaseId.storageKey)) {
+                return;
+            }
+        }
+        if (!databaseWithObjectStores) {
             return;
         }
         const databaseModel = new Database(databaseId, databaseWithObjectStores.version);
@@ -277,38 +399,71 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
     }
     async requestData(databaseId, databaseName, objectStoreName, indexName, idbKeyRange, skipCount, pageSize, callback) {
         const keyRange = idbKeyRange ? IndexedDBModel.keyRangeFromIDBKeyRange(idbKeyRange) : undefined;
-        const response = await this.indexedDBAgent.invoke_requestData({
-            securityOrigin: databaseId.securityOrigin,
-            databaseName,
-            objectStoreName,
-            indexName,
-            skipCount,
-            pageSize,
-            keyRange,
-        });
-        if (response.getError()) {
-            console.error('IndexedDBAgent error: ' + response.getError());
+        const runtimeModel = this.target().model(SDK.RuntimeModel.RuntimeModel);
+        let response = null;
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            response = await this.indexedDBAgent.invoke_requestData({
+                securityOrigin: databaseId.securityOrigin,
+                databaseName,
+                objectStoreName,
+                indexName,
+                skipCount,
+                pageSize,
+                keyRange,
+            });
+            if (!runtimeModel || !this.databaseNamesBySecurityOrigin.has(databaseId.securityOrigin)) {
+                return;
+            }
+        }
+        else if (databaseId.storageKey) {
+            response = await this.indexedDBAgent.invoke_requestData({
+                storageKey: databaseId.storageKey,
+                databaseName,
+                objectStoreName,
+                indexName,
+                skipCount,
+                pageSize,
+                keyRange,
+            });
+            if (!runtimeModel || !this.databaseNamesByStorageKey.has(databaseId.storageKey)) {
+                return;
+            }
+        }
+        if (!response) {
             return;
         }
-        const runtimeModel = this.target().model(SDK.RuntimeModel.RuntimeModel);
-        if (!runtimeModel || !this.databaseNamesBySecurityOrigin[databaseId.securityOrigin]) {
+        if (response.getError()) {
+            console.error('IndexedDBAgent error: ' + response.getError());
             return;
         }
         const dataEntries = response.objectStoreDataEntries;
         const entries = [];
         for (const dataEntry of dataEntries) {
-            const key = runtimeModel.createRemoteObject(dataEntry.key);
-            const primaryKey = runtimeModel.createRemoteObject(dataEntry.primaryKey);
-            const value = runtimeModel.createRemoteObject(dataEntry.value);
+            const key = runtimeModel?.createRemoteObject(dataEntry.key);
+            const primaryKey = runtimeModel?.createRemoteObject(dataEntry.primaryKey);
+            const value = runtimeModel?.createRemoteObject(dataEntry.value);
+            if (!key || !primaryKey || !value) {
+                return;
+            }
             entries.push(new Entry(key, primaryKey, value));
         }
         callback(entries, response.hasMore);
     }
     async getMetadata(databaseId, objectStore) {
-        const databaseOrigin = databaseId.securityOrigin;
         const databaseName = databaseId.name;
         const objectStoreName = objectStore.name;
-        const response = await this.indexedDBAgent.invoke_getMetadata({ securityOrigin: databaseOrigin, databaseName, objectStoreName });
+        let response = null;
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (databaseId.securityOrigin) {
+            response = await this.indexedDBAgent.invoke_getMetadata({ securityOrigin: databaseId.securityOrigin, databaseName, objectStoreName });
+        }
+        else if (databaseId.storageKey) {
+            await this.indexedDBAgent.invoke_getMetadata({ storageKey: databaseId.storageKey, databaseName, objectStoreName });
+        }
+        if (!response) {
+            return null;
+        }
         if (response.getError()) {
             console.error('IndexedDBAgent error: ' + response.getError());
             return null;
@@ -318,21 +473,42 @@ export class IndexedDBModel extends SDK.SDKModel.SDKModel {
     async refreshDatabaseList(securityOrigin) {
         const databaseNames = await this.loadDatabaseNames(securityOrigin);
         for (const databaseName of databaseNames) {
-            void this.loadDatabase(new DatabaseId(securityOrigin, databaseName), false);
+            void this.loadDatabase(new DatabaseId(securityOrigin, undefined, databaseName), false);
         }
     }
-    indexedDBListUpdated({ origin: securityOrigin }) {
-        this.originsUpdated.add(securityOrigin);
-        void this.throttler.schedule(() => {
-            const promises = Array.from(this.originsUpdated, securityOrigin => {
-                void this.refreshDatabaseList(securityOrigin);
-            });
-            this.originsUpdated.clear();
-            return Promise.all(promises);
-        });
+    async refreshDatabaseListForStorageKey(storageKey) {
+        const databaseNames = await this.loadDatabaseNamesByStorageKey(storageKey);
+        for (const databaseName of databaseNames) {
+            void this.loadDatabase(new DatabaseId(undefined, storageKey, databaseName), false);
+        }
     }
-    indexedDBContentUpdated({ origin: securityOrigin, databaseName, objectStoreName }) {
-        const databaseId = new DatabaseId(securityOrigin, databaseName);
+    indexedDBListUpdated({ origin: securityOrigin, storageKey: storageKey }) {
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        if (securityOrigin) {
+            this.originsUpdated.add(securityOrigin);
+            void this.throttler.schedule(() => {
+                const promises = Array.from(this.originsUpdated, securityOrigin => {
+                    void this.refreshDatabaseList(securityOrigin);
+                });
+                this.originsUpdated.clear();
+                return Promise.all(promises);
+            });
+        }
+        else if (storageKey) {
+            this.updatedStorageKeys.add(storageKey);
+            void this.throttler.schedule(() => {
+                const promises = Array.from(this.updatedStorageKeys, storageKey => {
+                    void this.refreshDatabaseListForStorageKey(storageKey);
+                });
+                this.updatedStorageKeys.clear();
+                return Promise.all(promises);
+            });
+        }
+    }
+    indexedDBContentUpdated({ origin: securityOrigin, storageKey, databaseName, objectStoreName }) {
+        // TODO(crbug.com/1347831) Prioritize storageKey once everything is ready
+        const databaseId = securityOrigin ? new DatabaseId(securityOrigin, undefined, databaseName) :
+            new DatabaseId(undefined, storageKey, databaseName);
         this.dispatchEventToListeners(Events.IndexedDBContentUpdated, { databaseId: databaseId, objectStoreName: objectStoreName, model: this });
     }
     cacheStorageListUpdated(_event) {
@@ -365,13 +541,23 @@ export class Entry {
 }
 export class DatabaseId {
     securityOrigin;
+    storageKey;
     name;
-    constructor(securityOrigin, name) {
+    constructor(securityOrigin, storageKey, name) {
+        if (Boolean(securityOrigin) === Boolean(storageKey)) {
+            throw new Error('At least and at most one of security origin or storage key must be defined');
+        }
         this.securityOrigin = securityOrigin;
+        this.storageKey = securityOrigin ? undefined : storageKey;
         this.name = name;
     }
+    // cannot be null since constructor checks that either one of security origin or storage key is set
+    getOriginOrStorageKey() {
+        return this.securityOrigin ? this.securityOrigin : this.storageKey;
+    }
     equals(databaseId) {
-        return this.name === databaseId.name && this.securityOrigin === databaseId.securityOrigin;
+        return this.name === databaseId.name && this.securityOrigin === databaseId.securityOrigin &&
+            this.storageKey === databaseId.storageKey;
     }
 }
 export class Database {

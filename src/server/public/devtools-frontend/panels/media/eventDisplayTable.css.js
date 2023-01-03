@@ -24,6 +24,10 @@ styles.replaceSync(
   line-height: 26px;
 }
 
+.event-display-table-contents-json-wrapper > .json-view {
+  overflow: visible;
+}
+
 /*# sourceURL=eventDisplayTable.css */
 `);
 export default styles;

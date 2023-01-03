@@ -104,6 +104,15 @@ const UIStrings = {
     *@description The aria label for the drawer hidden.
     */
     drawerHidden: 'Drawer hidden',
+    /**
+    * @description Request for the user to select a local file system folder for DevTools
+    * to store local overrides in.
+    */
+    selectOverrideFolder: 'Select a folder to store override files in.',
+    /**
+    *@description Label for a button which opens a file picker.
+    */
+    selectFolder: 'Select folder',
 };
 const str_ = i18n.i18n.registerUIStrings('ui/legacy/InspectorView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -121,6 +130,7 @@ export class InspectorView extends VBox {
     focusRestorer;
     ownerSplitWidget;
     reloadRequiredInfobar;
+    #selectOverrideFolderInfobar;
     constructor() {
         super();
         GlassPane.setContainer(this.element);
@@ -153,6 +163,12 @@ export class InspectorView extends VBox {
         this.tabbedLocation = ViewManager.instance().createTabbedLocation(Host.InspectorFrontendHost.InspectorFrontendHostInstance.bringToFront.bind(Host.InspectorFrontendHost.InspectorFrontendHostInstance), 'panel', true, true, Root.Runtime.Runtime.queryParam('panel'));
         this.tabbedPane = this.tabbedLocation.tabbedPane();
         this.tabbedPane.element.classList.add('main-tabbed-pane');
+        // The 'Inspect element' and 'Device mode' buttons in the tabs toolbar takes longer to load than
+        // the tabs themselves, so a space equal to the buttons' total width is preemptively allocated
+        // to prevent to prevent a shift in the tab layout. Note that when DevTools cannot be docked,
+        // the Device mode button is not added and so the allocated space is smaller.
+        const allocatedSpace = Root.Runtime.Runtime.queryParam(Root.Runtime.ConditionName.CAN_DOCK) ? '69px' : '41px';
+        this.tabbedPane.leftToolbar().element.style.minWidth = allocatedSpace;
         this.tabbedPane.registerRequiredCSS(inspectorViewTabbedPaneStyles);
         this.tabbedPane.addEventListener(TabbedPaneEvents.TabSelected, this.tabSelected, this);
         this.tabbedPane.setAccessibleName(i18nString(UIStrings.panels));
@@ -370,6 +386,24 @@ export class InspectorView extends VBox {
             });
         }
     }
+    displaySelectOverrideFolderInfobar(callback) {
+        if (!this.#selectOverrideFolderInfobar) {
+            const infobar = new Infobar(InfobarType.Info, i18nString(UIStrings.selectOverrideFolder), [
+                {
+                    text: i18nString(UIStrings.selectFolder),
+                    highlight: true,
+                    delegate: () => callback(),
+                    dismiss: true,
+                },
+            ]);
+            infobar.setParentView(this);
+            this.attachInfobar(infobar);
+            this.#selectOverrideFolderInfobar = infobar;
+            infobar.setCloseCallback(() => {
+                this.#selectOverrideFolderInfobar = undefined;
+            });
+        }
+    }
     createInfoBarDiv() {
         if (!this.infoBarDiv) {
             this.infoBarDiv = document.createElement('div');
@@ -404,7 +438,7 @@ function createLocaleInfobar() {
     const devtoolsLocale = i18n.DevToolsLocale.DevToolsLocale.instance();
     const closestSupportedLocale = devtoolsLocale.lookupClosestDevToolsLocale(navigator.language);
     const locale = new Intl.Locale(closestSupportedLocale);
-    const closestSupportedLanguageInCurrentLocale = new Intl.DisplayNames([devtoolsLocale.locale], { type: 'language' }).of(locale.language || 'en');
+    const closestSupportedLanguageInCurrentLocale = new Intl.DisplayNames([devtoolsLocale.locale], { type: 'language' }).of(locale.language || 'en') || 'English';
     const languageSetting = Common.Settings.Settings.instance().moduleSetting('language');
     return new Infobar(InfobarType.Info, i18nString(UIStrings.devToolsLanguageMissmatch, { PH1: closestSupportedLanguageInCurrentLocale }), [
         {
@@ -430,7 +464,7 @@ function createLocaleInfobar() {
     ], getDisableLocaleInfoBarSetting());
 }
 function reloadDevTools() {
-    if (DockController.instance().canDock() && DockController.instance().dockSide() === "undocked" /* UNDOCKED */) {
+    if (DockController.instance().canDock() && DockController.instance().dockSide() === "undocked" /* DockState.UNDOCKED */) {
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.setIsDocked(true, function () { });
     }
     Host.InspectorFrontendHost.InspectorFrontendHostInstance.reattach(() => window.location.reload());

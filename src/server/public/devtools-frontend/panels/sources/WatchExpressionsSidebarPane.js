@@ -172,7 +172,7 @@ export class WatchExpressionsSidebarPane extends UI.ThrottledWidget.ThrottledWid
     createWatchExpression(expression) {
         this.contentElement.appendChild(this.treeOutline.element);
         const watchExpression = new WatchExpression(expression, this.expandController, this.linkifier);
-        watchExpression.addEventListener("ExpressionUpdated" /* ExpressionUpdated */, this.watchExpressionUpdated, this);
+        watchExpression.addEventListener("ExpressionUpdated" /* Events.ExpressionUpdated */, this.watchExpressionUpdated, this);
         this.treeOutline.appendChild(watchExpression.treeElement());
         this.watchExpressions.push(watchExpression);
         return watchExpression;
@@ -362,7 +362,7 @@ export class WatchExpression extends Common.ObjectWrapper.ObjectWrapper {
         this.resizeObserver?.disconnect();
         this.expressionInternal = newExpression;
         this.update();
-        this.dispatchEventToListeners("ExpressionUpdated" /* ExpressionUpdated */, this);
+        this.dispatchEventToListeners("ExpressionUpdated" /* Events.ExpressionUpdated */, this);
     }
     deleteWatchExpression(event) {
         event.consume(true);
@@ -471,8 +471,9 @@ export class WatchExpression extends Common.ObjectWrapper.ObjectWrapper {
         }
     }
     promptKeyDown(event) {
-        if (event.key === 'Enter' || isEscKey(event)) {
-            this.finishEditing(event, isEscKey(event));
+        const isEscapeKey = Platform.KeyboardUtilities.isEscKey(event);
+        if (event.key === 'Enter' || isEscapeKey) {
+            this.finishEditing(event, isEscapeKey);
         }
     }
     populateContextMenu(contextMenu, event) {

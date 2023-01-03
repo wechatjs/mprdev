@@ -79,7 +79,7 @@ export class CompilerScriptMapping {
         }
     }
     addStubUISourceCode(script) {
-        const stubUISourceCode = this.#stubProject.addContentProvider(script.sourceURL + ':sourcemap', TextUtils.StaticContentProvider.StaticContentProvider.fromString(script.sourceURL, Common.ResourceType.resourceTypes.Script, '\n\n\n\n\n// Please wait a bit.\n// Compiled script is not shown while source map is being loaded!'), 'text/javascript');
+        const stubUISourceCode = this.#stubProject.addContentProvider(Common.ParsedURL.ParsedURL.concatenate(script.sourceURL, ':sourcemap'), TextUtils.StaticContentProvider.StaticContentProvider.fromString(script.sourceURL, Common.ResourceType.resourceTypes.Script, '\n\n\n\n\n// Please wait a bit.\n// Compiled script is not shown while source map is being loaded!'), 'text/javascript');
         this.#stubUISourceCodes.set(script, stubUISourceCode);
     }
     async removeStubUISourceCode(script) {
@@ -186,7 +186,7 @@ export class CompilerScriptMapping {
         const script = event.data.client;
         const sourceMap = event.data.sourceMap;
         await this.removeStubUISourceCode(script);
-        if (IgnoreListManager.instance().isIgnoreListedURL(script.sourceURL, script.isContentScript())) {
+        if (IgnoreListManager.instance().isUserIgnoreListedURL(script.sourceURL, script.isContentScript())) {
             this.sourceMapAttachedForTest(sourceMap);
             return;
         }
@@ -268,9 +268,12 @@ class Binding {
         this.referringSourceMaps = [];
         this.uiSourceCode = null;
     }
-    recreateUISourceCodeIfNeeded(frameId) {
+    recreateUISourceCodeIfNeeded(frameId, isKnownThirdParty) {
         const sourceMap = this.referringSourceMaps[this.referringSourceMaps.length - 1];
         const newUISourceCode = this.#project.createUISourceCode(this.#url, Common.ResourceType.resourceTypes.SourceMapScript);
+        if (isKnownThirdParty) {
+            newUISourceCode.markKnownThirdParty();
+        }
         uiSourceCodeToBinding.set(newUISourceCode, this);
         const contentProvider = sourceMap.sourceContentProvider(this.#url, Common.ResourceType.resourceTypes.SourceMapScript);
         const mimeType = Common.ResourceType.ResourceType.mimeFromURL(this.#url) || 'text/javascript';
@@ -293,7 +296,7 @@ class Binding {
             NetworkProject.addFrameAttribution(this.uiSourceCode, frameId);
         }
         this.referringSourceMaps.push(sourceMap);
-        this.recreateUISourceCodeIfNeeded(frameId);
+        this.recreateUISourceCodeIfNeeded(frameId, sourceMap.hasIgnoreListHint(this.#url));
     }
     removeSourceMap(sourceMap, frameId) {
         const uiSourceCode = this.uiSourceCode;
@@ -307,7 +310,7 @@ class Binding {
             this.uiSourceCode = null;
         }
         else {
-            this.recreateUISourceCodeIfNeeded(frameId);
+            this.recreateUISourceCodeIfNeeded(frameId, sourceMap.hasIgnoreListHint(this.#url));
         }
     }
     getReferringSourceMaps() {

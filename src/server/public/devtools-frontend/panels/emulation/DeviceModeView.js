@@ -90,7 +90,7 @@ export class DeviceModeView extends UI.Widget.VBox {
         this.element.classList.add('device-mode-view');
         this.registerRequiredCSS(deviceModeViewStyles);
         this.model = EmulationModel.DeviceModeModel.DeviceModeModel.instance();
-        this.model.addEventListener("Updated" /* Updated */, this.updateUI, this);
+        this.model.addEventListener("Updated" /* EmulationModel.DeviceModeModel.Events.Updated */, this.updateUI, this);
         this.mediaInspector =
             new MediaQueryInspector(() => this.model.appliedDeviceSize().width, this.model.setWidth.bind(this.model));
         this.showMediaInspectorSetting = Common.Settings.Settings.instance().moduleSetting('showMediaQueryInspector');
@@ -102,7 +102,7 @@ export class DeviceModeView extends UI.Widget.VBox {
         this.leftRuler = new Ruler(false, this.model.setHeightAndScaleToFit.bind(this.model));
         this.leftRuler.element.classList.add('device-mode-ruler-left');
         this.createUI();
-        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomChanged */, this.zoomChanged, this);
+        UI.ZoomManager.ZoomManager.instance().addEventListener("ZoomChanged" /* UI.ZoomManager.Events.ZoomChanged */, this.zoomChanged, this);
     }
     createUI() {
         this.toolbar = new DeviceModeToolbar(this.model, this.showMediaInspectorSetting, this.showRulersSetting);

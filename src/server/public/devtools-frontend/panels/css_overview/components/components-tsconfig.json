@@ -46,6 +46,9 @@
       "path": "../../../ui/components/panel_feedback/bundle-tsconfig.json"
     },
     {
+      "path": "../../../ui/components/panel_introduction_steps/bundle-tsconfig.json"
+    },
+    {
       "path": "../../../ui/lit-html/bundle-tsconfig.json"
     }
   ]

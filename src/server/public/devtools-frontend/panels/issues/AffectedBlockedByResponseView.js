@@ -47,7 +47,7 @@ export class AffectedBlockedByResponseView extends AffectedResourcesView {
         element.classList.add('affected-resource-row');
         const requestCell = this.createRequestCell(details.request, {
             additionalOnClickAction() {
-                Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.CrossOriginEmbedderPolicy, "Request" /* Request */);
+                Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.CrossOriginEmbedderPolicy, "Request" /* AffectedItem.Request */);
             },
         });
         element.appendChild(requestCell);

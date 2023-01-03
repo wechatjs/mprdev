@@ -1,4 +1,4 @@
-import type { EventPayload } from './TracingManager.js';
+import { type EventPayload } from './TracingManager.js';
 export declare class TracingModel {
     #private;
     constructor(backingStorage: BackingStorage);
@@ -25,7 +25,6 @@ export declare class TracingModel {
     getProcessByName(name: string): Process | null;
     getProcessById(pid: number): Process | null;
     getThreadByName(processName: string, threadName: string): Thread | null;
-    extractEventsFromThreadByName(processName: string, threadName: string, eventName: string): Event[];
     private processPendingAsyncEvents;
     private closeOpenAsyncEvents;
     private addNestableAsyncEvent;

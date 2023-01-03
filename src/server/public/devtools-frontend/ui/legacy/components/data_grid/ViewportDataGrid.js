@@ -136,7 +136,7 @@ export class ViewportDataGrid extends Common.ObjectWrapper.eventMixin(DataGridIm
             this.element.window().cancelAnimationFrame(this.updateAnimationFrameId);
             delete this.updateAnimationFrameId;
         }
-        const clientHeight = this.scrollContainer.clientHeight;
+        const clientHeight = this.scrollContainer.clientHeight - this.headerHeightInScroller();
         let scrollTop = this.scrollContainer.scrollTop;
         const currentScrollTop = scrollTop;
         const maxScrollTop = Math.max(0, this.contentHeight() - clientHeight);
@@ -204,12 +204,13 @@ export class ViewportDataGrid extends Common.ObjectWrapper.eventMixin(DataGridIm
         }
         const toY = fromY + node.nodeSelfHeight();
         let scrollTop = this.scrollContainer.scrollTop;
+        const visibleHeight = this.scrollContainer.offsetHeight - this.headerHeightInScroller();
         if (scrollTop > fromY) {
             scrollTop = fromY;
             this.stickToBottom = false;
         }
-        else if (scrollTop + this.scrollContainer.offsetHeight < toY) {
-            scrollTop = toY - this.scrollContainer.offsetHeight;
+        else if (scrollTop + visibleHeight < toY) {
+            scrollTop = toY - visibleHeight;
         }
         this.scrollContainer.scrollTop = scrollTop;
     }

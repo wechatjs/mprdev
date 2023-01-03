@@ -159,7 +159,7 @@ export class GraphView extends Common.ObjectWrapper.ObjectWrapper {
         this.notifyShouldRedraw();
     }
     notifyShouldRedraw() {
-        this.dispatchEventToListeners("ShouldRedraw" /* ShouldRedraw */, this);
+        this.dispatchEventToListeners("ShouldRedraw" /* Events.ShouldRedraw */, this);
     }
 }
 //# sourceMappingURL=GraphView.js.map

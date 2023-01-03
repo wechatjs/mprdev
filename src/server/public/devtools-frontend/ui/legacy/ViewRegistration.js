@@ -36,6 +36,11 @@ export function registerLocationResolver(registration) {
 export function getRegisteredLocationResolvers() {
     return registeredLocationResolvers;
 }
+export function resetViewRegistration() {
+    registeredViewExtensions.length = 0;
+    registeredLocationResolvers.length = 0;
+    viewLocationNameSet.clear();
+}
 // TODO(crbug.com/1181019)
 export const ViewLocationCategoryValues = {
     ELEMENTS: 'Elements',

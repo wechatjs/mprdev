@@ -1,5 +1,4 @@
-import type { Setting } from './LayoutPaneUtils.js';
-import type { LayoutElement } from './LayoutPaneUtils.js';
+import { type LayoutElement, type Setting } from './LayoutPaneUtils.js';
 export { LayoutElement };
 export declare class SettingChangedEvent extends Event {
     static readonly eventName = "settingchanged";

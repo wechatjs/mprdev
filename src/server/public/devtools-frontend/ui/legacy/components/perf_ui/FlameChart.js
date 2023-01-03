@@ -31,7 +31,6 @@ import * as Common from '../../../../core/common/common.js';
 import * as Host from '../../../../core/host/host.js';
 import * as i18n from '../../../../core/i18n/i18n.js';
 import * as Platform from '../../../../core/platform/platform.js';
-import * as Root from '../../../../core/root/root.js';
 import * as UI from '../../legacy.js';
 import * as ThemeSupport from '../../theme_support/theme_support.js';
 import { ChartViewport } from './ChartViewport.js';
@@ -77,24 +76,19 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
     groupExpansionSetting;
     groupExpansionState;
     flameChartDelegate;
-    useWebGL;
     chartViewport;
     dataProvider;
     candyStripeCanvas;
     viewportElement;
-    canvasGL;
     canvas;
     entryInfo;
     markerHighlighElement;
     highlightElement;
     selectedElement;
     rulerEnabled;
-    rangeSelectionStart;
-    rangeSelectionEnd;
     barHeight;
     textBaseline;
     textPadding;
-    markerRadius;
     headerLeftPadding;
     arrowSide;
     expansionArrowIndent;
@@ -104,7 +98,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
     highlightedEntryIndex;
     selectedEntryIndex;
     rawTimelineDataLength;
-    textWidth;
     markerPositions;
     lastMouseOffsetX;
     selectedGroup;
@@ -116,15 +109,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
     lastMouseOffsetY;
     minimumBoundaryInternal;
     maxDragOffset;
-    shaderProgram;
-    vertexBuffer;
-    colorBuffer;
-    uScalingFactor;
-    uShiftVector;
-    aVertexPosition;
-    aVertexColor;
-    vertexCount;
-    prevTimelineData;
     timelineLevels;
     visibleLevelOffsets;
     visibleLevels;
@@ -141,17 +125,12 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         this.groupExpansionSetting = groupExpansionSetting;
         this.groupExpansionState = groupExpansionSetting && groupExpansionSetting.get() || {};
         this.flameChartDelegate = flameChartDelegate;
-        this.useWebGL = Root.Runtime.experiments.isEnabled('timelineWebGL');
         this.chartViewport = new ChartViewport(this);
         this.chartViewport.show(this.contentElement);
         this.dataProvider = dataProvider;
         this.candyStripeCanvas = document.createElement('canvas');
         this.createCandyStripePattern();
         this.viewportElement = this.chartViewport.viewportElement;
-        if (this.useWebGL) {
-            this.canvasGL = this.viewportElement.createChild('canvas', 'fill');
-            this.initWebGL();
-        }
         this.canvas = this.viewportElement.createChild('canvas', 'fill');
         this.canvas.tabIndex = 0;
         UI.ARIAUtils.setAccessibleName(this.canvas, i18nString(UIStrings.flameChart));
@@ -171,12 +150,9 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         }, false);
         UI.UIUtils.installDragHandle(this.viewportElement, this.startDragging.bind(this), this.dragging.bind(this), this.endDragging.bind(this), null);
         this.rulerEnabled = true;
-        this.rangeSelectionStart = 0;
-        this.rangeSelectionEnd = 0;
         this.barHeight = 17;
         this.textBaseline = 5;
         this.textPadding = 5;
-        this.markerRadius = 6;
         this.chartViewport.setWindowTimes(dataProvider.minimumBoundary(), dataProvider.minimumBoundary() + dataProvider.totalTime());
         this.headerLeftPadding = 6;
         this.arrowSide = 8;
@@ -187,7 +163,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         this.highlightedEntryIndex = -1;
         this.selectedEntryIndex = -1;
         this.rawTimelineDataLength = 0;
-        this.textWidth = new Map();
         this.markerPositions = new Map();
         this.lastMouseOffsetX = 0;
         this.selectedGroup = -1;
@@ -261,12 +236,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         this.canvas.height = height;
         this.canvas.style.width = `${width / ratio}px`;
         this.canvas.style.height = `${height / ratio}px`;
-        if (this.useWebGL) {
-            this.canvasGL.width = width;
-            this.canvasGL.height = height;
-            this.canvasGL.style.width = `${width / ratio}px`;
-            this.canvasGL.style.height = `${height / ratio}px`;
-        }
     }
     windowChanged(startTime, endTime, animate) {
         this.flameChartDelegate.windowChanged(startTime, endTime, animate);
@@ -838,31 +807,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         }
         return group;
     }
-    markerIndexAtPosition(x) {
-        const timelineData = this.timelineData();
-        if (!timelineData) {
-            return -1;
-        }
-        const markers = timelineData.markers;
-        if (!markers) {
-            return -1;
-        }
-        const /** @const */ accurracyOffsetPx = 4;
-        const time = this.chartViewport.pixelToTime(x);
-        const leftTime = this.chartViewport.pixelToTime(x - accurracyOffsetPx);
-        const rightTime = this.chartViewport.pixelToTime(x + accurracyOffsetPx);
-        const left = this.markerIndexBeforeTime(leftTime);
-        let markerIndex = -1;
-        let distance = Infinity;
-        for (let i = left; i < markers.length && markers[i].startTime() < rightTime; i++) {
-            const nextDistance = Math.abs(markers[i].startTime() - time);
-            if (nextDistance < distance) {
-                markerIndex = i;
-                distance = nextDistance;
-            }
-        }
-        return markerIndex;
-    }
     markerIndexBeforeTime(time) {
         const timelineData = this.timelineData();
         if (!timelineData) {
@@ -897,9 +841,16 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         const entryStartTimes = timelineData.entryStartTimes;
         const entryLevels = timelineData.entryLevels;
         const timeToPixel = this.chartViewport.timeToPixel();
+        // These are the event indexes of events that we are drawing onto the timeline that:
+        // 1) have text within them
+        // 2) are visually wide enough in pixels to make it worth rendering the text.
         const titleIndices = [];
+        // These point to events that represent single points in the timeline, most
+        // often an event such as DCL/LCP.
         const markerIndices = [];
         const textPadding = this.textPadding;
+        // How wide in pixels / long in duration an event needs to be to make it
+        // worthwhile rendering the text inside it.
         const minTextWidth = 2 * textPadding + UI.UIUtils.measureTextWidth(context, '…');
         const minTextWidthDuration = this.chartViewport.pixelToTimeOffset(minTextWidth);
         const minVisibleBarLevel = Math.max(Platform.ArrayUtilities.upperBound(visibleLevelOffsets, top, Platform.ArrayUtilities.DEFAULT_COMPARATOR) - 1, 0);
@@ -917,6 +868,11 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
                 mainThreadTopLevel = mainThread.startLevel;
             }
         }
+        // As we parse each event, we bucket them into groups based on the color we
+        // will render them with. The key of this map will be a color, and all
+        // events stored in the `indexes` array for that color will be painted as
+        // such. This way, when rendering events, we can render them based on
+        // color, and ensure the minimum amount of changes to context.fillStyle.
         const colorBuckets = new Map();
         for (let level = minVisibleBarLevel; level < this.dataProvider.maxStackDepth(); ++level) {
             if (this.levelToOffset(level) > top + height) {
@@ -936,20 +892,22 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
             for (let entryIndexOnLevel = rightIndexOnLevel; entryIndexOnLevel >= 0; --entryIndexOnLevel) {
                 const entryIndex = levelIndexes[entryIndexOnLevel];
                 const duration = entryTotalTimes[entryIndex];
+                // Markers are single events in time (e.g. LCP): they do not have a duration.
                 if (isNaN(duration)) {
                     markerIndices.push(entryIndex);
                     continue;
                 }
                 if (duration >= minTextWidthDuration || (this.forceDecorationCache && this.forceDecorationCache[entryIndex])) {
+                    // If the event is big enough visually to have its text rendered,
+                    // or if it's in the array of event indexes that we forcibly render (as defined by the data provider)
+                    // then we store its index. Later on, we'll loop through all
+                    // `titleIndices` to render the text for each event.
                     titleIndices.push(entryIndex);
                 }
                 const entryStartTime = entryStartTimes[entryIndex];
                 const entryOffsetRight = entryStartTime + duration;
                 if (entryOffsetRight <= this.chartViewport.windowLeftTime()) {
                     break;
-                }
-                if (this.useWebGL) {
-                    continue;
                 }
                 const barX = this.timeToPositionClipped(entryStartTime);
                 // Check if the entry entirely fits into an already drawn pixel, we can just skip drawing it.
@@ -968,63 +926,58 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
                 }
             }
         }
-        if (this.useWebGL) {
-            this.drawGL();
-        }
-        else {
-            context.save();
-            this.forEachGroupInViewport((offset, index, group, isFirst, groupHeight) => {
-                if (this.isGroupFocused(index)) {
-                    context.fillStyle =
-                        ThemeSupport.ThemeSupport.instance().getComputedValue('--selected-group-background', this.contentElement);
-                    context.fillRect(0, offset, width, groupHeight - group.style.padding);
+        context.save();
+        this.forEachGroupInViewport((offset, index, group, isFirst, groupHeight) => {
+            if (this.isGroupFocused(index)) {
+                context.fillStyle =
+                    ThemeSupport.ThemeSupport.instance().getComputedValue('--selected-group-background', this.contentElement);
+                context.fillRect(0, offset, width, groupHeight - group.style.padding);
+            }
+        });
+        context.restore();
+        for (const [color, { indexes }] of colorBuckets) {
+            context.beginPath();
+            for (let i = 0; i < indexes.length; ++i) {
+                const entryIndex = indexes[i];
+                const duration = entryTotalTimes[entryIndex];
+                if (isNaN(duration)) {
+                    continue;
                 }
-            });
-            context.restore();
-            for (const [color, { indexes }] of colorBuckets) {
-                context.beginPath();
-                for (let i = 0; i < indexes.length; ++i) {
-                    const entryIndex = indexes[i];
-                    const duration = entryTotalTimes[entryIndex];
-                    if (isNaN(duration)) {
-                        continue;
-                    }
-                    const entryStartTime = entryStartTimes[entryIndex];
-                    const barX = this.timeToPositionClipped(entryStartTime);
-                    const barLevel = entryLevels[entryIndex];
-                    const barHeight = this.levelHeight(barLevel);
-                    const barY = this.levelToOffset(barLevel);
-                    const barRight = this.timeToPositionClipped(entryStartTime + duration);
-                    const barWidth = Math.max(barRight - barX, 1);
-                    context.rect(barX, barY, barWidth - 0.4, barHeight - 1);
+                const entryStartTime = entryStartTimes[entryIndex];
+                const barX = this.timeToPositionClipped(entryStartTime);
+                const barLevel = entryLevels[entryIndex];
+                const barHeight = this.levelHeight(barLevel);
+                const barY = this.levelToOffset(barLevel);
+                const barRight = this.timeToPositionClipped(entryStartTime + duration);
+                const barWidth = Math.max(barRight - barX, 1);
+                context.rect(barX, barY, barWidth - 0.4, barHeight - 1);
+            }
+            context.fillStyle = color;
+            context.fill();
+            // Draw long task regions.
+            context.beginPath();
+            for (let i = 0; i < indexes.length; ++i) {
+                const entryIndex = indexes[i];
+                const duration = entryTotalTimes[entryIndex];
+                const showLongDurations = entryLevels[entryIndex] === mainThreadTopLevel;
+                if (!showLongDurations) {
+                    continue;
                 }
-                context.fillStyle = color;
+                if (isNaN(duration) || duration < 50) {
+                    continue;
+                }
+                const entryStartTime = entryStartTimes[entryIndex];
+                const barX = this.timeToPositionClipped(entryStartTime + 50);
+                const barLevel = entryLevels[entryIndex];
+                const barHeight = this.levelHeight(barLevel);
+                const barY = this.levelToOffset(barLevel);
+                const barRight = this.timeToPositionClipped(entryStartTime + duration);
+                const barWidth = Math.max(barRight - barX, 1);
+                context.rect(barX, barY, barWidth - 0.4, barHeight - 1);
+            }
+            if (candyStripePattern) {
+                context.fillStyle = candyStripePattern;
                 context.fill();
-                // Draw long task regions.
-                context.beginPath();
-                for (let i = 0; i < indexes.length; ++i) {
-                    const entryIndex = indexes[i];
-                    const duration = entryTotalTimes[entryIndex];
-                    const showLongDurations = entryLevels[entryIndex] === mainThreadTopLevel;
-                    if (!showLongDurations) {
-                        continue;
-                    }
-                    if (isNaN(duration) || duration < 50) {
-                        continue;
-                    }
-                    const entryStartTime = entryStartTimes[entryIndex];
-                    const barX = this.timeToPositionClipped(entryStartTime + 50);
-                    const barLevel = entryLevels[entryIndex];
-                    const barHeight = this.levelHeight(barLevel);
-                    const barY = this.levelToOffset(barLevel);
-                    const barRight = this.timeToPositionClipped(entryStartTime + duration);
-                    const barWidth = Math.max(barRight - barX, 1);
-                    context.rect(barX, barY, barWidth - 0.4, barHeight - 1);
-                }
-                if (candyStripePattern) {
-                    context.fillStyle = candyStripePattern;
-                    context.fill();
-                }
             }
         }
         context.textBaseline = 'alphabetic';
@@ -1114,223 +1067,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         this.updateElementPosition(this.selectedElement, this.selectedEntryIndex);
         this.updateMarkerHighlight();
     }
-    initWebGL() {
-        const gl = this.canvasGL.getContext('webgl');
-        if (!gl) {
-            console.error('Failed to obtain WebGL context.');
-            this.useWebGL = false; // Fallback to use canvas.
-            return;
-        }
-        const vertexShaderSource = `
-  attribute vec2 aVertexPosition;
-  attribute float aVertexColor;
-
-  uniform vec2 uScalingFactor;
-  uniform vec2 uShiftVector;
-
-  varying mediump vec2 vPalettePosition;
-
-  void main() {
-  vec2 shiftedPosition = aVertexPosition - uShiftVector;
-  gl_Position = vec4(shiftedPosition * uScalingFactor + vec2(-1.0, 1.0), 0.0, 1.0);
-  vPalettePosition = vec2(aVertexColor, 0.5);
-  }`;
-        const fragmentShaderSource = `
-  varying mediump vec2 vPalettePosition;
-  uniform sampler2D uSampler;
-
-  void main() {
-  gl_FragColor = texture2D(uSampler, vPalettePosition);
-  }`;
-        function loadShader(gl, type, source) {
-            const shader = gl.createShader(type);
-            if (!shader) {
-                return null;
-            }
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                return shader;
-            }
-            console.error('Shader compile error: ' + gl.getShaderInfoLog(shader));
-            gl.deleteShader(shader);
-            return null;
-        }
-        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-        const shaderProgram = gl.createProgram();
-        if (!shaderProgram || !vertexShader || !fragmentShader) {
-            return;
-        }
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
-        if (gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            this.shaderProgram = shaderProgram;
-            gl.useProgram(shaderProgram);
-        }
-        else {
-            this.shaderProgram = null;
-            throw new Error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
-        }
-        this.vertexBuffer = gl.createBuffer();
-        this.colorBuffer = gl.createBuffer();
-        this.uScalingFactor = gl.getUniformLocation(shaderProgram, 'uScalingFactor');
-        this.uShiftVector = gl.getUniformLocation(shaderProgram, 'uShiftVector');
-        const uSampler = gl.getUniformLocation(shaderProgram, 'uSampler');
-        gl.uniform1i(uSampler, 0);
-        this.aVertexPosition = gl.getAttribLocation(this.shaderProgram, 'aVertexPosition');
-        this.aVertexColor = gl.getAttribLocation(this.shaderProgram, 'aVertexColor');
-        gl.enableVertexAttribArray(this.aVertexPosition);
-        gl.enableVertexAttribArray(this.aVertexColor);
-    }
-    setupGLGeometry() {
-        const gl = this.canvasGL.getContext('webgl');
-        if (!gl) {
-            return;
-        }
-        const timelineData = this.timelineData();
-        if (!timelineData) {
-            return;
-        }
-        const entryTotalTimes = timelineData.entryTotalTimes;
-        const entryStartTimes = timelineData.entryStartTimes;
-        const entryLevels = timelineData.entryLevels;
-        const verticesPerBar = 6;
-        const vertexArray = new Float32Array(entryTotalTimes.length * verticesPerBar * 2);
-        let colorArray = new Uint8Array(entryTotalTimes.length * verticesPerBar);
-        let vertex = 0;
-        const parsedColorCache = new Map();
-        const colors = [];
-        const visibleLevels = this.visibleLevels || [];
-        const rawTimelineData = this.rawTimelineData || { groups: [] };
-        const collapsedOverviewLevels = new Array(visibleLevels.length);
-        const groups = rawTimelineData.groups || [];
-        this.forEachGroup((offset, index, group) => {
-            if (group.style.useFirstLineForOverview || !this.isGroupCollapsible(index) || group.expanded) {
-                return;
-            }
-            let nextGroup = index + 1;
-            while (nextGroup < groups.length && groups[nextGroup].style.nestingLevel > group.style.nestingLevel) {
-                ++nextGroup;
-            }
-            const endLevel = nextGroup < groups.length ? groups[nextGroup].startLevel : this.dataProvider.maxStackDepth();
-            for (let i = group.startLevel; i < endLevel; ++i) {
-                collapsedOverviewLevels[i] = offset;
-            }
-        });
-        for (let i = 0; i < entryTotalTimes.length; ++i) {
-            const level = entryLevels[i];
-            const collapsedGroupOffset = collapsedOverviewLevels[level];
-            if (!visibleLevels[level] && !collapsedGroupOffset) {
-                continue;
-            }
-            if (!this.entryColorsCache) {
-                continue;
-            }
-            const color = this.entryColorsCache[i];
-            if (!color) {
-                continue;
-            }
-            let colorIndex = parsedColorCache.get(color);
-            if (colorIndex === undefined) {
-                const parsedColor = Common.Color.Color.parse(color);
-                if (parsedColor) {
-                    const rgba = parsedColor.canonicalRGBA();
-                    rgba[3] = Math.round(rgba[3] * 255);
-                    colorIndex = colors.length / 4;
-                    colors.push(...rgba);
-                    if (colorIndex === 256) {
-                        colorArray = new Uint8Array(colorArray);
-                    }
-                }
-                if (colorIndex) {
-                    parsedColorCache.set(color, colorIndex);
-                }
-            }
-            for (let j = 0; j < verticesPerBar; ++j) {
-                if (colorIndex) {
-                    colorArray[vertex + j] = colorIndex;
-                }
-            }
-            const vpos = vertex * 2;
-            const x0 = entryStartTimes[i] - this.minimumBoundaryInternal;
-            const x1 = x0 + entryTotalTimes[i];
-            const y0 = collapsedGroupOffset || this.levelToOffset(level);
-            const y1 = y0 + this.levelHeight(level) - 1;
-            vertexArray[vpos + 0] = x0;
-            vertexArray[vpos + 1] = y0;
-            vertexArray[vpos + 2] = x1;
-            vertexArray[vpos + 3] = y0;
-            vertexArray[vpos + 4] = x0;
-            vertexArray[vpos + 5] = y1;
-            vertexArray[vpos + 6] = x0;
-            vertexArray[vpos + 7] = y1;
-            vertexArray[vpos + 8] = x1;
-            vertexArray[vpos + 9] = y0;
-            vertexArray[vpos + 10] = x1;
-            vertexArray[vpos + 11] = y1;
-            vertex += verticesPerBar;
-        }
-        this.vertexCount = vertex;
-        const paletteTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, paletteTexture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.activeTexture(gl.TEXTURE0);
-        const numColors = colors.length / 4;
-        const useShortForColors = numColors >= 256;
-        const width = !useShortForColors ? 256 : Math.min(1 << 16, gl.getParameter(gl.MAX_TEXTURE_SIZE));
-        console.assert(numColors <= width, 'Too many colors');
-        const height = 1;
-        const colorIndexType = useShortForColors ? gl.UNSIGNED_SHORT : gl.UNSIGNED_BYTE;
-        if (useShortForColors) {
-            const factor = (1 << 16) / width;
-            for (let i = 0; i < vertex; ++i) {
-                colorArray[i] *= factor;
-            }
-        }
-        const pixels = new Uint8Array(width * 4);
-        pixels.set(colors);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        if (this.vertexBuffer && this.aVertexPosition) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, vertexArray, gl.STATIC_DRAW);
-            gl.vertexAttribPointer(this.aVertexPosition, /* vertexComponents */ 2, gl.FLOAT, false, 0, 0);
-        }
-        if (this.colorBuffer && this.aVertexColor) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, colorArray, gl.STATIC_DRAW);
-            gl.vertexAttribPointer(this.aVertexColor, /* colorComponents */ 1, colorIndexType, true, 0, 0);
-        }
-    }
-    drawGL() {
-        const gl = this.canvasGL.getContext('webgl');
-        if (!gl) {
-            return;
-        }
-        const timelineData = this.timelineData();
-        if (!timelineData) {
-            return;
-        }
-        if (!this.prevTimelineData || timelineData.entryTotalTimes !== this.prevTimelineData.entryTotalTimes) {
-            this.prevTimelineData = timelineData;
-            this.setupGLGeometry();
-        }
-        gl.viewport(0, 0, this.canvasGL.width, this.canvasGL.height);
-        if (!this.vertexCount) {
-            return;
-        }
-        const viewportScale = [2.0 / this.boundarySpan(), -2.0 * window.devicePixelRatio / this.canvasGL.height];
-        const viewportShift = [this.minimumBoundary() - this.zeroTime(), this.chartViewport.scrollOffset()];
-        if (this.uScalingFactor) {
-            gl.uniform2fv(this.uScalingFactor, viewportScale);
-        }
-        if (this.uShiftVector) {
-            gl.uniform2fv(this.uShiftVector, viewportShift);
-        }
-        gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
-    }
     drawGroupHeaders(width, height) {
         const context = this.canvas.getContext('2d');
         const top = this.chartViewport.scrollOffset();
@@ -1382,9 +1118,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
                     context.fillStyle = group.style.backgroundColor;
                     context.fillRect(0, offset, width, group.style.height);
                 }
-                return;
-            }
-            if (this.useWebGL) {
                 return;
             }
             let nextGroup = index + 1;
@@ -1784,9 +1517,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
             this.groupOffsets[groupIndex + 1] = currentOffset;
         }
         this.visibleLevelOffsets[level] = currentOffset;
-        if (this.useWebGL) {
-            this.setupGLGeometry();
-        }
     }
     isGroupCollapsible(index) {
         if (!this.rawTimelineData) {
@@ -1912,7 +1642,6 @@ export class FlameChart extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) 
         this.highlightedMarkerIndex = -1;
         this.highlightedEntryIndex = -1;
         this.selectedEntryIndex = -1;
-        this.textWidth = new Map();
         this.chartViewport.scheduleUpdate();
     }
     scheduleUpdate() {

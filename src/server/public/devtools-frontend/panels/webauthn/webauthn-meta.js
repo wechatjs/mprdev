@@ -24,12 +24,12 @@ async function loadWebauthnModule() {
     return loadedWebauthnModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'webauthn-pane',
     title: i18nLazyString(UIStrings.webauthn),
     commandPrompt: i18nLazyString(UIStrings.showWebauthn),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const Webauthn = await loadWebauthnModule();
         return Webauthn.WebauthnPane.WebauthnPaneImpl.instance();

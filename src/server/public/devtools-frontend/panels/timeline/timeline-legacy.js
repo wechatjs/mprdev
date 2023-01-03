@@ -49,8 +49,6 @@ Timeline.TimelineEventOverviewResponsiveness = TimelineModule.TimelineEventOverv
 /** @constructor */
 Timeline.TimelineFilmStripOverview = TimelineModule.TimelineEventOverview.TimelineFilmStripOverview;
 /** @constructor */
-Timeline.TimelineEventOverviewFrames = TimelineModule.TimelineEventOverview.TimelineEventOverviewFrames;
-/** @constructor */
 Timeline.TimelineEventOverviewMemory = TimelineModule.TimelineEventOverview.TimelineEventOverviewMemory;
 /** @constructor */
 Timeline.Quantizer = TimelineModule.TimelineEventOverview.Quantizer;

@@ -4,7 +4,7 @@
 import * as i18n from '../../core/i18n/i18n.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { isCausedByThirdParty } from './SameSiteCookieIssue.js';
+import { isCausedByThirdParty } from './CookieIssue.js';
 const UIStrings = {
     /**
      * @description Label for the link for User-Agent String reduction issues, that is, issues that are related to an

@@ -34,8 +34,21 @@ styles.replaceSync(
 }
 
 button {
+  /*
+    --override-button-no-right-border-radius decides
+    whether button has border radius on the right or not.
+
+    It works as a boolean variable:
+    * If it is 1, \\'--button-has-right-border-radius\\' becomes a 0 multiplier
+    for the border-radius-top-right and border-radius-bottom-right properties.
+    * If it is not set or 0, it becomes a 1 multiplier
+    for the same properties which means they'll continue to have the given
+    border radius.
+  */
+  --button-has-right-border-radius: calc(1 - var(--override-button-no-right-border-radius, 0));
+
   align-items: center;
-  border-radius: 4px;
+  border-radius: 4px calc(var(--button-has-right-border-radius) * 4px) calc(var(--button-has-right-border-radius) * 4px) 4px;
   display: inline-flex;
   font-family: inherit;
   font-size: 12px;
@@ -49,16 +62,17 @@ button {
 
 button.small {
   height: 18px;
-  border-radius: 2px;
+  border-radius: 2px calc(var(--button-has-right-border-radius) * 2px) calc(var(--button-has-right-border-radius) * 2px) 2px;
 }
 
 button:focus-visible {
   box-shadow: 0 0 0 2px var(--color-button-outline-focus);
 }
 
-button.toolbar {
+button.toolbar,
+button.round {
   background: transparent;
-  border-radius: 2px;
+  border-radius: 2px calc(var(--button-has-right-border-radius) * 2px) calc(var(--button-has-right-border-radius) * 2px) 2px;
   border: none;
   height: 24px;
   width: 24px;
@@ -67,9 +81,29 @@ button.toolbar {
   white-space: nowrap;
 }
 
+button.round {
+  border-radius: 100%;
+  height: 30px;
+  width: 30px;
+}
+
 button.toolbar.small {
   height: 18px;
   width: 18px;
+}
+
+button.unified-toolbar-2022 {
+  /* These buttons are always 16px in dimension, and don't have different
+   * sizes, hence the lack of a size class above and the use of important! to
+   * ensure no sizing classes accidentally interfere.
+   */
+  height: 16px !important; /* stylelint-disable-line declaration-no-important */
+  width: 16px !important;/* stylelint-disable-line declaration-no-important */
+}
+
+button.round.small {
+  height: 24px;
+  width: 24px;
 }
 
 button.primary {
@@ -130,21 +164,27 @@ button.secondary:active:focus-visible {
   border: 1px solid var(--color-button-secondary-background-pressed);
 }
 
-button.toolbar:hover {
-  background-color: var(--color-button-secondary-background-hovering);
+button.toolbar:hover,
+button.round:hover {
+  background-color: var(--color-iconbutton-hover);
 }
 
 button.toolbar.active,
-button.toolbar:active {
-  background-color: var(--color-button-secondary-background-pressed);
+button.toolbar:active,
+button.round.active,
+button.round:active {
+  background-color: var(--color-iconbutton-pressed);
 }
 
-button.toolbar:focus-visible {
+button.toolbar:focus-visible,
+button.round:focus-visible {
   background-color: var(--color-background-elevation-2);
 }
 
 button.toolbar:disabled,
-button.toolbar:disabled:hover {
+button.toolbar:disabled:hover,
+button.round:disabled,
+button.round:disabled:hover {
   background: var(--color-background);
   color: var(--color-text-disabled);
   cursor: not-allowed;
@@ -167,9 +207,17 @@ button devtools-icon {
   height: 19px;
 }
 
-button.toolbar devtools-icon {
+button.toolbar devtools-icon,
+button.round devtools-icon {
   width: 24px;
   height: 24px;
+
+  --icon-color: var(--color-text-secondary);
+}
+
+button.unified-toolbar-2022 devtools-icon {
+  width: 16px;
+  height: 16px;
 
   --icon-color: var(--color-text-secondary);
 }
@@ -187,9 +235,15 @@ button.small devtools-icon {
   height: 14px;
 }
 
-button.toolbar.small devtools-icon {
+button.toolbar.small devtools-icon,
+button.round.small devtools-icon {
   width: 18px;
   height: 18px;
+}
+
+button.round.explicit-size devtools-icon {
+  width: unset;
+  height: unset;
 }
 
 button.toolbar.active devtools-icon,
@@ -201,7 +255,8 @@ button.toolbar:hover devtools-icon {
   --icon-color: var(--color-text-primary);
 }
 
-button.toolbar:disabled devtools-icon {
+button.toolbar:disabled devtools-icon,
+button.round:disabled devtools-icon {
   --icon-color: var(--color-text-disabled);
 }
 

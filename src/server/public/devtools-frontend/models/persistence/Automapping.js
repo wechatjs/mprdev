@@ -66,7 +66,7 @@ export class Automapping {
             const networkProjects = this.workspace.projectsForType(Workspace.Workspace.projectTypes.Network);
             for (const networkProject of networkProjects) {
                 for (const uiSourceCode of networkProject.uiSourceCodes()) {
-                    this.computeNetworkStatus(uiSourceCode);
+                    void this.computeNetworkStatus(uiSourceCode);
                 }
             }
             this.onSweepHappenedForTest();
@@ -112,7 +112,7 @@ export class Automapping {
             this.scheduleSweep();
         }
         else if (project.type() === Workspace.Workspace.projectTypes.Network) {
-            this.computeNetworkStatus(uiSourceCode);
+            void this.computeNetworkStatus(uiSourceCode);
         }
     }
     onUISourceCodeRemoved(uiSourceCode) {
@@ -144,18 +144,22 @@ export class Automapping {
         this.scheduleSweep();
     }
     computeNetworkStatus(networkSourceCode) {
-        if (this.sourceCodeToProcessingPromiseMap.has(networkSourceCode) ||
-            this.sourceCodeToAutoMappingStatusMap.has(networkSourceCode)) {
-            return;
+        const processingPromise = this.sourceCodeToProcessingPromiseMap.get(networkSourceCode);
+        if (processingPromise) {
+            return processingPromise;
+        }
+        if (this.sourceCodeToAutoMappingStatusMap.has(networkSourceCode)) {
+            return Promise.resolve();
         }
         if (this.interceptors.some(interceptor => interceptor(networkSourceCode))) {
-            return;
+            return Promise.resolve();
         }
         if (networkSourceCode.url().startsWith('wasm://')) {
-            return;
+            return Promise.resolve();
         }
         const createBindingPromise = this.createBinding(networkSourceCode).then(validateStatus.bind(this)).then(onStatus.bind(this));
         this.sourceCodeToProcessingPromiseMap.set(networkSourceCode, createBindingPromise);
+        return createBindingPromise;
         async function validateStatus(status) {
             if (!status) {
                 return null;
@@ -205,7 +209,7 @@ export class Automapping {
             else {
                 if (networkContent.content) {
                     // Trim trailing whitespaces because V8 adds trailing newline.
-                    isValid = fileContent.trimRight() === networkContent.content.trimRight();
+                    isValid = fileContent.trimEnd() === networkContent.content.trimEnd();
                 }
             }
             if (!isValid) {
@@ -214,18 +218,19 @@ export class Automapping {
             }
             return status;
         }
-        function onStatus(status) {
+        async function onStatus(status) {
             if (this.sourceCodeToProcessingPromiseMap.get(networkSourceCode) !== createBindingPromise) {
                 return;
             }
-            this.sourceCodeToProcessingPromiseMap.delete(networkSourceCode);
             if (!status) {
                 this.onBindingFailedForTest();
+                this.sourceCodeToProcessingPromiseMap.delete(networkSourceCode);
                 return;
             }
             // TODO(lushnikov): remove this check once there's a single uiSourceCode per url. @see crbug.com/670180
             if (this.sourceCodeToAutoMappingStatusMap.has(status.network) ||
                 this.sourceCodeToAutoMappingStatusMap.has(status.fileSystem)) {
+                this.sourceCodeToProcessingPromiseMap.delete(networkSourceCode);
                 return;
             }
             this.statuses.add(status);
@@ -238,7 +243,8 @@ export class Automapping {
                     this.scheduleSweep();
                 }
             }
-            void this.onStatusAdded.call(null, status);
+            await this.onStatusAdded.call(null, status);
+            this.sourceCodeToProcessingPromiseMap.delete(networkSourceCode);
         }
     }
     prevalidationFailedForTest(_binding) {
@@ -277,7 +283,7 @@ export class Automapping {
             return Promise.resolve(null);
         }
         if (networkPath.endsWith('/')) {
-            networkPath += 'index.html';
+            networkPath = Common.ParsedURL.ParsedURL.concatenate(networkPath, 'index.html');
         }
         const similarFiles = this.filesIndex.similarFiles(networkPath).map(path => this.fileSystemUISourceCodes.get(path));
         if (!similarFiles.length) {
@@ -361,7 +367,7 @@ class FolderIndex {
     }
     addFolder(path) {
         if (path.endsWith('/')) {
-            path = path.substring(0, path.length - 1);
+            path = Common.ParsedURL.ParsedURL.substring(path, 0, path.length - 1);
         }
         const encodedPath = this.encoder.encode(path);
         this.index.add(encodedPath);
@@ -371,7 +377,7 @@ class FolderIndex {
     }
     removeFolder(path) {
         if (path.endsWith('/')) {
-            path = path.substring(0, path.length - 1);
+            path = Common.ParsedURL.ParsedURL.substring(path, 0, path.length - 1);
         }
         const encodedPath = this.encoder.encode(path);
         const count = this.folderCount.get(encodedPath) || 0;
@@ -398,7 +404,7 @@ class FileSystemUISourceCodes {
         this.sourceCodes = new Map();
     }
     getPlatformCanonicalFileUrl(path) {
-        return Host.Platform.isWin() ? path.toLowerCase() : path;
+        return Host.Platform.isWin() ? Common.ParsedURL.ParsedURL.toLowerCase(path) : path;
     }
     add(sourceCode) {
         const fileUrl = this.getPlatformCanonicalFileUrl(sourceCode.url());

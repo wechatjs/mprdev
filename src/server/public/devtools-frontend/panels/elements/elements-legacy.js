@@ -62,6 +62,8 @@ Elements.NodeStackTraceWidget = ElementsModule.NodeStackTraceWidget.NodeStackTra
 /** @constructor */
 Elements.PropertiesWidget = ElementsModule.PropertiesWidget.PropertiesWidget;
 /** @constructor */
+Elements.StylePropertiesSection = ElementsModule.StylePropertiesSection.StylePropertiesSection;
+/** @constructor */
 Elements.StylePropertyTreeElement = ElementsModule.StylePropertyTreeElement.StylePropertyTreeElement;
 /** @constructor */
 Elements.StylesSidebarPane = ElementsModule.StylesSidebarPane.StylesSidebarPane;
@@ -69,6 +71,4 @@ Elements.StylesSidebarPane = ElementsModule.StylesSidebarPane.StylesSidebarPane;
 Elements.StylesSidebarPane.CSSPropertyPrompt = ElementsModule.StylesSidebarPane.CSSPropertyPrompt;
 /** @constructor */
 Elements.StylesSidebarPane.ButtonProvider = ElementsModule.StylesSidebarPane.ButtonProvider;
-/** @constructor */
-Elements.StylePropertiesSection = ElementsModule.StylesSidebarPane.StylePropertiesSection;
 //# sourceMappingURL=elements-legacy.js.map

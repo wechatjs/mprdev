@@ -1,10 +1,11 @@
+import * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
 import { CSSModel } from './CSSModel.js';
 import { OverlayModel } from './OverlayModel.js';
-import type { RemoteObject } from './RemoteObject.js';
+import { type RemoteObject } from './RemoteObject.js';
 import { RuntimeModel } from './RuntimeModel.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class DOMNode {
     #private;
@@ -12,7 +13,7 @@ export declare class DOMNode {
     id: Protocol.DOM.NodeId;
     index: number | undefined;
     nodeValueInternal: string;
-    pseudoElementsInternal: Map<string, DOMNode>;
+    assignedSlot: DOMNodeShortcut | null;
     readonly shadowRootsInternal: DOMNode[];
     childNodeCountInternal: number;
     childrenInternal: DOMNode[] | null;
@@ -55,11 +56,15 @@ export declare class DOMNode {
     nodeType(): number;
     nodeName(): string;
     pseudoType(): string | undefined;
+    pseudoIdentifier(): string | undefined;
     hasPseudoElements(): boolean;
-    pseudoElements(): Map<string, DOMNode>;
-    beforePseudoElement(): DOMNode | null;
-    afterPseudoElement(): DOMNode | null;
-    markerPseudoElement(): DOMNode | null;
+    pseudoElements(): Map<string, DOMNode[]>;
+    beforePseudoElement(): DOMNode | undefined;
+    afterPseudoElement(): DOMNode | undefined;
+    markerPseudoElement(): DOMNode | undefined;
+    backdropPseudoElement(): DOMNode | undefined;
+    pageTransitionPseudoElements(): DOMNode[];
+    hasAssignedSlot(): boolean;
     isInsertionPoint(): boolean;
     distributedNodes(): DOMNodeShortcut[];
     isInShadowTree(): boolean;
@@ -97,6 +102,7 @@ export declare class DOMNode {
     setChildrenPayload(payloads: Protocol.DOM.Node[]): void;
     private setPseudoElements;
     setDistributedNodePayloads(payloads: Protocol.DOM.BackendNode[]): void;
+    setAssignedSlot(payload: Protocol.DOM.BackendNode): void;
     private renumber;
     private addAttribute;
     setAttributeInternal(name: string, value: string): void;
@@ -108,7 +114,7 @@ export declare class DOMNode {
     marker<T>(name: string): T | null;
     getMarkerKeysForTest(): string[];
     traverseMarkers(visitor: (arg0: DOMNode, arg1: string) => void): void;
-    resolveURL(url: string): string | null;
+    resolveURL(url: string): Platform.DevToolsPath.UrlString | null;
     highlight(mode?: string): void;
     highlightForTwoSeconds(): void;
     resolveToObject(objectGroup?: string): Promise<RemoteObject | null>;
@@ -123,7 +129,13 @@ export declare namespace DOMNode {
     enum PseudoElementNames {
         Before = "before",
         After = "after",
-        Marker = "marker"
+        Marker = "marker",
+        PageTransition = "page-transition",
+        PageTransitionContainer = "page-transition-container",
+        PageTransitionImageWrapper = "page-transition-image-wrapper",
+        PageTransitionOutgoingImage = "page-transition-outgoing-image",
+        PageTransitionIncomingImage = "page-transition-incoming-image",
+        Backdrop = "backdrop"
     }
     enum ShadowRootTypes {
         UserAgent = "user-agent",
@@ -149,8 +161,8 @@ export declare class DOMNodeShortcut {
 export declare class DOMDocument extends DOMNode {
     body: DOMNode | null;
     documentElement: DOMNode | null;
-    documentURL: string;
-    baseURL: string;
+    documentURL: Platform.DevToolsPath.UrlString;
+    baseURL: Platform.DevToolsPath.UrlString;
     constructor(domModel: DOMModel, payload: Protocol.DOM.Node);
 }
 export declare class DOMModel extends SDKModel<EventTypes> {
@@ -187,6 +199,7 @@ export declare class DOMModel extends SDKModel<EventTypes> {
     shadowRootPushed(hostId: Protocol.DOM.NodeId, root: Protocol.DOM.Node): void;
     shadowRootPopped(hostId: Protocol.DOM.NodeId, rootId: Protocol.DOM.NodeId): void;
     pseudoElementAdded(parentId: Protocol.DOM.NodeId, pseudoElement: Protocol.DOM.Node): void;
+    topLayerElementsUpdated(): void;
     pseudoElementRemoved(parentId: Protocol.DOM.NodeId, pseudoElementId: Protocol.DOM.NodeId): void;
     distributedNodesUpdated(insertionPointId: Protocol.DOM.NodeId, distributedNodes: Protocol.DOM.BackendNode[]): void;
     private unbind;
@@ -200,6 +213,7 @@ export declare class DOMModel extends SDKModel<EventTypes> {
     classNamesPromise(nodeId: Protocol.DOM.NodeId): Promise<string[]>;
     querySelector(nodeId: Protocol.DOM.NodeId, selector: string): Promise<Protocol.DOM.NodeId | null>;
     querySelectorAll(nodeId: Protocol.DOM.NodeId, selector: string): Promise<Protocol.DOM.NodeId[] | null>;
+    getTopLayerElements(): Promise<Protocol.DOM.NodeId[] | null>;
     markUndoableState(minorChange?: boolean): void;
     nodeForLocation(x: number, y: number, includeUserAgentShadowDOM: boolean): Promise<DOMNode | null>;
     getContainerForNode(nodeId: Protocol.DOM.NodeId, containerName?: string): Promise<DOMNode | null>;
@@ -221,7 +235,8 @@ export declare enum Events {
     DocumentUpdated = "DocumentUpdated",
     ChildNodeCountUpdated = "ChildNodeCountUpdated",
     DistributedNodesChanged = "DistributedNodesChanged",
-    MarkersChanged = "MarkersChanged"
+    MarkersChanged = "MarkersChanged",
+    TopLayerElementsChanged = "TopLayerElementsChanged"
 }
 export declare type EventTypes = {
     [Events.AttrModified]: {
@@ -243,6 +258,7 @@ export declare type EventTypes = {
     [Events.ChildNodeCountUpdated]: DOMNode;
     [Events.DistributedNodesChanged]: DOMNode;
     [Events.MarkersChanged]: DOMNode;
+    [Events.TopLayerElementsChanged]: void;
 };
 export declare class DOMModelUndoStack {
     #private;

@@ -51,7 +51,7 @@ function maybeRetrieveContextTypes(getClassCallBack) {
     return getClassCallBack(loadedResourcesModule);
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'resources',
     title: i18nLazyString(UIStrings.application),
     commandPrompt: i18nLazyString(UIStrings.showApplication),
@@ -82,9 +82,9 @@ UI.ActionRegistration.registerActionExtension({
 });
 UI.ActionRegistration.registerActionExtension({
     actionId: 'background-service.toggle-recording',
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     contextTypes() {
         return maybeRetrieveContextTypes(Resources => [Resources.BackgroundServiceView.BackgroundServiceView]);
@@ -106,11 +106,11 @@ UI.ActionRegistration.registerActionExtension({
     ],
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+E',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+E',
         },
     ],

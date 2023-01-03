@@ -41,7 +41,7 @@ export class EventsTimelineTreeView extends TimelineTreeView {
     constructor(delegate) {
         super();
         this.filtersControl = new Filters();
-        this.filtersControl.addEventListener("FilterChanged" /* FilterChanged */, this.onFilterChanged, this);
+        this.filtersControl.addEventListener("FilterChanged" /* Events.FilterChanged */, this.onFilterChanged, this);
         this.init();
         this.delegate = delegate;
         this.dataGrid.markColumnAsSortedBy('startTime', DataGrid.DataGrid.Order.Ascending);
@@ -180,7 +180,7 @@ export class Filters extends Common.ObjectWrapper.ObjectWrapper {
         }
     }
     notifyFiltersChanged() {
-        this.dispatchEventToListeners("FilterChanged" /* FilterChanged */);
+        this.dispatchEventToListeners("FilterChanged" /* Events.FilterChanged */);
     }
     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
     // eslint-disable-next-line @typescript-eslint/naming-convention

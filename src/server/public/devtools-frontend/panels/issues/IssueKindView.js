@@ -101,7 +101,7 @@ export class IssueKindView extends UI.TreeOutline.TreeElement {
                 const values = setting.get();
                 for (const issue of IssuesManager.IssuesManager.IssuesManager.instance().issues()) {
                     if (issue.getKind() === this.#kind) {
-                        values[issue.code()] = "Hidden" /* Hidden */;
+                        values[issue.code()] = "Hidden" /* IssuesManager.IssuesManager.IssueStatus.Hidden */;
                     }
                 }
                 setting.set(values);

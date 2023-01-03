@@ -100,7 +100,7 @@ export class Item {
                 };
             }
             case 'checkbox': {
-                return {
+                const result = {
                     type: 'checkbox',
                     id: this.idInternal,
                     label: this.label,
@@ -108,6 +108,11 @@ export class Item {
                     enabled: !this.disabled,
                     subItems: undefined,
                 };
+                if (this.customElement) {
+                    const resultAsSoftContextMenuItem = result;
+                    resultAsSoftContextMenuItem.element = this.customElement;
+                }
+                return result;
             }
         }
         throw new Error('Invalid item type:' + this.typeInternal);
@@ -168,11 +173,14 @@ export class Section {
         this.items.push(item);
         return item;
     }
-    appendCheckboxItem(label, handler, checked, disabled) {
+    appendCheckboxItem(label, handler, checked, disabled, additionalElement) {
         const item = new Item(this.contextMenu, 'checkbox', label, disabled, checked);
         this.items.push(item);
         if (this.contextMenu) {
             this.contextMenu.setHandler(item.id(), handler);
+        }
+        if (additionalElement) {
+            item.customElement = additionalElement;
         }
         return item;
     }
@@ -305,6 +313,7 @@ export class ContextMenu extends SubMenu {
     handlers;
     idInternal;
     softMenu;
+    contextMenuLabel;
     constructor(event, options = {}) {
         super(null);
         const mouseEvent = event;
@@ -377,6 +386,9 @@ export class ContextMenu extends SubMenu {
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.isHostedMode()) {
             this.softMenu = new SoftContextMenu(menuObject, this.itemSelected.bind(this), undefined, this.onSoftMenuClosed);
             this.softMenu.show(ownerDocument, new AnchorBox(this.x, this.y, 0, 0));
+            if (this.contextMenuLabel) {
+                this.softMenu.setContextMenuElementLabel(this.contextMenuLabel);
+            }
         }
         else {
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.showContextMenuAtPoint(this.x, this.y, menuObject, ownerDocument);
@@ -388,6 +400,9 @@ export class ContextMenu extends SubMenu {
             // so we skip it before subscribing to the clear event.
             queueMicrotask(listenToEvents.bind(this));
         }
+    }
+    setContextMenuLabel(label) {
+        this.contextMenuLabel = label;
     }
     setX(x) {
         this.x = x;
@@ -423,6 +438,11 @@ export class ContextMenu extends SubMenu {
     appendApplicableItems(target) {
         this.pendingPromises.push(loadApplicableRegisteredProviders(target));
         this.pendingTargets.push(target);
+    }
+    markAsMenuItemCheckBox() {
+        if (this.softMenu) {
+            this.softMenu.markAsMenuItemCheckBox();
+        }
     }
     static pendingMenu = null;
     static useSoftMenu = false;

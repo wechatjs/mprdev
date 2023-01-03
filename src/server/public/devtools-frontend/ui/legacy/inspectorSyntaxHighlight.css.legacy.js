@@ -37,7 +37,6 @@ export default {
 }
 
 .webkit-html-comment {
-  /* Keep this in sync with view-source.css (.webkit-html-comment) */
   color: var(--color-token-comment);
 }
 

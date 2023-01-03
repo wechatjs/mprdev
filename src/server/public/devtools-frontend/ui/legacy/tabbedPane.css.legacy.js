@@ -104,6 +104,7 @@ export default {
   pointer-events: none;
   margin-left: 0;
   position: relative;
+  cursor: default;
 }
 
 .tabbed-pane-header-contents > * {
@@ -123,6 +124,7 @@ export default {
   height: 26px;
   line-height: 16px;
   white-space: nowrap;
+  cursor: default;
   display: flex;
   align-items: center;
   color: var(--color-text-secondary);
@@ -339,6 +341,7 @@ export default {
   align-items: center;
   justify-content: center;
   margin-left: 3px;
+  flex-shrink: 0;
 }
 
 .-theme-with-dark-background .preview-icon,

@@ -270,11 +270,11 @@ export class TimelineFlameChartNetworkDataProvider {
     colorForPriority(priority) {
         if (!this.priorityToValue) {
             this.priorityToValue = new Map([
-                ["VeryLow" /* VeryLow */, 1],
-                ["Low" /* Low */, 2],
-                ["Medium" /* Medium */, 3],
-                ["High" /* High */, 4],
-                ["VeryHigh" /* VeryHigh */, 5],
+                ["VeryLow" /* Protocol.Network.ResourcePriority.VeryLow */, 1],
+                ["Low" /* Protocol.Network.ResourcePriority.Low */, 2],
+                ["Medium" /* Protocol.Network.ResourcePriority.Medium */, 3],
+                ["High" /* Protocol.Network.ResourcePriority.High */, 4],
+                ["VeryHigh" /* Protocol.Network.ResourcePriority.VeryHigh */, 5],
             ]);
         }
         const value = this.priorityToValue.get(priority);

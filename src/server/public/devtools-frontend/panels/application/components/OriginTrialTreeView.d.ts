@@ -28,7 +28,6 @@ export declare class OriginTrialTreeView extends HTMLElement {
     #private;
     static readonly litTagName: import("../../../ui/lit-html/static.js").Static;
     set data(data: OriginTrialTreeViewData);
-    connectedCallback(): void;
 }
 declare global {
     interface HTMLElementTagNameMap {

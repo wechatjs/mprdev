@@ -49,6 +49,13 @@ const UIStrings = {
     */
     sS: '{PH1}: {PH2}',
     /**
+    *@description Text with three placeholders separated by a colon and a comma
+    *@example {Node removed} PH1
+    *@example {div#id1} PH2
+    *@example {checked} PH3
+    */
+    sSS: '{PH1}: {PH2}, {PH3}',
+    /**
     *@description Text exposed to screen readers on checked items.
     */
     checked: 'checked',
@@ -172,16 +179,20 @@ export class DOMBreakpointsSidebarPane extends UI.Widget.VBox {
         description.textContent = breakpointTypeLabel ? breakpointTypeLabel() : null;
         const breakpointTypeText = breakpointTypeLabel ? breakpointTypeLabel() : '';
         UI.ARIAUtils.setAccessibleName(checkboxElement, breakpointTypeText);
+        const checkedStateText = item.enabled ? i18nString(UIStrings.checked) : i18nString(UIStrings.unchecked);
         const linkifiedNode = document.createElement('monospace');
         linkifiedNode.style.display = 'block';
         labelElement.appendChild(linkifiedNode);
         void Common.Linkifier.Linkifier.linkify(item.node, { preventKeyboardFocus: true, tooltip: undefined })
             .then(linkified => {
             linkifiedNode.appendChild(linkified);
+            // Give the checkbox an aria-label as it is required for all form element
             UI.ARIAUtils.setAccessibleName(checkboxElement, i18nString(UIStrings.sS, { PH1: breakpointTypeText, PH2: linkified.deepTextContent() }));
+            // The parent list element is the one that actually gets focused.
+            // Assign it an aria-label with complete information for the screen reader to read out properly
+            UI.ARIAUtils.setAccessibleName(element, i18nString(UIStrings.sSS, { PH1: breakpointTypeText, PH2: linkified.deepTextContent(), PH3: checkedStateText }));
         });
         labelElement.appendChild(description);
-        const checkedStateText = item.enabled ? i18nString(UIStrings.checked) : i18nString(UIStrings.unchecked);
         if (item === this.#highlightedBreakpoint) {
             element.classList.add('breakpoint-hit');
             UI.ARIAUtils.setDescription(element, i18nString(UIStrings.sBreakpointHit, { PH1: checkedStateText }));
@@ -290,7 +301,7 @@ export class DOMBreakpointsSidebarPane extends UI.Widget.VBox {
             this.#highlightedBreakpoint = null;
             this.#list.refreshItem(oldHighlightedBreakpoint);
         }
-        if (!details || !details.auxData || details.reason !== "DOM" /* DOM */) {
+        if (!details || !details.auxData || details.reason !== "DOM" /* Protocol.Debugger.PausedEventReason.DOM */) {
             return;
         }
         const domDebuggerModel = details.debuggerModel.target().model(SDK.DOMDebuggerModel.DOMDebuggerModel);
@@ -319,9 +330,9 @@ export class DOMBreakpointsSidebarPane extends UI.Widget.VBox {
     }
 }
 const BreakpointTypeLabels = new Map([
-    ["subtree-modified" /* SubtreeModified */, i18nLazyString(UIStrings.subtreeModified)],
-    ["attribute-modified" /* AttributeModified */, i18nLazyString(UIStrings.attributeModified)],
-    ["node-removed" /* NodeRemoved */, i18nLazyString(UIStrings.nodeRemoved)],
+    ["subtree-modified" /* Protocol.DOMDebugger.DOMBreakpointType.SubtreeModified */, i18nLazyString(UIStrings.subtreeModified)],
+    ["attribute-modified" /* Protocol.DOMDebugger.DOMBreakpointType.AttributeModified */, i18nLazyString(UIStrings.attributeModified)],
+    ["node-removed" /* Protocol.DOMDebugger.DOMBreakpointType.NodeRemoved */, i18nLazyString(UIStrings.nodeRemoved)],
 ]);
 let contextMenuProviderInstance;
 export class ContextMenuProvider {
@@ -358,9 +369,9 @@ export class ContextMenuProvider {
         }
         const breakpointsMenu = contextMenu.debugSection().appendSubMenuItem(i18nString(UIStrings.breakOn));
         const allBreakpointTypes = {
-            SubtreeModified: "subtree-modified" /* SubtreeModified */,
-            AttributeModified: "attribute-modified" /* AttributeModified */,
-            NodeRemoved: "node-removed" /* NodeRemoved */,
+            SubtreeModified: "subtree-modified" /* Protocol.DOMDebugger.DOMBreakpointType.SubtreeModified */,
+            AttributeModified: "attribute-modified" /* Protocol.DOMDebugger.DOMBreakpointType.AttributeModified */,
+            NodeRemoved: "node-removed" /* Protocol.DOMDebugger.DOMBreakpointType.NodeRemoved */,
         };
         for (const type of Object.values(allBreakpointTypes)) {
             const label = Sources.DebuggerPausedMessage.BreakpointTypeNouns.get(type);

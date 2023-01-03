@@ -156,15 +156,15 @@ export class DebuggerPausedMessage {
             return;
         }
         const status = this.contentElement.createChild('div', 'paused-status');
-        const errorLike = details.reason === "exception" /* Exception */ ||
-            details.reason === "promiseRejection" /* PromiseRejection */ ||
-            details.reason === "assert" /* Assert */ ||
-            details.reason === "OOM" /* OOM */;
+        const errorLike = details.reason === "exception" /* Protocol.Debugger.PausedEventReason.Exception */ ||
+            details.reason === "promiseRejection" /* Protocol.Debugger.PausedEventReason.PromiseRejection */ ||
+            details.reason === "assert" /* Protocol.Debugger.PausedEventReason.Assert */ ||
+            details.reason === "OOM" /* Protocol.Debugger.PausedEventReason.OOM */;
         let messageWrapper;
-        if (details.reason === "DOM" /* DOM */) {
+        if (details.reason === "DOM" /* Protocol.Debugger.PausedEventReason.DOM */) {
             messageWrapper = await DebuggerPausedMessage.createDOMBreakpointHitMessage(details);
         }
-        else if (details.reason === "EventListener" /* EventListener */) {
+        else if (details.reason === "EventListener" /* Protocol.Debugger.PausedEventReason.EventListener */) {
             let eventNameForUI = '';
             if (details.auxData) {
                 const maybeNonDomEventNameForUI = SDK.EventBreakpointsModel.EventBreakpointsManager.instance().resolveEventListenerBreakpointTitle(details.auxData);
@@ -177,40 +177,40 @@ export class DebuggerPausedMessage {
             }
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedOnEventListener), eventNameForUI);
         }
-        else if (details.reason === "XHR" /* XHR */) {
+        else if (details.reason === "XHR" /* Protocol.Debugger.PausedEventReason.XHR */) {
             const auxData = details.auxData;
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedOnXhrOrFetch), auxData.url || '');
         }
-        else if (details.reason === "exception" /* Exception */) {
+        else if (details.reason === "exception" /* Protocol.Debugger.PausedEventReason.Exception */) {
             const auxData = details.auxData;
             const description = auxData.description || auxData.value || '';
             const descriptionWithoutStack = DebuggerPausedMessage.descriptionWithoutStack(description);
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedOnException), descriptionWithoutStack, description);
         }
-        else if (details.reason === "promiseRejection" /* PromiseRejection */) {
+        else if (details.reason === "promiseRejection" /* Protocol.Debugger.PausedEventReason.PromiseRejection */) {
             const auxData = details.auxData;
             const description = auxData.description || auxData.value || '';
             const descriptionWithoutStack = DebuggerPausedMessage.descriptionWithoutStack(description);
             messageWrapper =
                 buildWrapper(i18nString(UIStrings.pausedOnPromiseRejection), descriptionWithoutStack, description);
         }
-        else if (details.reason === "assert" /* Assert */) {
+        else if (details.reason === "assert" /* Protocol.Debugger.PausedEventReason.Assert */) {
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedOnAssertion));
         }
-        else if (details.reason === "debugCommand" /* DebugCommand */) {
+        else if (details.reason === "debugCommand" /* Protocol.Debugger.PausedEventReason.DebugCommand */) {
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedOnDebuggedFunction));
         }
-        else if (details.reason === "OOM" /* OOM */) {
+        else if (details.reason === "OOM" /* Protocol.Debugger.PausedEventReason.OOM */) {
             messageWrapper = buildWrapper(i18nString(UIStrings.pausedBeforePotentialOutofmemory));
         }
-        else if (details.reason === "CSPViolation" /* CSPViolation */ && details.auxData &&
+        else if (details.reason === "CSPViolation" /* Protocol.Debugger.PausedEventReason.CSPViolation */ && details.auxData &&
             details.auxData['violationType']) {
             const text = details.auxData['violationType'];
-            if (text === "trustedtype-sink-violation" /* TrustedtypeSinkViolation */) {
+            if (text === "trustedtype-sink-violation" /* Protocol.DOMDebugger.CSPViolationType.TrustedtypeSinkViolation */) {
                 messageWrapper =
                     buildWrapper(i18nString(UIStrings.pausedOnCspViolation), i18nString(UIStrings.trustedTypeSinkViolation));
             }
-            else if (text === "trustedtype-policy-violation" /* TrustedtypePolicyViolation */) {
+            else if (text === "trustedtype-policy-violation" /* Protocol.DOMDebugger.CSPViolationType.TrustedtypePolicyViolation */) {
                 messageWrapper =
                     buildWrapper(i18nString(UIStrings.pausedOnCspViolation), i18nString(UIStrings.trustedTypePolicyViolation));
             }
@@ -244,8 +244,8 @@ export class DebuggerPausedMessage {
     }
 }
 export const BreakpointTypeNouns = new Map([
-    ["subtree-modified" /* SubtreeModified */, i18nLazyString(UIStrings.subtreeModifications)],
-    ["attribute-modified" /* AttributeModified */, i18nLazyString(UIStrings.attributeModifications)],
-    ["node-removed" /* NodeRemoved */, i18nLazyString(UIStrings.nodeRemoval)],
+    ["subtree-modified" /* Protocol.DOMDebugger.DOMBreakpointType.SubtreeModified */, i18nLazyString(UIStrings.subtreeModifications)],
+    ["attribute-modified" /* Protocol.DOMDebugger.DOMBreakpointType.AttributeModified */, i18nLazyString(UIStrings.attributeModifications)],
+    ["node-removed" /* Protocol.DOMDebugger.DOMBreakpointType.NodeRemoved */, i18nLazyString(UIStrings.nodeRemoval)],
 ]);
 //# sourceMappingURL=DebuggerPausedMessage.js.map

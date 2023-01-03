@@ -1,4 +1,4 @@
-import type { FormattedContentBuilder } from './FormattedContentBuilder.js';
+import { type FormattedContentBuilder } from './FormattedContentBuilder.js';
 export declare class JavaScriptFormatter {
     #private;
     constructor(builder: FormattedContentBuilder);

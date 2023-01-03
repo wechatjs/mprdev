@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
+import * as SourceFrame from '../../ui/legacy/components/source_frame/source_frame.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import playerPropertiesViewStyles from './playerPropertiesView.css.js';
 const UIStrings = {
@@ -135,7 +136,7 @@ export class PropertyRenderer extends UI.Widget.VBox {
         super();
         this.contentElement.classList.add('media-property-renderer');
         const titleElement = this.contentElement.createChild('span', 'media-property-renderer-title');
-        this.contents = this.contentElement.createChild('span', 'media-property-renderer-contents');
+        this.contents = this.contentElement.createChild('div', 'media-property-renderer-contents');
         UI.UIUtils.createTextChild(titleElement, title);
         this.title = title;
         this.value = null;
@@ -169,16 +170,34 @@ export class PropertyRenderer extends UI.Widget.VBox {
             this.changeContents(propvalue);
         }
     }
+    unsetNestedContents() {
+        this.contentElement.classList.add('media-property-renderer-hidden');
+        if (this.pseudoColorProtectionElement === null) {
+            this.pseudoColorProtectionElement = document.createElement('div');
+            this.pseudoColorProtectionElement.classList.add('media-property-renderer');
+            this.pseudoColorProtectionElement.classList.add('media-property-renderer-hidden');
+            this.contentElement.parentNode
+                .insertBefore(this.pseudoColorProtectionElement, this.contentElement);
+        }
+    }
+    changeNestedContents(value) {
+        if (value === null || Object.keys(value).length === 0) {
+            this.unsetNestedContents();
+        }
+        else {
+            if (this.pseudoColorProtectionElement !== null) {
+                this.pseudoColorProtectionElement.remove();
+                this.pseudoColorProtectionElement = null;
+            }
+            this.contentElement.classList.remove('media-property-renderer-hidden');
+            this.contents.removeChildren();
+            const jsonWrapperElement = new SourceFrame.JSONView.JSONView(new SourceFrame.JSONView.ParsedJSON(value, '', ''), true);
+            jsonWrapperElement.show(this.contents);
+        }
+    }
     changeContents(value) {
         if (value === null) {
-            this.contentElement.classList.add('media-property-renderer-hidden');
-            if (this.pseudoColorProtectionElement === null) {
-                this.pseudoColorProtectionElement = document.createElement('div');
-                this.pseudoColorProtectionElement.classList.add('media-property-renderer');
-                this.pseudoColorProtectionElement.classList.add('media-property-renderer-hidden');
-                this.contentElement.parentNode
-                    .insertBefore(this.pseudoColorProtectionElement, this.contentElement);
-            }
+            this.unsetNestedContents();
         }
         else {
             if (this.pseudoColorProtectionElement !== null) {
@@ -212,6 +231,12 @@ export class DefaultPropertyRenderer extends PropertyRenderer {
     constructor(title, defaultText) {
         super(title);
         this.changeContents(defaultText);
+    }
+}
+export class NestedPropertyRenderer extends PropertyRenderer {
+    constructor(title, content) {
+        super(title);
+        this.changeNestedContents(content);
     }
 }
 export class DimensionPropertyRenderer extends PropertyRenderer {
@@ -282,7 +307,12 @@ export class TrackManager {
     addNewTab(tabs, tabData, tabNumber) {
         const tabElements = [];
         for (const [name, data] of Object.entries(tabData)) {
-            tabElements.push(new DefaultPropertyRenderer(i18n.i18n.lockedString(name), data));
+            if (typeof data === 'object') {
+                tabElements.push(new NestedPropertyRenderer(i18n.i18n.lockedString(name), data));
+            }
+            else {
+                tabElements.push(new DefaultPropertyRenderer(i18n.i18n.lockedString(name), data));
+            }
         }
         const newTab = new AttributesView(tabElements);
         tabs.addNewTab(tabNumber, newTab);
@@ -453,78 +483,78 @@ export class PlayerPropertiesView extends UI.Widget.VBox {
         /* Media properties */
         const resolution = new PropertyRenderer(i18nString(UIStrings.resolution));
         this.mediaElements.push(resolution);
-        this.attributeMap.set("kResolution" /* Resolution */, resolution);
+        this.attributeMap.set("kResolution" /* PlayerPropertyKeys.Resolution */, resolution);
         const fileSize = new FormattedPropertyRenderer(i18nString(UIStrings.fileSize), this.formatFileSize);
         this.mediaElements.push(fileSize);
-        this.attributeMap.set("kTotalBytes" /* TotalBytes */, fileSize);
+        this.attributeMap.set("kTotalBytes" /* PlayerPropertyKeys.TotalBytes */, fileSize);
         const bitrate = new FormattedPropertyRenderer(i18nString(UIStrings.bitrate), this.formatKbps);
         this.mediaElements.push(bitrate);
-        this.attributeMap.set("kBitrate" /* Bitrate */, bitrate);
+        this.attributeMap.set("kBitrate" /* PlayerPropertyKeys.Bitrate */, bitrate);
         const duration = new FormattedPropertyRenderer(i18nString(UIStrings.duration), this.formatTime);
         this.mediaElements.push(duration);
-        this.attributeMap.set("kMaxDuration" /* MaxDuration */, duration);
+        this.attributeMap.set("kMaxDuration" /* PlayerPropertyKeys.MaxDuration */, duration);
         const startTime = new PropertyRenderer(i18nString(UIStrings.startTime));
         this.mediaElements.push(startTime);
-        this.attributeMap.set("kStartTime" /* StartTime */, startTime);
+        this.attributeMap.set("kStartTime" /* PlayerPropertyKeys.StartTime */, startTime);
         const streaming = new PropertyRenderer(i18nString(UIStrings.streaming));
         this.mediaElements.push(streaming);
-        this.attributeMap.set("kIsStreaming" /* IsStreaming */, streaming);
+        this.attributeMap.set("kIsStreaming" /* PlayerPropertyKeys.IsStreaming */, streaming);
         const frameUrl = new PropertyRenderer(i18nString(UIStrings.playbackFrameUrl));
         this.mediaElements.push(frameUrl);
-        this.attributeMap.set("kFrameUrl" /* FrameUrl */, frameUrl);
+        this.attributeMap.set("kFrameUrl" /* PlayerPropertyKeys.FrameUrl */, frameUrl);
         const frameTitle = new PropertyRenderer(i18nString(UIStrings.playbackFrameTitle));
         this.mediaElements.push(frameTitle);
-        this.attributeMap.set("kFrameTitle" /* FrameTitle */, frameTitle);
+        this.attributeMap.set("kFrameTitle" /* PlayerPropertyKeys.FrameTitle */, frameTitle);
         const singleOrigin = new PropertyRenderer(i18nString(UIStrings.singleoriginPlayback));
         this.mediaElements.push(singleOrigin);
-        this.attributeMap.set("kIsSingleOrigin" /* IsSingleOrigin */, singleOrigin);
+        this.attributeMap.set("kIsSingleOrigin" /* PlayerPropertyKeys.IsSingleOrigin */, singleOrigin);
         const rangeHeaders = new PropertyRenderer(i18nString(UIStrings.rangeHeaderSupport));
         this.mediaElements.push(rangeHeaders);
-        this.attributeMap.set("kIsRangeHeaderSupported" /* IsRangeHeaderSupported */, rangeHeaders);
+        this.attributeMap.set("kIsRangeHeaderSupported" /* PlayerPropertyKeys.IsRangeHeaderSupported */, rangeHeaders);
         const frameRate = new PropertyRenderer(i18nString(UIStrings.frameRate));
         this.mediaElements.push(frameRate);
-        this.attributeMap.set("kFramerate" /* Framerate */, frameRate);
+        this.attributeMap.set("kFramerate" /* PlayerPropertyKeys.Framerate */, frameRate);
         const roughness = new PropertyRenderer(i18nString(UIStrings.videoPlaybackRoughness));
         this.mediaElements.push(roughness);
-        this.attributeMap.set("kVideoPlaybackRoughness" /* VideoPlaybackRoughness */, roughness);
+        this.attributeMap.set("kVideoPlaybackRoughness" /* PlayerPropertyKeys.VideoPlaybackRoughness */, roughness);
         const freezingScore = new PropertyRenderer(i18nString(UIStrings.videoFreezingScore));
         this.mediaElements.push(freezingScore);
-        this.attributeMap.set("kVideoPlaybackFreezing" /* VideoPlaybackFreezing */, freezingScore);
+        this.attributeMap.set("kVideoPlaybackFreezing" /* PlayerPropertyKeys.VideoPlaybackFreezing */, freezingScore);
         const rendererName = new PropertyRenderer(i18nString(UIStrings.rendererName));
         this.mediaElements.push(rendererName);
-        this.attributeMap.set("kRendererName" /* RendererName */, rendererName);
+        this.attributeMap.set("kRendererName" /* PlayerPropertyKeys.RendererName */, rendererName);
         /* Video Decoder Properties */
         const decoderName = new DefaultPropertyRenderer(i18nString(UIStrings.decoderName), i18nString(UIStrings.noDecoder));
         this.videoDecoderElements.push(decoderName);
-        this.attributeMap.set("kVideoDecoderName" /* VideoDecoderName */, decoderName);
+        this.attributeMap.set("kVideoDecoderName" /* PlayerPropertyKeys.VideoDecoderName */, decoderName);
         const videoPlatformDecoder = new PropertyRenderer(i18nString(UIStrings.hardwareDecoder));
         this.videoDecoderElements.push(videoPlatformDecoder);
-        this.attributeMap.set("kIsPlatformVideoDecoder" /* IsPlatformVideoDecoder */, videoPlatformDecoder);
+        this.attributeMap.set("kIsPlatformVideoDecoder" /* PlayerPropertyKeys.IsPlatformVideoDecoder */, videoPlatformDecoder);
         const encoderName = new DefaultPropertyRenderer(i18nString(UIStrings.encoderName), i18nString(UIStrings.noEncoder));
         this.videoDecoderElements.push(encoderName);
-        this.attributeMap.set("kVideoEncoderName" /* VideoEncoderName */, encoderName);
+        this.attributeMap.set("kVideoEncoderName" /* PlayerPropertyKeys.VideoEncoderName */, encoderName);
         const videoPlatformEncoder = new PropertyRenderer(i18nString(UIStrings.hardwareEncoder));
         this.videoDecoderElements.push(videoPlatformEncoder);
-        this.attributeMap.set("kIsPlatformVideoEncoder" /* IsPlatformVideoEncoder */, videoPlatformEncoder);
+        this.attributeMap.set("kIsPlatformVideoEncoder" /* PlayerPropertyKeys.IsPlatformVideoEncoder */, videoPlatformEncoder);
         const videoDDS = new PropertyRenderer(i18nString(UIStrings.decryptingDemuxer));
         this.videoDecoderElements.push(videoDDS);
-        this.attributeMap.set("kIsVideoDecryptingDemuxerStream" /* IsVideoDecryptingDemuxerStream */, videoDDS);
+        this.attributeMap.set("kIsVideoDecryptingDemuxerStream" /* PlayerPropertyKeys.IsVideoDecryptingDemuxerStream */, videoDDS);
         const videoTrackManager = new VideoTrackManager(this);
-        this.attributeMap.set("kVideoTracks" /* VideoTracks */, videoTrackManager);
+        this.attributeMap.set("kVideoTracks" /* PlayerPropertyKeys.VideoTracks */, videoTrackManager);
         /* Audio Decoder Properties */
         const audioDecoder = new DefaultPropertyRenderer(i18nString(UIStrings.decoderName), i18nString(UIStrings.noDecoder));
         this.audioDecoderElements.push(audioDecoder);
-        this.attributeMap.set("kAudioDecoderName" /* AudioDecoderName */, audioDecoder);
+        this.attributeMap.set("kAudioDecoderName" /* PlayerPropertyKeys.AudioDecoderName */, audioDecoder);
         const audioPlatformDecoder = new PropertyRenderer(i18nString(UIStrings.hardwareDecoder));
         this.audioDecoderElements.push(audioPlatformDecoder);
-        this.attributeMap.set("kIsPlatformAudioDecoder" /* IsPlatformAudioDecoder */, audioPlatformDecoder);
+        this.attributeMap.set("kIsPlatformAudioDecoder" /* PlayerPropertyKeys.IsPlatformAudioDecoder */, audioPlatformDecoder);
         const audioDDS = new PropertyRenderer(i18nString(UIStrings.decryptingDemuxer));
         this.audioDecoderElements.push(audioDDS);
-        this.attributeMap.set("kIsAudioDecryptingDemuxerStream" /* IsAudioDecryptingDemuxerStream */, audioDDS);
+        this.attributeMap.set("kIsAudioDecryptingDemuxerStream" /* PlayerPropertyKeys.IsAudioDecryptingDemuxerStream */, audioDDS);
         const audioTrackManager = new AudioTrackManager(this);
-        this.attributeMap.set("kAudioTracks" /* AudioTracks */, audioTrackManager);
+        this.attributeMap.set("kAudioTracks" /* PlayerPropertyKeys.AudioTracks */, audioTrackManager);
         const textTrackManager = new TextTrackManager(this);
-        this.attributeMap.set("kTextTracks" /* TextTracks */, textTrackManager);
+        this.attributeMap.set("kTextTracks" /* PlayerPropertyKeys.TextTracks */, textTrackManager);
     }
     wasShown() {
         super.wasShown();

@@ -118,11 +118,6 @@ styles.replaceSync(
   flex-basis: 8px;
 }
 
-#timeline-overview-framerate {
-  flex-basis: 16px;
-  margin-top: 0 !important; /* stylelint-disable-line declaration-no-important */
-}
-
 #timeline-overview-filmstrip {
   flex-basis: 30px;
 }
@@ -131,7 +126,6 @@ styles.replaceSync(
   flex-basis: 20px;
 }
 
-#timeline-overview-framerate::before,
 #timeline-overview-network::before,
 #timeline-overview-cpu-activity::before {
   content: "";
@@ -413,7 +407,6 @@ styles.replaceSync(
 
 .timeline-tree-view .data-grid .data-container {
   overflow-y: scroll;
-  top: 21px;
 }
 
 .timeline-tree-view .data-grid.data-grid-fits-viewport .corner {
@@ -526,7 +519,7 @@ styles.replaceSync(
   width: 120px;
 }
 
-.timeline-tree-view .data-grid .header-container {
+.timeline-tree-view .data-grid thead {
   height: 21px;
 }
 
@@ -631,6 +624,14 @@ styles.replaceSync(
 .status-pane-container > .small-dialog {
   width: 100%;
   height: 100%;
+}
+
+.timeline-concurrency-input {
+  width: 50px;
+}
+
+.timeline-concurrency-hidden {
+  visibility: hidden;
 }
 
 /*# sourceURL=timelinePanel.css */

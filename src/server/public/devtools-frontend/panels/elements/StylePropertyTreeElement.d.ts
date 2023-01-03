@@ -1,7 +1,9 @@
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { StylePropertiesSection } from './StylesSidebarPane.js';
+import { type StylePropertiesSection } from './StylePropertiesSection.js';
 import { StylesSidebarPane } from './StylesSidebarPane.js';
+import { type Hint } from './CSSRuleValidator.js';
+export declare const activeHints: WeakMap<Element, Hint>;
 export declare class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
     #private;
     private readonly style;
@@ -21,6 +23,8 @@ export declare class StylePropertyTreeElement extends UI.TreeOutline.TreeElement
     private hasBeenEditedIncrementally;
     private prompt;
     private lastComputedValue;
+    private computedStyles;
+    private parentsComputedStyles;
     private contextForTest;
     constructor(stylesPane: StylesSidebarPane, matchedStyles: SDK.CSSMatchedStyles.CSSMatchedStyles, property: SDK.CSSProperty.CSSProperty, isShorthand: boolean, inherited: boolean, overloaded: boolean, newProperty: boolean);
     matchedStyles(): SDK.CSSMatchedStyles.CSSMatchedStyles;
@@ -28,6 +32,8 @@ export declare class StylePropertyTreeElement extends UI.TreeOutline.TreeElement
     inherited(): boolean;
     overloaded(): boolean;
     setOverloaded(x: boolean): void;
+    setComputedStyles(computedStyles: Map<string, string> | null): void;
+    setParentsComputedStyles(parentsComputedStyles: Map<string, string> | null): void;
     get name(): string;
     get value(): string;
     updateFilter(): boolean;
@@ -57,10 +63,12 @@ export declare class StylePropertyTreeElement extends UI.TreeOutline.TreeElement
     updateTitleIfComputedValueChanged(): void;
     updateTitle(): void;
     private innerUpdateTitle;
+    updateAuthoringHint(): void;
     private updateFontVariationSettingsWarning;
     private mouseUp;
     private handleContextMenuEvent;
     private handleCopyContextMenuEvent;
+    createCopyContextMenu(event: Event): UI.ContextMenu.ContextMenu;
     private viewComputedValue;
     private copyCssDeclarationAsJs;
     private copyAllCssDeclarationAsJs;

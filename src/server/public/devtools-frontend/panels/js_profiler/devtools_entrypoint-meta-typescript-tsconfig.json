@@ -41,6 +41,9 @@
     },
     {
       "path": "../profiler/bundle-tsconfig.json"
+    },
+    {
+      "path": "../timeline/bundle-tsconfig.json"
     }
   ]
 }

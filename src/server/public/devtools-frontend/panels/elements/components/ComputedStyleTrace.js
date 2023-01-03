@@ -11,6 +11,7 @@ export class ComputedStyleTrace extends HTMLElement {
     #selector = '';
     #active = false;
     #onNavigateToSource = () => { };
+    #ruleOriginNode;
     connectedCallback() {
         this.#shadow.adoptedStyleSheets = [computedStyleTraceStyles];
     }
@@ -18,6 +19,7 @@ export class ComputedStyleTrace extends HTMLElement {
         this.#selector = data.selector;
         this.#active = data.active;
         this.#onNavigateToSource = data.onNavigateToSource;
+        this.#ruleOriginNode = data.ruleOriginNode;
         this.#render();
     }
     #render() {
@@ -28,7 +30,7 @@ export class ComputedStyleTrace extends HTMLElement {
         <span class="goto" @click=${this.#onNavigateToSource}></span>
         <slot name="trace-value" @click=${this.#onNavigateToSource}></slot>
         <span class="trace-selector">${this.#selector}</span>
-        <slot name="trace-link"></slot>
+        <span class="trace-link">${this.#ruleOriginNode}</span>
       </div>
     `, this.#shadow, {
             host: this,

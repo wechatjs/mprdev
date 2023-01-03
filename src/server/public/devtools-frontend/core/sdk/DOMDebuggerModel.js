@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 import * as Common from '../common/common.js';
 import * as i18n from '../i18n/i18n.js';
+import * as Platform from '../platform/platform.js';
 import { CategorizedBreakpoint } from './CategorizedBreakpoint.js';
 import { DOMModel, Events as DOMModelEvents } from './DOMModel.js';
 import { RemoteObject } from './RemoteObject.js';
@@ -332,7 +333,7 @@ export class DOMDebuggerModel extends SDKModel {
         }
         let targetNode = null;
         let insertion = false;
-        if (type === "subtree-modified" /* SubtreeModified */) {
+        if (type === "subtree-modified" /* Protocol.DOMDebugger.DOMBreakpointType.SubtreeModified */) {
             insertion = auxData['insertion'] || false;
             targetNode = this.#domModel.nodeForId(auxData['targetNodeId']);
         }
@@ -340,7 +341,7 @@ export class DOMDebuggerModel extends SDKModel {
     }
     currentURL() {
         const domDocument = this.#domModel.existingDocument();
-        return domDocument ? domDocument.documentURL : '';
+        return domDocument ? domDocument.documentURL : Platform.DevToolsPath.EmptyUrlString;
     }
     async documentUpdated() {
         if (this.suspended) {
@@ -355,7 +356,7 @@ export class DOMDebuggerModel extends SDKModel {
         // Note that requestDocument() caches the document so that it is requested
         // only once.
         const document = await this.#domModel.requestDocument();
-        const currentURL = document ? document.documentURL : '';
+        const currentURL = document ? document.documentURL : Platform.DevToolsPath.EmptyUrlString;
         for (const breakpoint of this.#domBreakpointsSetting.get()) {
             if (breakpoint.url === currentURL) {
                 void this.#domModel.pushNodeByPathToFrontend(breakpoint.path).then(appendBreakpoint.bind(this, breakpoint));
@@ -458,7 +459,7 @@ export class EventListener {
         this.#originalHandlerInternal = originalHandler || handler;
         this.#locationInternal = location;
         const script = location.script();
-        this.#sourceURLInternal = script ? script.contentURL() : '';
+        this.#sourceURLInternal = script ? script.contentURL() : Platform.DevToolsPath.EmptyUrlString;
         this.#customRemoveFunction = customRemoveFunction;
         this.#originInternal = origin || EventListener.Origin.Raw;
     }
@@ -640,8 +641,8 @@ export class DOMDebuggerManager {
             this.#xhrBreakpointsInternal.set(breakpoint.url, breakpoint.enabled);
         }
         this.#cspViolationsToBreakOn = [];
-        this.#cspViolationsToBreakOn.push(new CSPViolationBreakpoint(i18nString(UIStrings.trustedTypeViolations), i18nString(UIStrings.sinkViolations), "trustedtype-sink-violation" /* TrustedtypeSinkViolation */));
-        this.#cspViolationsToBreakOn.push(new CSPViolationBreakpoint(i18nString(UIStrings.trustedTypeViolations), i18nString(UIStrings.policyViolations), "trustedtype-policy-violation" /* TrustedtypePolicyViolation */));
+        this.#cspViolationsToBreakOn.push(new CSPViolationBreakpoint(i18nString(UIStrings.trustedTypeViolations), i18nString(UIStrings.sinkViolations), "trustedtype-sink-violation" /* Protocol.DOMDebugger.CSPViolationType.TrustedtypeSinkViolation */));
+        this.#cspViolationsToBreakOn.push(new CSPViolationBreakpoint(i18nString(UIStrings.trustedTypeViolations), i18nString(UIStrings.policyViolations), "trustedtype-policy-violation" /* Protocol.DOMDebugger.CSPViolationType.TrustedtypePolicyViolation */));
         this.#eventListenerBreakpointsInternal = [];
         this.createInstrumentationBreakpoints(i18nString(UIStrings.animation), ['requestAnimationFrame', 'cancelAnimationFrame', 'requestAnimationFrame.callback']);
         this.createInstrumentationBreakpoints(i18nString(UIStrings.canvas), ['canvasContextCreated', 'webglErrorFired', 'webglWarningFired']);

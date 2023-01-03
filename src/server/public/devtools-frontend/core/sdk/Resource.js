@@ -121,7 +121,6 @@ export class Resource {
     set isGenerated(val) {
         this.#isGeneratedInternal = val;
     }
-    // TODO(crbug.com/1253323): Cast to RawPathString will be removed when migration to branded types is complete.
     contentURL() {
         return this.#urlInternal;
     }
@@ -131,10 +130,6 @@ export class Resource {
             return Common.ResourceType.resourceTypes.Script;
         }
         return this.resourceType();
-    }
-    async contentEncoded() {
-        await this.requestContent();
-        return this.#contentEncodedInternal;
     }
     async requestContent() {
         if (typeof this.#contentInternal !== 'undefined') {

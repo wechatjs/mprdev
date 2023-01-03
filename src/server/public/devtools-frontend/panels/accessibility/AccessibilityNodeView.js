@@ -205,8 +205,8 @@ export class AXNodePropertyTreeElement extends UI.TreeOutline.TreeElement {
     }
     static createSimpleValueElement(type, value) {
         let valueElement;
-        if (!type || type === "valueUndefined" /* ValueUndefined */ ||
-            type === "computedString" /* ComputedString */) {
+        if (!type || type === "valueUndefined" /* Protocol.Accessibility.AXValueType.ValueUndefined */ ||
+            type === "computedString" /* Protocol.Accessibility.AXValueType.ComputedString */) {
             valueElement = document.createElement('span');
         }
         else {
@@ -252,10 +252,10 @@ export class AXNodePropertyTreeElement extends UI.TreeOutline.TreeElement {
         this.listItemElement.appendChild(nameElement);
     }
     appendValueElement(value) {
-        if (value.type === "idref" /* Idref */ ||
-            value.type === "node" /* Node */ ||
-            value.type === "idrefList" /* IdrefList */ ||
-            value.type === "nodeList" /* NodeList */) {
+        if (value.type === "idref" /* Protocol.Accessibility.AXValueType.Idref */ ||
+            value.type === "node" /* Protocol.Accessibility.AXValueType.Node */ ||
+            value.type === "idrefList" /* Protocol.Accessibility.AXValueType.IdrefList */ ||
+            value.type === "nodeList" /* Protocol.Accessibility.AXValueType.NodeList */) {
             this.appendRelatedNodeListValueElement(value);
             return;
         }
@@ -313,10 +313,10 @@ export const TypeStyles = {
     valueUndefined: 'ax-value-undefined',
 };
 export const StringProperties = new Set([
-    "string" /* String */,
-    "computedString" /* ComputedString */,
-    "idrefList" /* IdrefList */,
-    "idref" /* Idref */,
+    "string" /* Protocol.Accessibility.AXValueType.String */,
+    "computedString" /* Protocol.Accessibility.AXValueType.ComputedString */,
+    "idrefList" /* Protocol.Accessibility.AXValueType.IdrefList */,
+    "idref" /* Protocol.Accessibility.AXValueType.Idref */,
 ]);
 export class AXNodePropertyTreePropertyElement extends AXNodePropertyTreeElement {
     property;
@@ -386,8 +386,8 @@ export class AXValueSourceTreeElement extends AXNodePropertyTreeElement {
     appendRelatedNodeListValueElement(value) {
         const relatedNodes = value.relatedNodes;
         const numNodes = relatedNodes ? relatedNodes.length : 0;
-        if (value.type === "idrefList" /* IdrefList */ ||
-            value.type === "idref" /* Idref */) {
+        if (value.type === "idrefList" /* Protocol.Accessibility.AXValueType.IdrefList */ ||
+            value.type === "idref" /* Protocol.Accessibility.AXValueType.Idref */) {
             this.appendIDRefValueElement(value);
         }
         else {
@@ -404,9 +404,9 @@ export class AXValueSourceTreeElement extends AXNodePropertyTreeElement {
         const nameElement = document.createElement('span');
         const type = source.type;
         switch (type) {
-            case "attribute" /* Attribute */:
-            case "placeholder" /* Placeholder */:
-            case "relatedElement" /* RelatedElement */:
+            case "attribute" /* Protocol.Accessibility.AXValueSourceType.Attribute */:
+            case "placeholder" /* Protocol.Accessibility.AXValueSourceType.Placeholder */:
+            case "relatedElement" /* Protocol.Accessibility.AXValueSourceType.RelatedElement */:
                 if (source.nativeSource) {
                     const nativeSource = source.nativeSource;
                     nameElement.textContent = AXNativeSourceTypes[nativeSource].name();
@@ -458,7 +458,7 @@ export class AXValueSourceTreeElement extends AXNodePropertyTreeElement {
             this.appendValueElement(this.source.value);
         }
         else {
-            const valueElement = AXNodePropertyTreeElement.createSimpleValueElement("valueUndefined" /* ValueUndefined */, i18nString(UIStrings.notSpecified));
+            const valueElement = AXNodePropertyTreeElement.createSimpleValueElement("valueUndefined" /* Protocol.Accessibility.AXValueType.ValueUndefined */, i18nString(UIStrings.notSpecified));
             this.listItemElement.appendChild(valueElement);
             this.listItemElement.classList.add('ax-value-source-unused');
         }
@@ -482,7 +482,7 @@ export class AXRelatedNodeSourceTreeElement extends UI.TreeOutline.TreeElement {
             return;
         }
         if (this.value.text) {
-            this.listItemElement.appendChild(AXNodePropertyTreeElement.createSimpleValueElement("computedString" /* ComputedString */, this.value.text));
+            this.listItemElement.appendChild(AXNodePropertyTreeElement.createSimpleValueElement("computedString" /* Protocol.Accessibility.AXValueType.ComputedString */, this.value.text));
         }
     }
     onenter() {
@@ -610,7 +610,7 @@ export class AXNodeIgnoredReasonTreeElement extends AXNodePropertyTreeElement {
             this.listItemElement.appendChild(this.reasonElement);
         }
         const value = this.property.value;
-        if (value.type === "idref" /* Idref */) {
+        if (value.type === "idref" /* Protocol.Accessibility.AXValueType.Idref */) {
             this.appendRelatedNodeListValueElement(value);
         }
     }

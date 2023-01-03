@@ -6,7 +6,7 @@ import * as UI from '../../ui/legacy/legacy.js';
 import * as Search from '../search/search.js';
 import { NetworkItemView } from './NetworkItemView.js';
 import { NetworkLogView } from './NetworkLogView.js';
-import type { NetworkTimeCalculator } from './NetworkTimeCalculator.js';
+import { type NetworkTimeCalculator } from './NetworkTimeCalculator.js';
 export declare class NetworkPanel extends UI.Panel.Panel implements UI.ContextMenu.Provider, UI.View.ViewLocationResolver {
     private readonly networkLogShowOverviewSetting;
     private readonly networkLogLargeRowsSetting;

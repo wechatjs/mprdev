@@ -7,3 +7,9 @@ export declare class RenderingOptionsView extends UI.Widget.VBox {
     }): RenderingOptionsView;
     wasShown(): void;
 }
+export declare class ReloadActionDelegate implements UI.ActionRegistration.ActionDelegate {
+    static instance(opts?: {
+        forceNew: boolean | null;
+    }): ReloadActionDelegate;
+    handleAction(context: UI.Context.Context, actionId: string): boolean;
+}

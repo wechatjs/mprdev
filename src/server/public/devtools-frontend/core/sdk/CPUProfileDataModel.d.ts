@@ -1,6 +1,6 @@
 import type * as Protocol from '../../generated/protocol.js';
 import { ProfileNode, ProfileTreeModel } from './ProfileTreeModel.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 export declare class CPUProfileNode extends ProfileNode {
     id: number;
     self: number;

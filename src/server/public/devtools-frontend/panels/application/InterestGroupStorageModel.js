@@ -50,7 +50,7 @@ export class InterestGroupStorageModel extends SDK.SDKModel.SDKModel {
         void this.storageAgent.invoke_setInterestGroupTracking({ enable: false });
     }
     interestGroupAccessed(event) {
-        this.dispatchEventToListeners("InterestGroupAccess" /* InterestGroupAccess */, event);
+        this.dispatchEventToListeners("InterestGroupAccess" /* Events.InterestGroupAccess */, event);
     }
     indexedDBListUpdated(_event) {
     }

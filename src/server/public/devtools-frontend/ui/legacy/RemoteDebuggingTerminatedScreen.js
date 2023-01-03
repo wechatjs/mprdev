@@ -45,7 +45,7 @@ export class RemoteDebuggingTerminatedScreen extends VBox {
     }
     static show(reason) {
         const dialog = new Dialog();
-        dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        dialog.setSizeBehavior("MeasureContent" /* SizeBehavior.MeasureContent */);
         dialog.addCloseButton();
         dialog.setDimmed(true);
         new RemoteDebuggingTerminatedScreen(reason).show(dialog.contentElement);

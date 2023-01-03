@@ -56,8 +56,8 @@ export class AnimationUI {
         this.#svg.style.marginLeft = '-' + Options.AnimationMargin + 'px';
         this.#svg.addEventListener('contextmenu', this.onContextMenu.bind(this));
         this.#activeIntervalGroup = UI.UIUtils.createSVGChild(this.#svg, 'g');
-        UI.UIUtils.installDragHandle(this.#activeIntervalGroup, this.mouseDown.bind(this, "AnimationDrag" /* AnimationDrag */, null), this.mouseMove.bind(this), this.mouseUp.bind(this), '-webkit-grabbing', '-webkit-grab');
-        AnimationUI.installDragHandleKeyboard(this.#activeIntervalGroup, this.keydownMove.bind(this, "AnimationDrag" /* AnimationDrag */, null));
+        UI.UIUtils.installDragHandle(this.#activeIntervalGroup, this.mouseDown.bind(this, "AnimationDrag" /* Events.AnimationDrag */, null), this.mouseMove.bind(this), this.mouseUp.bind(this), '-webkit-grabbing', '-webkit-grab');
+        AnimationUI.installDragHandleKeyboard(this.#activeIntervalGroup, this.keydownMove.bind(this, "AnimationDrag" /* Events.AnimationDrag */, null));
         this.#cachedElements = [];
         this.#movementInMs = 0;
         this.#keyboardMovementRateMs = 50;
@@ -149,13 +149,13 @@ export class AnimationUI {
         }
         let eventType;
         if (keyframeIndex === 0) {
-            eventType = "StartEndpointMove" /* StartEndpointMove */;
+            eventType = "StartEndpointMove" /* Events.StartEndpointMove */;
         }
         else if (keyframeIndex === -1) {
-            eventType = "FinishEndpointMove" /* FinishEndpointMove */;
+            eventType = "FinishEndpointMove" /* Events.FinishEndpointMove */;
         }
         else {
-            eventType = "KeyframeMove" /* KeyframeMove */;
+            eventType = "KeyframeMove" /* Events.KeyframeMove */;
         }
         UI.UIUtils.installDragHandle(circle, this.mouseDown.bind(this, eventType, keyframeIndex), this.mouseMove.bind(this), this.mouseUp.bind(this), 'ew-resize');
         AnimationUI.installDragHandleKeyboard(circle, this.keydownMove.bind(this, eventType, keyframeIndex));
@@ -272,7 +272,7 @@ export class AnimationUI {
     }
     delay() {
         let delay = this.#animationInternal.source().delay();
-        if (this.#mouseEventType === "AnimationDrag" /* AnimationDrag */ || this.#mouseEventType === "StartEndpointMove" /* StartEndpointMove */) {
+        if (this.#mouseEventType === "AnimationDrag" /* Events.AnimationDrag */ || this.#mouseEventType === "StartEndpointMove" /* Events.StartEndpointMove */) {
             delay += this.#movementInMs;
         }
         // FIXME: add support for negative start delay
@@ -280,10 +280,10 @@ export class AnimationUI {
     }
     duration() {
         let duration = this.#animationInternal.source().duration();
-        if (this.#mouseEventType === "FinishEndpointMove" /* FinishEndpointMove */) {
+        if (this.#mouseEventType === "FinishEndpointMove" /* Events.FinishEndpointMove */) {
             duration += this.#movementInMs;
         }
-        else if (this.#mouseEventType === "StartEndpointMove" /* StartEndpointMove */) {
+        else if (this.#mouseEventType === "StartEndpointMove" /* Events.StartEndpointMove */) {
             duration -= Math.max(this.#movementInMs, -this.#animationInternal.source().delay());
             // Cannot have negative delay
         }
@@ -294,7 +294,7 @@ export class AnimationUI {
             throw new Error('Unable to calculate offset; keyframes do not exist');
         }
         let offset = this.#keyframes[i].offsetAsNumber();
-        if (this.#mouseEventType === "KeyframeMove" /* KeyframeMove */ && i === this.#keyframeMoved) {
+        if (this.#mouseEventType === "KeyframeMove" /* Events.KeyframeMove */ && i === this.#keyframeMoved) {
             console.assert(i > 0 && i < this.#keyframes.length - 1, 'First and last keyframe cannot be moved');
             offset += this.#movementInMs / this.#animationInternal.source().duration();
             offset = Math.max(offset, this.#keyframes[i - 1].offsetAsNumber());
@@ -334,7 +334,7 @@ export class AnimationUI {
         const mouseEvent = event;
         this.#movementInMs = (mouseEvent.clientX - (this.#downMouseX || 0)) / this.#timeline.pixelMsRatio();
         // Commit changes
-        if (this.#mouseEventType === "KeyframeMove" /* KeyframeMove */) {
+        if (this.#mouseEventType === "KeyframeMove" /* Events.KeyframeMove */) {
             if (this.#keyframes && this.#keyframeMoved !== null && typeof this.#keyframeMoved !== 'undefined') {
                 this.#keyframes[this.#keyframeMoved].setOffset(this.offset(this.#keyframeMoved));
             }
@@ -364,7 +364,7 @@ export class AnimationUI {
             default:
                 return;
         }
-        if (this.#mouseEventType === "KeyframeMove" /* KeyframeMove */) {
+        if (this.#mouseEventType === "KeyframeMove" /* Events.KeyframeMove */) {
             if (this.#keyframes && this.#keyframeMoved !== null) {
                 this.#keyframes[this.#keyframeMoved].setOffset(this.offset(this.#keyframeMoved));
             }

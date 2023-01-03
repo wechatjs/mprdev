@@ -1,7 +1,6 @@
 import type * as Platform from '../platform/platform.js';
-import type { Color } from './Color.js';
-import { Format } from './Color.js';
-import type { GenericEvents, EventDescriptor, EventTargetEvent } from './EventTarget.js';
+import { Format, type Color } from './Color.js';
+import { type GenericEvents, type EventDescriptor, type EventTargetEvent } from './EventTarget.js';
 import { ObjectWrapper } from './Object.js';
 import { getLocalizedSettingsCategory, getRegisteredSettings, maybeRemoveSettingExtension, type RegExpSettingItem, registerSettingExtension, registerSettingsForTest, resetSettings, SettingCategory, type SettingExtensionOption, type SettingRegistration, SettingType } from './SettingRegistration.js';
 export declare class Settings {

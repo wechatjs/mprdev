@@ -25,7 +25,7 @@ export declare const domWordWrap: DynamicSetting<boolean>;
 export declare const dummyDarkTheme: CM.Extension;
 export declare const themeSelection: CM.Compartment;
 export declare function theme(): CM.Extension;
-export declare function baseConfiguration(text: string): CM.Extension;
+export declare function baseConfiguration(text: string | CM.Text): CM.Extension;
 export declare const closeBrackets: CM.Extension;
 export declare const showCompletionHint: CM.ViewPlugin<{
     decorations: CM.DecorationSet;

@@ -169,8 +169,8 @@ export class PopoverHelper {
     showPopover(document) {
         const popover = new GlassPane();
         popover.registerRequiredCSS(popoverStyles);
-        popover.setSizeBehavior("MeasureContent" /* MeasureContent */);
-        popover.setMarginBehavior("Arrow" /* Arrow */);
+        popover.setSizeBehavior("MeasureContent" /* SizeBehavior.MeasureContent */);
+        popover.setMarginBehavior("Arrow" /* MarginBehavior.Arrow */);
         const request = this.scheduledRequest;
         if (!request) {
             return;

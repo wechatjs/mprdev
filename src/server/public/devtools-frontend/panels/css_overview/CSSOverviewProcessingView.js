@@ -21,7 +21,7 @@ export class CSSOverviewProcessingView extends UI.Widget.Widget {
         this.#render();
     }
     #render() {
-        const cancelButton = UI.UIUtils.createTextButton(i18nString(UIStrings.cancel), () => this.#controller.dispatchEventToListeners("RequestOverviewCancel" /* RequestOverviewCancel */), '', true /* primary */);
+        const cancelButton = UI.UIUtils.createTextButton(i18nString(UIStrings.cancel), () => this.#controller.dispatchEventToListeners("RequestOverviewCancel" /* Events.RequestOverviewCancel */), '', true /* primary */);
         this.setDefaultFocusedElement(cancelButton);
         this.fragment = UI.Fragment.Fragment.build `
       <div class="vbox overview-processing-view">

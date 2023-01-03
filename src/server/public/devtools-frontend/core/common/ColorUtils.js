@@ -13,11 +13,10 @@ export function blendColors(fgRGBA, bgRGBA) {
         alpha + (bgRGBA[3] * (1 - alpha)),
     ];
 }
-export function rgbaToHsla([r, g, b, a]) {
+function rgbToHue([r, g, b]) {
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const diff = max - min;
-    const sum = max + min;
     let h;
     if (min === max) {
         h = 0;
@@ -31,6 +30,14 @@ export function rgbaToHsla([r, g, b, a]) {
     else {
         h = (1 / 6 * (r - g) / diff) + 2 / 3;
     }
+    return h;
+}
+export function rgbaToHsla([r, g, b, a]) {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const diff = max - min;
+    const sum = max + min;
+    const h = rgbToHue([r, g, b]);
     const l = 0.5 * sum;
     let s;
     if (l === 0) {
@@ -46,6 +53,12 @@ export function rgbaToHsla([r, g, b, a]) {
         s = diff / (2 - sum);
     }
     return [h, s, l, a];
+}
+export function rgbaToHwba([r, g, b, a]) {
+    const h = rgbToHue([r, g, b]);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    return [h, min, 1 - max, a];
 }
 /**
 * Calculate the luminance of this color using the WCAG algorithm.

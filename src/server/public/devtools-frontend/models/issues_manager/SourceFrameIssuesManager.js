@@ -6,7 +6,7 @@ import * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as TextUtils from '../../models/text_utils/text_utils.js';
 import * as Workspace from '../../models/workspace/workspace.js';
-import { ContentSecurityPolicyIssue, trustedTypesPolicyViolationCode, trustedTypesSinkViolationCode } from './ContentSecurityPolicyIssue.js';
+import { ContentSecurityPolicyIssue, trustedTypesPolicyViolationCode, trustedTypesSinkViolationCode, } from './ContentSecurityPolicyIssue.js';
 import { toZeroBasedLocation } from './Issue.js';
 import { getIssueTitleFromMarkdownDescription } from './MarkdownIssueDescription.js';
 export class SourceFrameIssuesManager {
@@ -15,8 +15,8 @@ export class SourceFrameIssuesManager {
     #issueMessages = new Array();
     constructor(issuesManager) {
         this.issuesManager = issuesManager;
-        this.issuesManager.addEventListener("IssueAdded" /* IssueAdded */, this.#onIssueAdded, this);
-        this.issuesManager.addEventListener("FullUpdateRequired" /* FullUpdateRequired */, this.#onFullUpdateRequired, this);
+        this.issuesManager.addEventListener("IssueAdded" /* Events.IssueAdded */, this.#onIssueAdded, this);
+        this.issuesManager.addEventListener("FullUpdateRequired" /* Events.FullUpdateRequired */, this.#onFullUpdateRequired, this);
     }
     #onIssueAdded(event) {
         const { issue } = event.data;

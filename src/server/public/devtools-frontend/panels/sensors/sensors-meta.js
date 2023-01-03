@@ -100,11 +100,11 @@ async function loadEmulationModule() {
     return loadedSensorsModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     commandPrompt: i18nLazyString(UIStrings.showSensors),
     title: i18nLazyString(UIStrings.sensors),
     id: 'sensors',
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 100,
     async loadView() {
         const Sensors = await loadEmulationModule();
@@ -120,7 +120,7 @@ UI.ViewManager.registerViewExtension({
     ],
 });
 UI.ViewManager.registerViewExtension({
-    location: "settings-view" /* SETTINGS_VIEW */,
+    location: "settings-view" /* UI.ViewManager.ViewLocationValues.SETTINGS_VIEW */,
     id: 'emulation-locations',
     commandPrompt: i18nLazyString(UIStrings.showLocations),
     title: i18nLazyString(UIStrings.locations),

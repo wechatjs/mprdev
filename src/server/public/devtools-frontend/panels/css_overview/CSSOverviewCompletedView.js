@@ -194,7 +194,7 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
         this.#resultsContainer = new UI.Widget.VBox();
         this.#elementContainer = new DetailsView();
         // If closing the last tab, collapse the sidebar.
-        this.#elementContainer.addEventListener("TabClosed" /* TabClosed */, evt => {
+        this.#elementContainer.addEventListener("TabClosed" /* Events.TabClosed */, evt => {
             if (evt.data === 0) {
                 this.#mainContainer.setSidebarMinimized(true);
             }
@@ -206,6 +206,7 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
         this.#mainContainer.setSecondIsSidebar(true);
         this.#mainContainer.setSidebarMinimized(true);
         this.#sideBar = new CSSOverviewSidebarPanel();
+        this.#sideBar.setMinimumSize(100, 25);
         this.splitWidget().setSidebarWidget(this.#sideBar);
         this.splitWidget().setMainWidget(this.#mainContainer);
         this.#linkifier = new Components.Linkifier.Linkifier(/* maxLinkLength */ 20, /* useLinkDecorator */ true);
@@ -216,10 +217,10 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
         this.#sideBar.addItem(i18nString(UIStrings.unusedDeclarations), 'unused-declarations');
         this.#sideBar.addItem(i18nString(UIStrings.mediaQueries), 'media-queries');
         this.#sideBar.select('summary');
-        this.#sideBar.addEventListener("ItemSelected" /* ItemSelected */, this.#sideBarItemSelected, this);
-        this.#sideBar.addEventListener("Reset" /* Reset */, this.#sideBarReset, this);
-        this.#controller.addEventListener("Reset" /* Reset */, this.#reset, this);
-        this.#controller.addEventListener("PopulateNodes" /* PopulateNodes */, this.#createElementsView, this);
+        this.#sideBar.addEventListener("ItemSelected" /* SidebarEvents.ItemSelected */, this.#sideBarItemSelected, this);
+        this.#sideBar.addEventListener("Reset" /* SidebarEvents.Reset */, this.#sideBarReset, this);
+        this.#controller.addEventListener("Reset" /* CSSOverViewControllerEvents.Reset */, this.#reset, this);
+        this.#controller.addEventListener("PopulateNodes" /* CSSOverViewControllerEvents.PopulateNodes */, this.#createElementsView, this);
         this.#resultsContainer.element.addEventListener('click', this.#onClick.bind(this));
         this.#data = null;
     }
@@ -247,7 +248,7 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
         section.scrollIntoView();
     }
     #sideBarReset() {
-        this.#controller.dispatchEventToListeners("Reset" /* Reset */);
+        this.#controller.dispatchEventToListeners("Reset" /* CSSOverViewControllerEvents.Reset */);
     }
     #reset() {
         this.#resultsContainer.element.removeChildren();
@@ -363,7 +364,7 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
                 return;
         }
         evt.consume();
-        this.#controller.dispatchEventToListeners("PopulateNodes" /* PopulateNodes */, { payload });
+        this.#controller.dispatchEventToListeners("PopulateNodes" /* CSSOverViewControllerEvents.PopulateNodes */, { payload });
         this.#mainContainer.setSidebarMinimized(false);
     }
     async #render(data) {
@@ -653,7 +654,7 @@ export class CSSOverviewCompletedView extends UI.Panel.PanelWithSidebar {
     #colorsToFragment(section, color) {
         const blockFragment = UI.Fragment.Fragment.build `<li>
       <button data-type="color" data-color="${color}" data-section="${section}" class="block" $="color"></button>
-      <div class="block-title">${color}</div>
+      <div class="block-title color-text">${color}</div>
     </li>`;
         const block = blockFragment.$('color');
         block.style.backgroundColor = color;
@@ -687,7 +688,7 @@ export class DetailsView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox)
         this.#tabbedPane = new UI.TabbedPane.TabbedPane();
         this.#tabbedPane.show(this.element);
         this.#tabbedPane.addEventListener(UI.TabbedPane.Events.TabClosed, () => {
-            this.dispatchEventToListeners("TabClosed" /* TabClosed */, this.#tabbedPane.tabIds().length);
+            this.dispatchEventToListeners("TabClosed" /* Events.TabClosed */, this.#tabbedPane.tabIds().length);
         });
     }
     appendTab(id, tabTitle, view, isCloseable) {
@@ -816,7 +817,7 @@ export class ElementDetailsView extends UI.Widget.Widget {
             return;
         }
         const backendNodeId = Number(node.dataset.backendNodeId);
-        this.#controller.dispatchEventToListeners("RequestNodeHighlight" /* RequestNodeHighlight */, backendNodeId);
+        this.#controller.dispatchEventToListeners("RequestNodeHighlight" /* CSSOverViewControllerEvents.RequestNodeHighlight */, backendNodeId);
     }
     async populateNodes(data) {
         this.#elementGrid.rootNode().removeChildren();
@@ -890,7 +891,7 @@ export class ElementNode extends DataGrid.SortableDataGrid.SortableDataGridNode 
                 button.classList.add('show-element');
                 UI.Tooltip.Tooltip.install(button, i18nString(UIStrings.showElement));
                 button.tabIndex = 0;
-                button.onclick = () => this.data.node.scrollIntoView();
+                button.onclick = () => frontendNode.scrollIntoView();
                 cell.appendChild(button);
             });
             return cell;

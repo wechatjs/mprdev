@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
-import type { Suggestions } from './SuggestBox.js';
-import type { ToolbarButton } from './Toolbar.js';
+import { type Suggestions } from './SuggestBox.js';
+import { type ToolbarButton } from './Toolbar.js';
 import { HBox } from './Widget.js';
 declare const FilterBar_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<FilterBarEventTypes>;

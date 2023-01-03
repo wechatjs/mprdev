@@ -1,5 +1,6 @@
 import type * as Protocol from '../../generated/protocol.js';
-import type { Target } from './Target.js';
+import type * as Platform from '../platform/platform.js';
+import { type Target } from './Target.js';
 export declare class ProfileNode {
     callFrame: Protocol.Runtime.CallFrame;
     callUID: string;
@@ -13,7 +14,7 @@ export declare class ProfileNode {
     constructor(callFrame: Protocol.Runtime.CallFrame);
     get functionName(): string;
     get scriptId(): Protocol.Runtime.ScriptId;
-    get url(): string;
+    get url(): Platform.DevToolsPath.UrlString;
     get lineNumber(): number;
     get columnNumber(): number;
 }

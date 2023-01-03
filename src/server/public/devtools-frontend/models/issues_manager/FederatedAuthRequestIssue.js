@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { resolveLazyDescription } from './MarkdownIssueDescription.js';
+import { resolveLazyDescription, } from './MarkdownIssueDescription.js';
 const UIStrings = {
     /**
     *@description Title for Client Hint specification url link
@@ -16,9 +16,9 @@ export class FederatedAuthRequestIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel) {
         super({
-            code: "FederatedAuthRequestIssue" /* FederatedAuthRequestIssue */,
+            code: "FederatedAuthRequestIssue" /* Protocol.Audits.InspectorIssueCode.FederatedAuthRequestIssue */,
             umaCode: [
-                "FederatedAuthRequestIssue" /* FederatedAuthRequestIssue */,
+                "FederatedAuthRequestIssue" /* Protocol.Audits.InspectorIssueCode.FederatedAuthRequestIssue */,
                 issueDetails.federatedAuthRequestIssueReason,
             ].join('::'),
         }, issuesModel);
@@ -54,17 +54,7 @@ export class FederatedAuthRequestIssue extends Issue {
 }
 const issueDescriptions = new Map([
     [
-        "ApprovalDeclined" /* ApprovalDeclined */,
-        {
-            file: 'federatedAuthRequestApprovalDeclined.md',
-            links: [{
-                    link: 'https://fedidcg.github.io/FedCM/',
-                    linkTitle: i18nLazyString(UIStrings.fedCm),
-                }],
-        },
-    ],
-    [
-        "TooManyRequests" /* TooManyRequests */,
+        "TooManyRequests" /* Protocol.Audits.FederatedAuthRequestIssueReason.TooManyRequests */,
         {
             file: 'federatedAuthRequestTooManyRequests.md',
             links: [{
@@ -74,9 +64,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "WellKnownHttpNotFound" /* WellKnownHttpNotFound */,
+        "ManifestHttpNotFound" /* Protocol.Audits.FederatedAuthRequestIssueReason.ManifestHttpNotFound */,
         {
-            file: 'federatedAuthRequestWellKnownHttpNotFound.md',
+            file: 'federatedAuthRequestManifestHttpNotFound.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -84,9 +74,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "WellKnownNoResponse" /* WellKnownNoResponse */,
+        "ManifestNoResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.ManifestNoResponse */,
         {
-            file: 'federatedAuthRequestWellKnownNoResponse.md',
+            file: 'federatedAuthRequestManifestNoResponse.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -94,9 +84,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "WellKnownInvalidResponse" /* WellKnownInvalidResponse */,
+        "ManifestInvalidResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.ManifestInvalidResponse */,
         {
-            file: 'federatedAuthRequestWellKnownInvalidResponse.md',
+            file: 'federatedAuthRequestManifestInvalidResponse.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -104,9 +94,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "ClientIdMetadataHttpNotFound" /* ClientIdMetadataHttpNotFound */,
+        "ClientMetadataHttpNotFound" /* Protocol.Audits.FederatedAuthRequestIssueReason.ClientMetadataHttpNotFound */,
         {
-            file: 'federatedAuthRequestClientIdMetadataHttpNotFound.md',
+            file: 'federatedAuthRequestClientMetadataHttpNotFound.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -114,9 +104,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "ClientIdMetadataNoResponse" /* ClientIdMetadataNoResponse */,
+        "ClientMetadataNoResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.ClientMetadataNoResponse */,
         {
-            file: 'federatedAuthRequestClientIdMetadataNoResponse.md',
+            file: 'federatedAuthRequestClientMetadataNoResponse.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -124,9 +114,9 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "ClientIdMetadataInvalidResponse" /* ClientIdMetadataInvalidResponse */,
+        "ClientMetadataInvalidResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.ClientMetadataInvalidResponse */,
         {
-            file: 'federatedAuthRequestClientIdMetadataInvalidResponse.md',
+            file: 'federatedAuthRequestClientMetadataInvalidResponse.md',
             links: [{
                     link: 'https://fedidcg.github.io/FedCM/',
                     linkTitle: i18nLazyString(UIStrings.fedCm),
@@ -134,7 +124,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "ErrorFetchingSignin" /* ErrorFetchingSignin */,
+        "ErrorFetchingSignin" /* Protocol.Audits.FederatedAuthRequestIssueReason.ErrorFetchingSignin */,
         {
             file: 'federatedAuthRequestErrorFetchingSignin.md',
             links: [{
@@ -144,7 +134,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "InvalidSigninResponse" /* InvalidSigninResponse */,
+        "InvalidSigninResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.InvalidSigninResponse */,
         {
             file: 'federatedAuthRequestInvalidSigninResponse.md',
             links: [{
@@ -154,7 +144,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "AccountsHttpNotFound" /* AccountsHttpNotFound */,
+        "AccountsHttpNotFound" /* Protocol.Audits.FederatedAuthRequestIssueReason.AccountsHttpNotFound */,
         {
             file: 'federatedAuthRequestAccountsHttpNotFound.md',
             links: [{
@@ -164,7 +154,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "AccountsNoResponse" /* AccountsNoResponse */,
+        "AccountsNoResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.AccountsNoResponse */,
         {
             file: 'federatedAuthRequestAccountsNoResponse.md',
             links: [{
@@ -174,7 +164,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "AccountsInvalidResponse" /* AccountsInvalidResponse */,
+        "AccountsInvalidResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.AccountsInvalidResponse */,
         {
             file: 'federatedAuthRequestAccountsInvalidResponse.md',
             links: [{
@@ -184,7 +174,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "IdTokenHttpNotFound" /* IdTokenHttpNotFound */,
+        "IdTokenHttpNotFound" /* Protocol.Audits.FederatedAuthRequestIssueReason.IdTokenHttpNotFound */,
         {
             file: 'federatedAuthRequestIdTokenHttpNotFound.md',
             links: [{
@@ -194,7 +184,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "IdTokenNoResponse" /* IdTokenNoResponse */,
+        "IdTokenNoResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.IdTokenNoResponse */,
         {
             file: 'federatedAuthRequestIdTokenNoResponse.md',
             links: [{
@@ -204,7 +194,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "IdTokenInvalidResponse" /* IdTokenInvalidResponse */,
+        "IdTokenInvalidResponse" /* Protocol.Audits.FederatedAuthRequestIssueReason.IdTokenInvalidResponse */,
         {
             file: 'federatedAuthRequestIdTokenInvalidResponse.md',
             links: [{
@@ -214,7 +204,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "IdTokenInvalidRequest" /* IdTokenInvalidRequest */,
+        "IdTokenInvalidRequest" /* Protocol.Audits.FederatedAuthRequestIssueReason.IdTokenInvalidRequest */,
         {
             file: 'federatedAuthRequestIdTokenInvalidRequest.md',
             links: [{
@@ -224,7 +214,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "ErrorIdToken" /* ErrorIdToken */,
+        "ErrorIdToken" /* Protocol.Audits.FederatedAuthRequestIssueReason.ErrorIdToken */,
         {
             file: 'federatedAuthRequestErrorIdToken.md',
             links: [{
@@ -234,7 +224,7 @@ const issueDescriptions = new Map([
         },
     ],
     [
-        "Canceled" /* Canceled */,
+        "Canceled" /* Protocol.Audits.FederatedAuthRequestIssueReason.Canceled */,
         {
             file: 'federatedAuthRequestCanceled.md',
             links: [{

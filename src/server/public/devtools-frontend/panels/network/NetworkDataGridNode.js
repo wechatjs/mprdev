@@ -804,7 +804,7 @@ export class NetworkRequestNode extends NetworkNode {
             case 'initiator-address-space': {
                 const clientSecurityState = this.requestInternal.clientSecurityState();
                 this.renderAddressSpaceCell(cell, clientSecurityState ? clientSecurityState.initiatorIPAddressSpace :
-                    "Unknown" /* Unknown */);
+                    "Unknown" /* Protocol.Network.IPAddressSpace.Unknown */);
                 break;
             }
             case 'size': {
@@ -908,8 +908,7 @@ export class NetworkRequestNode extends NetworkNode {
                 const secondIconElement = document.createElement('img');
                 secondIconElement.classList.add('icon');
                 secondIconElement.alt = i18nString(UIStrings.webBundleInnerRequest);
-                secondIconElement.src = 'Images/ic_file_webbundle_inner_request.svg';
-                new URL('../../Images/ic_file_webbundle_inner_request.svg', import.meta.url).toString();
+                secondIconElement.src = new URL('../../Images/ic_file_webbundle_inner_request.svg', import.meta.url).toString();
                 const networkManager = SDK.NetworkManager.NetworkManager.forRequest(this.requestInternal);
                 if (webBundleInnerRequestInfo.bundleRequestId && networkManager) {
                     cell.appendChild(Components.Linkifier.Linkifier.linkifyRevealable(new NetworkForward.NetworkRequestId.NetworkRequestId(webBundleInnerRequestInfo.bundleRequestId, networkManager), secondIconElement));
@@ -922,6 +921,10 @@ export class NetworkRequestNode extends NetworkNode {
             const networkManager = SDK.NetworkManager.NetworkManager.forRequest(this.requestInternal);
             UI.UIUtils.createTextChild(cell, networkManager ? networkManager.target().decorateLabel(name) : name);
             this.appendSubtitle(cell, this.requestInternal.path());
+            if (!this.requestInternal.url().startsWith('data')) {
+                // Show the URL as tooltip unless it's a data URL.
+                UI.Tooltip.Tooltip.install(cell, this.requestInternal.url());
+            }
         }
         else if (text) {
             UI.UIUtils.createTextChild(cell, text);
@@ -962,44 +965,44 @@ export class NetworkRequestNode extends NetworkNode {
             let reason = i18nString(UIStrings.other);
             let displayShowHeadersLink = false;
             switch (this.requestInternal.blockedReason()) {
-                case "other" /* Other */:
+                case "other" /* Protocol.Network.BlockedReason.Other */:
                     reason = i18nString(UIStrings.other);
                     break;
-                case "csp" /* Csp */:
+                case "csp" /* Protocol.Network.BlockedReason.Csp */:
                     reason = i18nString(UIStrings.csp);
                     break;
-                case "mixed-content" /* MixedContent */:
+                case "mixed-content" /* Protocol.Network.BlockedReason.MixedContent */:
                     reason = i18n.i18n.lockedString('mixed-content');
                     break;
-                case "origin" /* Origin */:
+                case "origin" /* Protocol.Network.BlockedReason.Origin */:
                     reason = i18nString(UIStrings.origin);
                     break;
-                case "inspector" /* Inspector */:
+                case "inspector" /* Protocol.Network.BlockedReason.Inspector */:
                     reason = i18nString(UIStrings.devtools);
                     break;
-                case "subresource-filter" /* SubresourceFilter */:
+                case "subresource-filter" /* Protocol.Network.BlockedReason.SubresourceFilter */:
                     reason = i18n.i18n.lockedString('subresource-filter');
                     break;
-                case "content-type" /* ContentType */:
+                case "content-type" /* Protocol.Network.BlockedReason.ContentType */:
                     reason = i18n.i18n.lockedString('content-type');
                     break;
-                case "coep-frame-resource-needs-coep-header" /* CoepFrameResourceNeedsCoepHeader */:
+                case "coep-frame-resource-needs-coep-header" /* Protocol.Network.BlockedReason.CoepFrameResourceNeedsCoepHeader */:
                     displayShowHeadersLink = true;
                     reason = i18n.i18n.lockedString('CoepFrameResourceNeedsCoepHeader');
                     break;
-                case "coop-sandboxed-iframe-cannot-navigate-to-coop-page" /* CoopSandboxedIframeCannotNavigateToCoopPage */:
+                case "coop-sandboxed-iframe-cannot-navigate-to-coop-page" /* Protocol.Network.BlockedReason.CoopSandboxedIframeCannotNavigateToCoopPage */:
                     displayShowHeadersLink = true;
                     reason = i18n.i18n.lockedString('CoopSandboxedIframeCannotNavigateToCoopPage');
                     break;
-                case "corp-not-same-origin" /* CorpNotSameOrigin */:
+                case "corp-not-same-origin" /* Protocol.Network.BlockedReason.CorpNotSameOrigin */:
                     displayShowHeadersLink = true;
                     reason = i18n.i18n.lockedString('NotSameOrigin');
                     break;
-                case "corp-not-same-site" /* CorpNotSameSite */:
+                case "corp-not-same-site" /* Protocol.Network.BlockedReason.CorpNotSameSite */:
                     displayShowHeadersLink = true;
                     reason = i18n.i18n.lockedString('NotSameSite');
                     break;
-                case "corp-not-same-origin-after-defaulted-to-same-origin-by-coep" /* CorpNotSameOriginAfterDefaultedToSameOriginByCoep */:
+                case "corp-not-same-origin-after-defaulted-to-same-origin-by-coep" /* Protocol.Network.BlockedReason.CorpNotSameOriginAfterDefaultedToSameOriginByCoep */:
                     displayShowHeadersLink = true;
                     reason = i18n.i18n.lockedString('NotSameOriginAfterDefaultedToSameOriginByCoep');
                     break;
@@ -1068,16 +1071,13 @@ export class NetworkRequestNode extends NetworkNode {
                 break;
             }
             case SDK.NetworkRequest.InitiatorType.Script: {
-                const networkManager = SDK.NetworkManager.NetworkManager.forRequest(request);
-                if (!networkManager) {
-                    return;
-                }
+                const target = SDK.NetworkManager.NetworkManager.forRequest(request)?.target() || null;
                 const linkifier = this.parentView().linkifier();
                 if (initiator.stack) {
-                    this.linkifiedInitiatorAnchor = linkifier.linkifyStackTraceTopFrame(networkManager.target(), initiator.stack);
+                    this.linkifiedInitiatorAnchor = linkifier.linkifyStackTraceTopFrame(target, initiator.stack);
                 }
                 else {
-                    this.linkifiedInitiatorAnchor = linkifier.linkifyScriptLocation(networkManager.target(), initiator.scriptId, initiator.url, initiator.lineNumber, { columnNumber: initiator.columnNumber, inlineFrameIndex: 0, className: undefined, tabStop: undefined });
+                    this.linkifiedInitiatorAnchor = linkifier.linkifyScriptLocation(target, initiator.scriptId, initiator.url, initiator.lineNumber, { columnNumber: initiator.columnNumber, inlineFrameIndex: 0 });
                 }
                 UI.Tooltip.Tooltip.install((this.linkifiedInitiatorAnchor), '');
                 cell.appendChild(this.linkifiedInitiatorAnchor);
@@ -1114,7 +1114,7 @@ export class NetworkRequestNode extends NetworkNode {
         }
     }
     renderAddressSpaceCell(cell, ipAddressSpace) {
-        if (ipAddressSpace !== "Unknown" /* Unknown */) {
+        if (ipAddressSpace !== "Unknown" /* Protocol.Network.IPAddressSpace.Unknown */) {
             UI.UIUtils.createTextChild(cell, ipAddressSpace);
         }
     }

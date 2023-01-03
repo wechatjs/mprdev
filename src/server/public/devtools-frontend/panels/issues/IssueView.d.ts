@@ -1,6 +1,6 @@
 import * as IssuesManager from '../../models/issues_manager/issues_manager.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { AggregatedIssue } from './IssueAggregator.js';
+import { type AggregatedIssue } from './IssueAggregator.js';
 export declare class IssueView extends UI.TreeOutline.TreeElement {
     #private;
     toggleOnClick: boolean;

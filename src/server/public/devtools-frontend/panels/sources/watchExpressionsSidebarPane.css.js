@@ -17,6 +17,12 @@ styles.replaceSync(
   opacity: 0%;
 }
 
+:host-context(.-theme-with-dark-background) .watch-expression-delete-button {
+  /* This is a workaround due to a sprite with hardcoded color.
+     It should no longer be necessary after we update icons. */
+  filter: brightness(1.5);
+}
+
 .right-aligned {
   right: 16px;
 }
@@ -36,9 +42,8 @@ styles.replaceSync(
 
 .watch-expression-title {
   white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
   line-height: 20px;
+  display: flex;
 }
 
 .watch-expression-title:hover {
@@ -55,7 +60,7 @@ styles.replaceSync(
   min-height: 20px;
 }
 
-.watch-expressions .name {
+.watch-expression .name {
   --override-watch-expression-name-color: rgb(136 19 145);
 
   color: var(--override-watch-expression-name-color);
@@ -63,10 +68,11 @@ styles.replaceSync(
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  flex-shrink: 2;
 }
 
-.-theme-with-dark-background .watch-expressions .name,
-:host-context(.-theme-with-dark-background) .watch-expressions .name {
+.-theme-with-dark-background .watch-expression .name,
+:host-context(.-theme-with-dark-background) .watch-expression .name {
   --override-watch-expression-name-color: rgb(227 110 236);
 }
 
@@ -78,9 +84,13 @@ styles.replaceSync(
   flex: none;
 }
 
-.watch-expressions .value {
+.watch-expression .value {
   white-space: nowrap;
   display: inline;
+  overflow: hidden;
+  padding-left: 4px;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
 }
 
 .watch-expression .text-prompt {

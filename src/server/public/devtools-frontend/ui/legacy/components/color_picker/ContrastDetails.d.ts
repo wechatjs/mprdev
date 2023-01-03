@@ -1,5 +1,5 @@
 import * as Common from '../../../../core/common/common.js';
-import type { ContrastInfo } from './ContrastInfo.js';
+import { type ContrastInfo } from './ContrastInfo.js';
 export declare class ContrastDetails extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     private contrastInfo;
     private readonly elementInternal;

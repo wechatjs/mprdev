@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import type { Issue, IssueKind } from './Issue.js';
+import { type Issue, type IssueKind } from './Issue.js';
 import { Events } from './IssuesManagerEvents.js';
 export { Events } from './IssuesManagerEvents.js';
 export interface IssuesManagerCreationOptions {
@@ -36,6 +36,7 @@ export declare class IssuesManager extends Common.ObjectWrapper.ObjectWrapper<Ev
     private readonly hideIssueSetting?;
     constructor(showThirdPartyIssuesSetting?: Common.Settings.Setting<boolean> | undefined, hideIssueSetting?: Common.Settings.Setting<HideIssueMenuSetting> | undefined);
     static instance(opts?: IssuesManagerCreationOptions): IssuesManager;
+    static removeInstance(): void;
     /**
      * Once we have seen at least one `TopFrameNavigated` event, we can be reasonably sure
      * that we also collected issues that were reported during the navigation to the current

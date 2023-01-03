@@ -327,7 +327,7 @@ export class ShortcutRegistry {
                         this.registerShortcut(new KeyboardShortcut(shortcutDescriptors, actionId, Type.DefaultShortcut));
                     }
                     else {
-                        if (keybindSets.includes("devToolsDefault" /* DEVTOOLS_DEFAULT */)) {
+                        if (keybindSets.includes("devToolsDefault" /* KeybindSet.DEVTOOLS_DEFAULT */)) {
                             this.devToolsDefaultShortcutActions.add(actionId);
                         }
                         this.registerShortcut(new KeyboardShortcut(shortcutDescriptors, actionId, Type.KeybindSetShortcut, new Set(keybindSets)));

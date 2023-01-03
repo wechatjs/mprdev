@@ -15,8 +15,8 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export class SharedArrayBufferIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel) {
-        const umaCode = ["SharedArrayBufferIssue" /* SharedArrayBufferIssue */, issueDetails.type].join('::');
-        super({ code: "SharedArrayBufferIssue" /* SharedArrayBufferIssue */, umaCode }, issuesModel);
+        const umaCode = ["SharedArrayBufferIssue" /* Protocol.Audits.InspectorIssueCode.SharedArrayBufferIssue */, issueDetails.type].join('::');
+        super({ code: "SharedArrayBufferIssue" /* Protocol.Audits.InspectorIssueCode.SharedArrayBufferIssue */, umaCode }, issuesModel);
         this.#issueDetails = issueDetails;
     }
     getCategory() {

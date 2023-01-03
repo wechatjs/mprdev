@@ -23,7 +23,7 @@ async function loadEmulationModule() {
     return loadedEmulationModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "settings-view" /* SETTINGS_VIEW */,
+    location: "settings-view" /* UI.ViewManager.ViewLocationValues.SETTINGS_VIEW */,
     commandPrompt: i18nLazyString(UIStrings.showDevices),
     title: i18nLazyString(UIStrings.devices),
     order: 30,

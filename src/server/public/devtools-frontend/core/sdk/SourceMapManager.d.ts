@@ -1,17 +1,20 @@
 import * as Common from '../common/common.js';
-import type { FrameAssociated } from './FrameAssociated.js';
-import type { Target } from './Target.js';
-import type { SourceMap } from './SourceMap.js';
+import * as Platform from '../platform/platform.js';
+import { type FrameAssociated } from './FrameAssociated.js';
+import { type Target } from './Target.js';
+import { type SourceMap } from './SourceMap.js';
 export declare class SourceMapManager<T extends FrameAssociated> extends Common.ObjectWrapper.ObjectWrapper<EventTypes<T>> {
     #private;
     constructor(target: Target);
     setEnabled(isEnabled: boolean): void;
+    private getBaseUrl;
     private inspectedURLChanged;
     sourceMapForClient(client: T): SourceMap | null;
+    sourceMapForClientPromise(client: T): Promise<SourceMap | null>;
     clientsForSourceMap(sourceMap: SourceMap): T[];
     private getSourceMapId;
     private resolveRelativeURLs;
-    attachSourceMap(client: T, relativeSourceURL: string | undefined, relativeSourceMapURL: string | undefined): void;
+    attachSourceMap(client: T, relativeSourceURL: Platform.DevToolsPath.UrlString | undefined, relativeSourceMapURL: string | undefined): void;
     detachSourceMap(client: T): void;
     private sourceMapLoadedForTest;
     dispose(): void;

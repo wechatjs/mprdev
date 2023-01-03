@@ -98,6 +98,10 @@ styles.replaceSync(
   background-color: var(--override-folder-tree-item-color);
 }
 
+.navigator-folder-tree-item.force-white-icons {
+  --icon-color: var(--override-force-white-icons-background);
+}
+
 .navigator-sm-folder-tree-item .icon,
 .navigator-fs-tree-item .icon,
 .navigator-fs-folder-tree-item .icon {
@@ -124,9 +128,9 @@ styles.replaceSync(
   background: var(--override-image-font-tree-item-color);
 }
 
-.navigator-sm-folder-tree-item .tree-element-title,
-.navigator-sm-script-tree-item .tree-element-title,
-.navigator-sm-stylesheet-tree-item .tree-element-title {
+.tree-outline:not(:has(.navigator-deployed-tree-item)) .navigator-sm-folder-tree-item .tree-element-title,
+.tree-outline:not(:has(.navigator-deployed-tree-item)) .navigator-sm-script-tree-item .tree-element-title,
+.tree-outline:not(:has(.navigator-deployed-tree-item)) .navigator-sm-stylesheet-tree-item .tree-element-title {
   font-style: italic;
 }
 

@@ -190,7 +190,7 @@ export class ScreencastView extends UI.Widget.VBox {
         dimensions.width *= window.devicePixelRatio;
         dimensions.height *= window.devicePixelRatio;
         // Note: startScreencast width and height are expected to be integers so must be floored.
-        this.screenCaptureModel.startScreencast("jpeg" /* Jpeg */, 80, Math.floor(Math.min(maxImageDimension, dimensions.width)), Math.floor(Math.min(maxImageDimension, dimensions.height)), undefined, this.screencastFrame.bind(this), this.screencastVisibilityChanged.bind(this));
+        this.screenCaptureModel.startScreencast("jpeg" /* Protocol.Page.StartScreencastRequestFormat.Jpeg */, 80, Math.floor(Math.min(maxImageDimension, dimensions.width)), Math.floor(Math.min(maxImageDimension, dimensions.height)), undefined, this.screencastFrame.bind(this), this.screencastVisibilityChanged.bind(this));
         for (const emulationModel of SDK.TargetManager.TargetManager.instance().models(SDK.EmulationModel.EmulationModel)) {
             void emulationModel.overrideEmulateTouch(true);
         }
@@ -541,7 +541,7 @@ export class ScreencastView extends UI.Widget.VBox {
         return { width: width, height: height };
     }
     setInspectMode(mode, config) {
-        this.inspectModeConfig = mode !== "none" /* None */ ? config : null;
+        this.inspectModeConfig = mode !== "none" /* Protocol.Overlay.InspectMode.None */ ? config : null;
         return Promise.resolve();
     }
     highlightFrame(_frameId) {

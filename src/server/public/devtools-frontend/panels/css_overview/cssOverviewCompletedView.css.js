@@ -102,6 +102,11 @@ styles.replaceSync(
   letter-spacing: 0;
 }
 
+.color-text {
+  cursor: text;
+  user-select: text;
+}
+
 .results-section {
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-details-hairline);
@@ -336,6 +341,10 @@ styles.replaceSync(
   align-items: center;
   display: flex;
   height: 20px;
+}
+
+.nodeId-column .monospace {
+  overflow: hidden;
 }
 
 .show-element {

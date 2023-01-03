@@ -124,11 +124,11 @@ export class CoverageView extends UI.Widget.VBox {
         const coverageTypes = [
             {
                 label: i18nString(UIStrings.perFunction),
-                value: 2 /* JavaScript */ | 4 /* JavaScriptPerFunction */,
+                value: 2 /* CoverageType.JavaScript */ | 4 /* CoverageType.JavaScriptPerFunction */,
             },
             {
                 label: i18nString(UIStrings.perBlock),
-                value: 2 /* JavaScript */,
+                value: 2 /* CoverageType.JavaScript */,
             },
         ];
         for (const type of coverageTypes) {
@@ -178,11 +178,11 @@ export class CoverageView extends UI.Widget.VBox {
             },
             {
                 label: i18nString(UIStrings.css),
-                value: 1 /* CSS */,
+                value: 1 /* CoverageType.CSS */,
             },
             {
                 label: i18nString(UIStrings.javascript),
-                value: 2 /* JavaScript */ | 4 /* JavaScriptPerFunction */,
+                value: 2 /* CoverageType.JavaScript */ | 4 /* CoverageType.JavaScriptPerFunction */,
             },
         ];
         for (const option of options) {
@@ -260,7 +260,7 @@ export class CoverageView extends UI.Widget.VBox {
         const option = this.coverageTypeComboBox.selectedOption();
         const coverageType = Number(option ? option.value : Number.NaN);
         // Check that Coverage.CoverageType.JavaScriptPerFunction is not present.
-        return coverageType === 2 /* JavaScript */;
+        return coverageType === 2 /* CoverageType.JavaScript */;
     }
     selectCoverageType(jsCoveragePerBlock) {
         const selectedIndex = jsCoveragePerBlock ? 1 : 0;

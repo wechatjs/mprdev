@@ -50,6 +50,10 @@ const UIStrings = {
     * @description Status text for successful update of client hints.
     */
     clientHintsStatusText: 'User agent updated.',
+    /**
+    * @description The aria alert message when the Network conditions panel is shown.
+    */
+    networkConditionsPanelShown: 'Network conditions shown',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/network/NetworkConfigView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -247,7 +251,7 @@ export class NetworkConfigView extends UI.Widget.VBox {
         section.appendChild(checkboxLabel);
         const autoCheckbox = checkboxLabel.checkboxElement;
         const useCustomAcceptedEncodingSetting = Common.Settings.Settings.instance().createSetting('useCustomAcceptedEncodings', false);
-        const customAcceptedEncodingSetting = Common.Settings.Settings.instance().createSetting('customAcceptedEncodings', `${"gzip" /* Gzip */},${"br" /* Br */},${"deflate" /* Deflate */}`);
+        const customAcceptedEncodingSetting = Common.Settings.Settings.instance().createSetting('customAcceptedEncodings', `${"gzip" /* Protocol.Network.ContentEncoding.Gzip */},${"br" /* Protocol.Network.ContentEncoding.Br */},${"deflate" /* Protocol.Network.ContentEncoding.Deflate */}`);
         function onSettingChange() {
             if (!useCustomAcceptedEncodingSetting.get()) {
                 SDK.NetworkManager.MultitargetNetworkManager.instance().clearCustomAcceptedEncodingsOverride();
@@ -265,9 +269,9 @@ export class NetworkConfigView extends UI.Widget.VBox {
         autoCheckbox.addEventListener('change', acceptedEncodingsChanged);
         const checkboxes = new Map();
         const contentEncodings = {
-            Deflate: "deflate" /* Deflate */,
-            Gzip: "gzip" /* Gzip */,
-            Br: "br" /* Br */,
+            Deflate: "deflate" /* Protocol.Network.ContentEncoding.Deflate */,
+            Gzip: "gzip" /* Protocol.Network.ContentEncoding.Gzip */,
+            Br: "br" /* Protocol.Network.ContentEncoding.Br */,
         };
         for (const encoding of Object.values(contentEncodings)) {
             const label = UI.UIUtils.CheckboxLabel.create(encoding, true);
@@ -294,6 +298,7 @@ export class NetworkConfigView extends UI.Widget.VBox {
     wasShown() {
         super.wasShown();
         this.registerCSSFiles([networkConfigViewStyles]);
+        UI.ARIAUtils.alert(i18nString(UIStrings.networkConditionsPanelShown));
     }
 }
 function getUserAgentMetadata(userAgent) {

@@ -21,6 +21,7 @@ export class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper {
         super();
         this.workspace = workspace;
         this.breakpointManager = breakpointManager;
+        this.breakpointManager.addUpdateBindingsCallback(this.#setupBindings.bind(this));
         this.filePathPrefixesToBindingCount = new FilePathPrefixesBindingCounts();
         this.subscribedBindingEventListeners = new Platform.MapUtilities.Multimap();
         const linkDecorator = new LinkDecorator(this);
@@ -54,6 +55,12 @@ export class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper {
     }
     async removeBindingForTest(binding) {
         await this.innerRemoveBinding(binding);
+    }
+    #setupBindings(networkUISourceCode) {
+        if (networkUISourceCode.project().type() !== Workspace.Workspace.projectTypes.Network) {
+            return Promise.resolve();
+        }
+        return this.mapping.computeNetworkStatus(networkUISourceCode);
     }
     async innerAddBinding(binding) {
         bindings.set(binding.network, binding);
@@ -97,10 +104,10 @@ export class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper {
         this.notifyBindingEvent(binding.fileSystem);
         this.dispatchEventToListeners(Events.BindingRemoved, binding);
     }
-    async onStatusAdded(status) {
+    onStatusAdded(status) {
         const binding = new PersistenceBinding(status.network, status.fileSystem);
         statusBindings.set(status, binding);
-        await this.innerAddBinding(binding);
+        return this.innerAddBinding(binding);
     }
     async onStatusRemoved(status) {
         const binding = statusBindings.get(status);
@@ -198,9 +205,9 @@ export class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper {
     }
     async moveBreakpoints(from, to) {
         const breakpoints = this.breakpointManager.breakpointLocationsForUISourceCode(from).map(breakpointLocation => breakpointLocation.breakpoint);
-        await Promise.all(breakpoints.map(breakpoint => {
-            breakpoint.remove(false /* keepInStorage */);
-            return this.breakpointManager.setBreakpoint(to, breakpoint.lineNumber(), breakpoint.columnNumber(), breakpoint.condition(), breakpoint.enabled());
+        await Promise.all(breakpoints.map(async (breakpoint) => {
+            await breakpoint.remove(false /* keepInStorage */);
+            return this.breakpointManager.setBreakpoint(to, breakpoint.lineNumber(), breakpoint.columnNumber(), breakpoint.condition(), breakpoint.enabled(), "RESTORED" /* Bindings.BreakpointManager.BreakpointOrigin.OTHER */);
         }));
     }
     hasUnsavedCommittedChanges(uiSourceCode) {
@@ -251,7 +258,7 @@ class FilePathPrefixesBindingCounts {
         this.prefixCounts = new Map();
     }
     getPlatformCanonicalFilePath(path) {
-        return Host.Platform.isWin() ? path.toLowerCase() : path;
+        return Host.Platform.isWin() ? Common.ParsedURL.ParsedURL.toLowerCase(path) : path;
     }
     add(filePath) {
         filePath = this.getPlatformCanonicalFilePath(filePath);
@@ -279,7 +286,7 @@ class FilePathPrefixesBindingCounts {
     hasBindingPrefix(filePath) {
         filePath = this.getPlatformCanonicalFilePath(filePath);
         if (!filePath.endsWith('/')) {
-            filePath += '/';
+            filePath = Common.ParsedURL.ParsedURL.concatenate(filePath, '/');
         }
         return this.prefixCounts.has(filePath);
     }

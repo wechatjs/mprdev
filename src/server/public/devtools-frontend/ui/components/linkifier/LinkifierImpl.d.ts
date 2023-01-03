@@ -1,5 +1,6 @@
+import * as Platform from '../../../core/platform/platform.js';
 export interface LinkifierData {
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     lineNumber?: number;
     columnNumber?: number;
 }

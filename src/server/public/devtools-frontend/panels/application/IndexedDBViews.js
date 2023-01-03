@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-import indexedDBViewsStyles from './indexedDBViews.css.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import indexedDBViewsStyles from './indexedDBViews.css.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as ObjectUI from '../../ui/legacy/components/object_ui/object_ui.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -171,7 +171,7 @@ export class IDBDatabaseView extends UI.Widget.VBox {
         }
     }
     refreshDatabase() {
-        this.securityOriginElement.textContent = this.database.databaseId.securityOrigin;
+        this.securityOriginElement.textContent = this.database.databaseId.getOriginOrStorageKey();
         if (this.versionElement) {
             this.versionElement.textContent = this.database.version.toString();
         }

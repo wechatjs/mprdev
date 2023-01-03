@@ -1,3 +1,4 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import type * as Protocol from '../../generated/protocol.js';
 export declare class TimelineModelImpl {
@@ -9,6 +10,7 @@ export declare class TimelineModelImpl {
     private sessionId;
     private mainFrameNodeId;
     private pageFrames;
+    private auctionWorklets;
     private cpuProfilesInternal;
     private workerIdByThread;
     private requestsFromBrowser;
@@ -26,7 +28,6 @@ export declare class TimelineModelImpl {
     private lastRecalculateStylesEvent;
     private currentScriptEvent;
     private eventStack;
-    private knownInputEvents;
     private browserFrameTracking;
     private persistentIds;
     private legacyCurrentPage;
@@ -40,6 +41,7 @@ export declare class TimelineModelImpl {
     isInteractiveTimeEvent(event: SDK.TracingModel.Event): boolean;
     isLayoutShiftEvent(event: SDK.TracingModel.Event): boolean;
     isUserTimingEvent(event: SDK.TracingModel.Event): boolean;
+    isEventTimingInteractionEvent(event: SDK.TracingModel.Event): boolean;
     isParseHTMLEvent(event: SDK.TracingModel.Event): boolean;
     isLCPCandidateEvent(event: SDK.TracingModel.Event): boolean;
     isLCPInvalidateEvent(event: SDK.TracingModel.Event): boolean;
@@ -57,6 +59,7 @@ export declare class TimelineModelImpl {
     targetByEvent(event: SDK.TracingModel.Event): SDK.Target.Target | null;
     navStartTimes(): Map<string, SDK.TracingModel.Event>;
     setEvents(tracingModel: SDK.TracingModel.TracingModel): void;
+    private collectInteractionEvents;
     private processGenericTrace;
     private processMetadataAndThreads;
     private processThreadsForBrowserFrames;
@@ -68,6 +71,7 @@ export declare class TimelineModelImpl {
     private resetProcessingState;
     private extractCpuProfile;
     private injectJSFrameEvents;
+    private static nameAuctionWorklet;
     private processThreadEvents;
     private fixNegativeDuration;
     private processAsyncEvents;
@@ -86,7 +90,7 @@ export declare class TimelineModelImpl {
     isEmpty(): boolean;
     timeMarkerEvents(): SDK.TracingModel.Event[];
     rootFrames(): PageFrame[];
-    pageURL(): string;
+    pageURL(): Platform.DevToolsPath.UrlString;
     pageFrameById(frameId: Protocol.Page.FrameId): PageFrame | null;
     networkRequests(): NetworkRequest[];
 }
@@ -115,6 +119,7 @@ export declare enum RecordType {
     PaintSetup = "PaintSetup",
     Paint = "Paint",
     PaintImage = "PaintImage",
+    PrePaint = "PrePaint",
     Rasterize = "Rasterize",
     RasterTask = "RasterTask",
     ScrollLayer = "ScrollLayer",
@@ -157,6 +162,7 @@ export declare enum RecordType {
     TimeStamp = "TimeStamp",
     ConsoleTime = "ConsoleTime",
     UserTiming = "UserTiming",
+    EventTiming = "EventTiming",
     ResourceWillSendRequest = "ResourceWillSendRequest",
     ResourceSendRequest = "ResourceSendRequest",
     ResourceReceiveResponse = "ResourceReceiveResponse",
@@ -240,6 +246,8 @@ export declare namespace TimelineModelImpl {
     const WorkerThreadNameLegacy = "DedicatedWorker Thread";
     const RendererMainThreadName = "CrRendererMain";
     const BrowserMainThreadName = "CrBrowserMain";
+    const UtilityMainThreadName = "CrUtilityMain";
+    const AuctionWorkletThreadName = "AuctionV8HelperThread";
     const DevToolsMetadataEvent: {
         TracingStartedInBrowser: string;
         TracingStartedInPage: string;
@@ -247,6 +255,8 @@ export declare namespace TimelineModelImpl {
         FrameCommittedInBrowser: string;
         ProcessReadyInBrowser: string;
         FrameDeletedInBrowser: string;
+        AuctionWorkletRunningInProcess: string;
+        AuctionWorkletDoneWithProcess: string;
     };
     const Thresholds: {
         LongTask: number;
@@ -260,7 +270,7 @@ export declare class Track {
     name: string;
     type: TrackType;
     forMainFrame: boolean;
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     events: SDK.TracingModel.Event[];
     asyncEvents: SDK.TracingModel.AsyncEvent[];
     tasks: SDK.TracingModel.Event[];
@@ -272,14 +282,20 @@ export declare class Track {
 export declare enum TrackType {
     MainThread = "MainThread",
     Worker = "Worker",
-    Input = "Input",
     Animation = "Animation",
     Timings = "Timings",
     Console = "Console",
     Raster = "Raster",
     GPU = "GPU",
     Experience = "Experience",
-    Other = "Other"
+    Other = "Other",
+    UserInteractions = "UserInteractions"
+}
+declare const enum WorkletType {
+    NotWorklet = 0,
+    BidderWorklet = 1,
+    SellerWorklet = 2,
+    UnknownWorklet = 3
 }
 export declare class PageFrame {
     frameId: any;
@@ -291,7 +307,7 @@ export declare class PageFrame {
         time: number;
         processId: number;
         processPseudoId: string | null;
-        url: string;
+        url: Platform.DevToolsPath.UrlString;
     }[];
     deletedTime: number | null;
     ownerNode: SDK.DOMModel.DeferredDOMNode | null;
@@ -299,6 +315,15 @@ export declare class PageFrame {
     update(time: number, payload: any): void;
     processReady(processPseudoId: string, processId: number): void;
     addChild(child: PageFrame): void;
+}
+export declare class AuctionWorklet {
+    targetId: string;
+    processId: number;
+    host?: string;
+    startTime: number;
+    endTime: number;
+    workletType: WorkletType;
+    constructor(event: SDK.TracingModel.Event, data: any);
 }
 export declare class NetworkRequest {
     startTime: number;
@@ -313,7 +338,7 @@ export declare class NetworkRequest {
         receiveHeadersEnd: number;
     };
     mimeType: string;
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     requestMethod: string;
     private transferSize;
     private maybeDiskCached;
@@ -414,7 +439,7 @@ export declare class TimelineAsyncEventTracker {
 export declare class TimelineData {
     warning: string | null;
     previewElement: Element | null;
-    url: string | null;
+    url: Platform.DevToolsPath.UrlString | null;
     backendNodeIds: Protocol.DOM.BackendNodeId[];
     stackTrace: Protocol.Runtime.CallFrame[] | null;
     picture: SDK.TracingModel.ObjectSnapshot | null;
@@ -436,3 +461,4 @@ export interface MetadataEvents {
     page: SDK.TracingModel.Event[];
     workers: SDK.TracingModel.Event[];
 }
+export {};

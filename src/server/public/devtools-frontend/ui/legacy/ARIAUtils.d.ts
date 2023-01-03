@@ -18,6 +18,7 @@ export declare function markAsTreeitem(element: Element): void;
 export declare function markAsTextBox(element: Element): void;
 export declare function markAsMenu(element: Element): void;
 export declare function markAsMenuItem(element: Element): void;
+export declare function markAsMenuItemCheckBox(element: Element): void;
 export declare function markAsMenuItemSubMenu(element: Element): void;
 export declare function markAsList(element: Element): void;
 export declare function markAsListitem(element: Element): void;

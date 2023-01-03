@@ -119,17 +119,17 @@ export class PermissionsPolicySection extends HTMLElement {
         const featureRows = await Promise.all(disallowed.map(async (policy) => {
             const frame = policy.locator ? frameManager.getFrame(policy.locator.frameId) : null;
             const blockReason = policy.locator?.blockReason;
-            const linkTargetDOMNode = await (blockReason === "IframeAttribute" /* IframeAttribute */ && frame &&
+            const linkTargetDOMNode = await (blockReason === "IframeAttribute" /* Protocol.Page.PermissionsPolicyBlockReason.IframeAttribute */ && frame &&
                 frame.getOwnerDOMNodeOrDocument());
             const resource = frame && frame.resourceForURL(frame.url);
-            const linkTargetRequest = blockReason === "Header" /* Header */ && resource && resource.request;
+            const linkTargetRequest = blockReason === "Header" /* Protocol.Page.PermissionsPolicyBlockReason.Header */ && resource && resource.request;
             const blockReasonText = (() => {
                 switch (blockReason) {
-                    case "IframeAttribute" /* IframeAttribute */:
+                    case "IframeAttribute" /* Protocol.Page.PermissionsPolicyBlockReason.IframeAttribute */:
                         return i18nString(UIStrings.disabledByIframe);
-                    case "Header" /* Header */:
+                    case "Header" /* Protocol.Page.PermissionsPolicyBlockReason.Header */:
                         return i18nString(UIStrings.disabledByHeader);
-                    case "InFencedFrameTree" /* InFencedFrameTree */:
+                    case "InFencedFrameTree" /* Protocol.Page.PermissionsPolicyBlockReason.InFencedFrameTree */:
                         return i18nString(UIStrings.disabledByFencedFrame);
                     default:
                         return '';

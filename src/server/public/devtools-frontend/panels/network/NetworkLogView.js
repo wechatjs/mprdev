@@ -34,23 +34,26 @@ import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
+import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as HAR from '../../models/har/har.js';
 import * as IssuesManager from '../../models/issues_manager/issues_manager.js';
 import * as Logs from '../../models/logs/logs.js';
+import * as Persistence from '../../models/persistence/persistence.js';
 import * as TextUtils from '../../models/text_utils/text_utils.js';
 import * as NetworkForward from '../../panels/network/forward/forward.js';
+import * as Sources from '../../panels/sources/sources.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import * as ThemeSupport from '../../ui/legacy/theme_support/theme_support.js';
 import networkLogViewStyles from './networkLogView.css.js';
-import { Events, NetworkGroupNode, NetworkRequestNode } from './NetworkDataGridNode.js';
+import { Events, NetworkGroupNode, NetworkRequestNode, } from './NetworkDataGridNode.js';
 import { NetworkFrameGrouper } from './NetworkFrameGrouper.js';
 import { NetworkLogViewColumns } from './NetworkLogViewColumns.js';
-import { NetworkTimeBoundary, NetworkTransferDurationCalculator, NetworkTransferTimeCalculator } from './NetworkTimeCalculator.js';
+import { NetworkTimeBoundary, NetworkTransferDurationCalculator, NetworkTransferTimeCalculator, } from './NetworkTimeCalculator.js';
 const UIStrings = {
     /**
     *@description Text in Network Log View of the Network panel
@@ -334,6 +337,11 @@ const UIStrings = {
     *@description Text in Network Log View of the Network panel
     */
     areYouSureYouWantToClearBrowserCookies: 'Are you sure you want to clear browser cookies?',
+    /**
+    *@description A context menu item in the Network Log View of the Network panel
+    * for creating a header override
+    */
+    createResponseHeaderOverride: 'Create response header override',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/network/NetworkLogView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -351,7 +359,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
     timeCalculatorInternal;
     durationCalculator;
     calculatorInternal;
-    columns;
+    columnsInternal;
     staleRequests;
     mainRequestLoadTime;
     mainRequestDOMContentLoadedTime;
@@ -409,8 +417,8 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         this.timeCalculatorInternal = new NetworkTransferTimeCalculator();
         this.durationCalculator = new NetworkTransferDurationCalculator();
         this.calculatorInternal = this.timeCalculatorInternal;
-        this.columns = new NetworkLogViewColumns(this, this.timeCalculatorInternal, this.durationCalculator, networkLogLargeRowsSetting);
-        this.columns.show(this.element);
+        this.columnsInternal = new NetworkLogViewColumns(this, this.timeCalculatorInternal, this.durationCalculator, networkLogLargeRowsSetting);
+        this.columnsInternal.show(this.element);
         this.staleRequests = new Set();
         this.mainRequestLoadTime = -1;
         this.mainRequestDOMContentLoadedTime = -1;
@@ -428,14 +436,14 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         this.groupLookups.set('Frame', new NetworkFrameGrouper(this));
         this.activeGroupLookup = null;
         this.textFilterUI = new UI.FilterBar.TextFilterUI();
-        this.textFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged, this);
+        this.textFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged, this);
         filterBar.addFilter(this.textFilterUI);
         this.invertFilterUI = new UI.FilterBar.CheckboxFilterUI('invert-filter', i18nString(UIStrings.invertFilter), true, this.networkInvertFilterSetting);
-        this.invertFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.invertFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         UI.Tooltip.Tooltip.install(this.invertFilterUI.element(), i18nString(UIStrings.invertsFilter));
         filterBar.addFilter(this.invertFilterUI);
         this.dataURLFilterUI = new UI.FilterBar.CheckboxFilterUI('hide-data-url', i18nString(UIStrings.hideDataUrls), true, this.networkHideDataURLSetting);
-        this.dataURLFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.dataURLFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         UI.Tooltip.Tooltip.install(this.dataURLFilterUI.element(), i18nString(UIStrings.hidesDataAndBlobUrls));
         filterBar.addFilter(this.dataURLFilterUI);
         const filterItems = Object.values(Common.ResourceType.resourceCategories)
@@ -443,27 +451,27 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         this.resourceCategoryFilterUI =
             new UI.FilterBar.NamedBitSetFilterUI(filterItems, this.networkResourceTypeFiltersSetting);
         UI.ARIAUtils.setAccessibleName(this.resourceCategoryFilterUI.element(), i18nString(UIStrings.resourceTypesToInclude));
-        this.resourceCategoryFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.resourceCategoryFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         filterBar.addFilter(this.resourceCategoryFilterUI);
         this.onlyIssuesFilterUI = new UI.FilterBar.CheckboxFilterUI('only-show-issues', i18nString(UIStrings.hasBlockedCookies), true, this.networkShowIssuesOnlySetting);
-        this.onlyIssuesFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.onlyIssuesFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         UI.Tooltip.Tooltip.install(this.onlyIssuesFilterUI.element(), i18nString(UIStrings.onlyShowRequestsWithBlocked));
         filterBar.addFilter(this.onlyIssuesFilterUI);
         this.onlyBlockedRequestsUI = new UI.FilterBar.CheckboxFilterUI('only-show-blocked-requests', i18nString(UIStrings.blockedRequests), true, this.networkOnlyBlockedRequestsSetting);
-        this.onlyBlockedRequestsUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.onlyBlockedRequestsUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         UI.Tooltip.Tooltip.install(this.onlyBlockedRequestsUI.element(), i18nString(UIStrings.onlyShowBlockedRequests));
         filterBar.addFilter(this.onlyBlockedRequestsUI);
         this.onlyThirdPartyFilterUI = new UI.FilterBar.CheckboxFilterUI('only-show-third-party', i18nString(UIStrings.thirdParty), true, this.networkOnlyThirdPartySetting);
-        this.onlyThirdPartyFilterUI.addEventListener("FilterChanged" /* FilterChanged */, this.filterChanged.bind(this), this);
+        this.onlyThirdPartyFilterUI.addEventListener("FilterChanged" /* UI.FilterBar.FilterUIEvents.FilterChanged */, this.filterChanged.bind(this), this);
         UI.Tooltip.Tooltip.install(this.onlyThirdPartyFilterUI.element(), i18nString(UIStrings.onlyShowThirdPartyRequests));
         filterBar.addFilter(this.onlyThirdPartyFilterUI);
         this.filterParser = new TextUtils.TextUtils.FilterParser(searchKeys);
         this.suggestionBuilder =
             new UI.FilterSuggestionBuilder.FilterSuggestionBuilder(searchKeys, NetworkLogView.sortSearchValues);
         this.resetSuggestionBuilder();
-        this.dataGrid = this.columns.dataGrid();
+        this.dataGrid = this.columnsInternal.dataGrid();
         this.setupDataGrid();
-        this.columns.sortByCurrentColumn();
+        this.columnsInternal.sortByCurrentColumn();
         filterBar.filterButton().addEventListener(UI.Toolbar.ToolbarButton.Events.Click, this.dataGrid.scheduleUpdate.bind(this.dataGrid, true /* isFromUser */));
         this.summaryToolbar = new UI.Toolbar.Toolbar('network-summary-bar', this.element);
         this.summaryToolbar.element.setAttribute('role', 'status');
@@ -558,16 +566,16 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
     }
     static requestMixedContentFilter(value, request) {
         if (value === NetworkForward.UIFilter.MixedContentFilterValues.Displayed) {
-            return request.mixedContentType === "optionally-blockable" /* OptionallyBlockable */;
+            return request.mixedContentType === "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */;
         }
         if (value === NetworkForward.UIFilter.MixedContentFilterValues.Blocked) {
-            return request.mixedContentType === "blockable" /* Blockable */ && request.wasBlocked();
+            return request.mixedContentType === "blockable" /* Protocol.Security.MixedContentType.Blockable */ && request.wasBlocked();
         }
         if (value === NetworkForward.UIFilter.MixedContentFilterValues.BlockOverridden) {
-            return request.mixedContentType === "blockable" /* Blockable */ && !request.wasBlocked();
+            return request.mixedContentType === "blockable" /* Protocol.Security.MixedContentType.Blockable */ && !request.wasBlocked();
         }
         if (value === NetworkForward.UIFilter.MixedContentFilterValues.All) {
-            return request.mixedContentType !== "none" /* None */;
+            return request.mixedContentType !== "none" /* Protocol.Security.MixedContentType.None */;
         }
         return false;
     }
@@ -693,6 +701,9 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         this.recording = recording;
         this.updateSummaryBar();
     }
+    columns() {
+        return this.columnsInternal;
+    }
     modelAdded(networkManager) {
         // TODO(allada) Remove dependency on networkManager and instead use NetworkLog and PageLoad for needed data.
         if (networkManager.target().parentTarget()) {
@@ -787,7 +798,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         this.recordingHint = null;
     }
     setHidden(value) {
-        this.columns.setHidden(value);
+        this.columnsInternal.setHidden(value);
         UI.ARIAUtils.setHidden(this.summaryToolbar.element, value);
     }
     elementsToRestoreScrollPositionsFor() {
@@ -958,13 +969,13 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
     }
     addFilmStripFrames(times) {
-        this.columns.addEventDividers(times, 'network-frame-divider');
+        this.columnsInternal.addEventDividers(times, 'network-frame-divider');
     }
     selectFilmStripFrame(time) {
-        this.columns.selectFilmStripFrame(time);
+        this.columnsInternal.selectFilmStripFrame(time);
     }
     clearFilmStripFrame() {
-        this.columns.clearFilmStripFrame();
+        this.columnsInternal.clearFilmStripFrame();
     }
     refreshIfNeeded() {
         if (this.needsRefresh) {
@@ -992,14 +1003,14 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
         if (this.calculatorInternal !== x) {
             this.calculatorInternal = x;
-            this.columns.setCalculator(this.calculatorInternal);
+            this.columnsInternal.setCalculator(this.calculatorInternal);
         }
         this.calculatorInternal.reset();
         if (this.calculatorInternal.startAtZero) {
-            this.columns.hideEventDividers();
+            this.columnsInternal.hideEventDividers();
         }
         else {
-            this.columns.showEventDividers();
+            this.columnsInternal.showEventDividers();
         }
         this.invalidateAllItems();
     }
@@ -1010,7 +1021,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         const time = event.data.loadTime;
         if (time) {
             this.mainRequestLoadTime = time;
-            this.columns.addEventDividers([time], 'network-load-divider');
+            this.columnsInternal.addEventDividers([time], 'network-load-divider');
         }
     }
     domContentLoadedEventFired(event) {
@@ -1020,16 +1031,16 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         const { data } = event;
         if (data) {
             this.mainRequestDOMContentLoadedTime = data;
-            this.columns.addEventDividers([data], 'network-dcl-divider');
+            this.columnsInternal.addEventDividers([data], 'network-dcl-divider');
         }
     }
     wasShown() {
         this.refreshIfNeeded();
         this.registerCSSFiles([networkLogViewStyles]);
-        this.columns.wasShown();
+        this.columnsInternal.wasShown();
     }
     willHide() {
-        this.columns.willHide();
+        this.columnsInternal.willHide();
     }
     onResize() {
         this.rowHeightInternal = this.computeRowHeight();
@@ -1062,7 +1073,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
     }
     stylesChanged() {
-        this.columns.scheduleRefresh();
+        this.columnsInternal.scheduleRefresh();
     }
     refresh() {
         this.needsRefresh = false;
@@ -1141,7 +1152,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
         this.updateSummaryBar();
         if (nodesToInsert.size) {
-            this.columns.sortByCurrentColumn();
+            this.columnsInternal.sortByCurrentColumn();
         }
         this.dataGrid.updateInstantly();
         this.didRefreshForTest();
@@ -1161,7 +1172,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
     reset() {
         this.dispatchEventToListeners(Events.RequestActivated, { showPanel: false });
         this.setHoveredNode(null);
-        this.columns.reset();
+        this.columnsInternal.reset();
         this.timeFilter = null;
         this.calculatorInternal.reset();
         this.timeCalculatorInternal.setWindow(null);
@@ -1211,13 +1222,13 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         if (priority) {
             this.suggestionBuilder.addItem(NetworkForward.UIFilter.FilterType.Priority, PerfUI.NetworkPriorities.uiLabelForNetworkPriority(priority));
         }
-        if (request.mixedContentType !== "none" /* None */) {
+        if (request.mixedContentType !== "none" /* Protocol.Security.MixedContentType.None */) {
             this.suggestionBuilder.addItem(NetworkForward.UIFilter.FilterType.MixedContent, NetworkForward.UIFilter.MixedContentFilterValues.All);
         }
-        if (request.mixedContentType === "optionally-blockable" /* OptionallyBlockable */) {
+        if (request.mixedContentType === "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */) {
             this.suggestionBuilder.addItem(NetworkForward.UIFilter.FilterType.MixedContent, NetworkForward.UIFilter.MixedContentFilterValues.Displayed);
         }
-        if (request.mixedContentType === "blockable" /* Blockable */) {
+        if (request.mixedContentType === "blockable" /* Protocol.Security.MixedContentType.Blockable */) {
             const suggestion = request.wasBlocked() ? NetworkForward.UIFilter.MixedContentFilterValues.Blocked :
                 NetworkForward.UIFilter.MixedContentFilterValues.BlockOverridden;
             this.suggestionBuilder.addItem(NetworkForward.UIFilter.FilterType.MixedContent, suggestion);
@@ -1247,7 +1258,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         return this.rowHeightInternal;
     }
     switchViewMode(gridMode) {
-        this.columns.switchViewMode(gridMode);
+        this.columnsInternal.switchViewMode(gridMode);
     }
     handleContextMenuForRequest(contextMenu, request) {
         contextMenu.appendApplicableItems(request);
@@ -1282,24 +1293,24 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
             const disableIfBlob = request.isBlobRequest();
             if (Host.Platform.isWin()) {
                 footerSection.appendItem(i18nString(UIStrings.copyAsPowershell), this.copyPowerShellCommand.bind(this, request), disableIfBlob);
-                footerSection.appendItem(i18nString(UIStrings.copyAsFetch), this.copyFetchCall.bind(this, request, 0 /* Browser */), disableIfBlob);
-                footerSection.appendItem(i18nString(UIStrings.copyAsNodejsFetch), this.copyFetchCall.bind(this, request, 1 /* NodeJs */), disableIfBlob);
+                footerSection.appendItem(i18nString(UIStrings.copyAsFetch), this.copyFetchCall.bind(this, request, 0 /* FetchStyle.Browser */), disableIfBlob);
+                footerSection.appendItem(i18nString(UIStrings.copyAsNodejsFetch), this.copyFetchCall.bind(this, request, 1 /* FetchStyle.NodeJs */), disableIfBlob);
                 footerSection.appendItem(i18nString(UIStrings.copyAsCurlCmd), this.copyCurlCommand.bind(this, request, 'win'), disableIfBlob);
                 footerSection.appendItem(i18nString(UIStrings.copyAsCurlBash), this.copyCurlCommand.bind(this, request, 'unix'), disableIfBlob);
                 footerSection.appendItem(i18nString(UIStrings.copyAllAsPowershell), this.copyAllPowerShellCommand.bind(this));
-                footerSection.appendItem(i18nString(UIStrings.copyAllAsFetch), this.copyAllFetchCall.bind(this, 0 /* Browser */));
-                footerSection.appendItem(i18nString(UIStrings.copyAllAsNodejsFetch), this.copyAllFetchCall.bind(this, 1 /* NodeJs */));
+                footerSection.appendItem(i18nString(UIStrings.copyAllAsFetch), this.copyAllFetchCall.bind(this, 0 /* FetchStyle.Browser */));
+                footerSection.appendItem(i18nString(UIStrings.copyAllAsNodejsFetch), this.copyAllFetchCall.bind(this, 1 /* FetchStyle.NodeJs */));
                 footerSection.appendItem(i18nString(UIStrings.copyAllAsCurlCmd), this.copyAllCurlCommand.bind(this, 'win'));
                 footerSection.appendItem(i18nString(UIStrings.copyAllAsCurlBash), this.copyAllCurlCommand.bind(this, 'unix'));
             }
             else {
                 footerSection.appendItem(i18nString(UIStrings.copyAsPowershell), this.copyPowerShellCommand.bind(this, request), disableIfBlob);
-                footerSection.appendItem(i18nString(UIStrings.copyAsFetch), this.copyFetchCall.bind(this, request, 0 /* Browser */), disableIfBlob);
-                footerSection.appendItem(i18nString(UIStrings.copyAsNodejsFetch), this.copyFetchCall.bind(this, request, 1 /* NodeJs */), disableIfBlob);
+                footerSection.appendItem(i18nString(UIStrings.copyAsFetch), this.copyFetchCall.bind(this, request, 0 /* FetchStyle.Browser */), disableIfBlob);
+                footerSection.appendItem(i18nString(UIStrings.copyAsNodejsFetch), this.copyFetchCall.bind(this, request, 1 /* FetchStyle.NodeJs */), disableIfBlob);
                 footerSection.appendItem(i18nString(UIStrings.copyAsCurl), this.copyCurlCommand.bind(this, request, 'unix'), disableIfBlob);
                 footerSection.appendItem(i18nString(UIStrings.copyAllAsPowershell), this.copyAllPowerShellCommand.bind(this));
-                footerSection.appendItem(i18nString(UIStrings.copyAllAsFetch), this.copyAllFetchCall.bind(this, 0 /* Browser */));
-                footerSection.appendItem(i18nString(UIStrings.copyAllAsNodejsFetch), this.copyAllFetchCall.bind(this, 1 /* NodeJs */));
+                footerSection.appendItem(i18nString(UIStrings.copyAllAsFetch), this.copyAllFetchCall.bind(this, 0 /* FetchStyle.Browser */));
+                footerSection.appendItem(i18nString(UIStrings.copyAllAsNodejsFetch), this.copyAllFetchCall.bind(this, 1 /* FetchStyle.NodeJs */));
                 footerSection.appendItem(i18nString(UIStrings.copyAllAsCurl), this.copyAllCurlCommand.bind(this, 'unix'));
             }
         }
@@ -1308,6 +1319,10 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
         footerSection.appendItem(i18nString(UIStrings.copyAllAsHar), this.copyAll.bind(this));
         contextMenu.saveSection().appendItem(i18nString(UIStrings.saveAllAsHarWithContent), this.exportAll.bind(this));
+        if (Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.HEADER_OVERRIDES)) {
+            contextMenu.editSection().appendItem(i18nString(UIStrings.createResponseHeaderOverride), this.#handleCreateResponseHeaderOverrideClick.bind(this, request));
+            contextMenu.editSection().appendSeparator();
+        }
         contextMenu.editSection().appendItem(i18nString(UIStrings.clearBrowserCache), this.clearBrowserCache.bind(this));
         contextMenu.editSection().appendItem(i18nString(UIStrings.clearBrowserCookies), this.clearBrowserCookies.bind(this));
         if (request) {
@@ -1360,7 +1375,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(JSON.stringify(harArchive, null, 2));
     }
     async copyCurlCommand(request, platform) {
-        const command = await this.generateCurlCommand(request, platform);
+        const command = await NetworkLogView.generateCurlCommand(request, platform);
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(command);
     }
     async copyAllCurlCommand(platform) {
@@ -1390,9 +1405,9 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         }
         const url = mainTarget.inspectedURL();
         const parsedURL = Common.ParsedURL.ParsedURL.fromString(url);
-        const filename = parsedURL ? parsedURL.host : 'network-log';
+        const filename = (parsedURL ? parsedURL.host : 'network-log');
         const stream = new Bindings.FileUtils.FileOutputStream();
-        if (!await stream.open(filename + '.har')) {
+        if (!await stream.open(Common.ParsedURL.ParsedURL.concatenate(filename, '.har'))) {
             return;
         }
         const progressIndicator = new UI.ProgressIndicator.ProgressIndicator();
@@ -1400,6 +1415,18 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         await HAR.Writer.Writer.write(stream, this.harRequests(), progressIndicator);
         progressIndicator.done();
         void stream.close();
+    }
+    async #handleCreateResponseHeaderOverrideClick(request) {
+        const networkPersistanceManager = Persistence.NetworkPersistenceManager.NetworkPersistenceManager.instance();
+        if (networkPersistanceManager.project()) {
+            await networkPersistanceManager.getOrCreateHeadersUISourceCodeFromUrl(request.url());
+        }
+        else { // If folder for local overrides has not been provided yet
+            UI.InspectorView.InspectorView.instance().displaySelectOverrideFolderInfobar(async () => {
+                await Sources.SourcesNavigator.OverridesNavigatorView.instance().setupNewWorkspace();
+                await networkPersistanceManager.getOrCreateHeadersUISourceCodeFromUrl(request.url());
+            });
+        }
     }
     clearBrowserCache() {
         if (confirm(i18nString(UIStrings.areYouSureYouWantToClearBrowser))) {
@@ -1427,7 +1454,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
             return false;
         }
         if (this.onlyIssuesFilterUI.checked() &&
-            !IssuesManager.RelatedIssue.hasIssueOfCategory(request, IssuesManager.Issue.IssueCategory.SameSiteCookie)) {
+            !IssuesManager.RelatedIssue.hasIssueOfCategory(request, IssuesManager.Issue.IssueCategory.Cookie)) {
             return false;
         }
         if (this.onlyBlockedRequestsUI.checked() && !request.wasBlocked() && !request.corsErrorStatus()) {
@@ -1674,7 +1701,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
             method: request.requestMethod,
             mode: 'cors',
         };
-        if (style === 1 /* NodeJs */) {
+        if (style === 1 /* FetchStyle.NodeJs */) {
             const cookieHeader = requestHeaders.find(header => header.name.toLowerCase() === 'cookie');
             const extraHeaders = {};
             // According to https://www.npmjs.com/package/node-fetch#class-request the
@@ -1709,7 +1736,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
         const commands = await Promise.all(nonBlobRequests.map(request => this.generateFetchCall(request, style)));
         return commands.join(' ;\n');
     }
-    async generateCurlCommand(request, platform) {
+    static async generateCurlCommand(request, platform) {
         let command = [];
         // Most of these headers are derived from the URL and are automatically added by cURL.
         // The |Accept-Encoding| header is ignored to prevent decompression errors. crbug.com/1015321
@@ -1731,7 +1758,7 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
                gets to MS Crt parser safely.
       
                The % character is special because MS Crt parser will try and look for
-               ENV variables and fill them in it's place. We cannot escape them with %
+               ENV variables and fill them in its place. We cannot escape them with %
                and cannot escape them with ^ (because it's cmd.exe's escape not MS Crt
                parser); So we can get cmd.exe parser to escape the character after it,
                if it is followed by a valid beginning character of an ENV variable.
@@ -1799,18 +1826,26 @@ export class NetworkLogView extends Common.ObjectWrapper.eventMixin(UI.Widget.VB
             if (ignoredHeaders.has(name.toLowerCase())) {
                 continue;
             }
-            command.push('-H ' + escapeString(name + ': ' + header.value));
+            if (header.value.trim()) {
+                command.push('-H ' + escapeString(name + ': ' + header.value));
+            }
+            else {
+                // A header passed with -H with no value or only whitespace as its
+                // value tells curl to not set the header at all. To post an empty
+                // header, you have to terminate it with a semicolon.
+                command.push('-H ' + escapeString(name + ';'));
+            }
         }
         command = command.concat(data);
         command.push('--compressed');
-        if (request.securityState() === "insecure" /* Insecure */) {
+        if (request.securityState() === "insecure" /* Protocol.Security.SecurityState.Insecure */) {
             command.push('--insecure');
         }
         return 'curl ' + command.join(command.length >= 3 ? (platform === 'win' ? ' ^\n  ' : ' \\\n  ') : ' ');
     }
     async generateAllCurlCommand(requests, platform) {
         const nonBlobRequests = this.filterOutBlobRequests(requests);
-        const commands = await Promise.all(nonBlobRequests.map(request => this.generateCurlCommand(request, platform)));
+        const commands = await Promise.all(nonBlobRequests.map(request => NetworkLogView.generateCurlCommand(request, platform)));
         if (platform === 'win') {
             return commands.join(' &\r\n');
         }

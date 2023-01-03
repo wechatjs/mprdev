@@ -11,6 +11,7 @@ export declare class TextRange {
     endColumn: number;
     constructor(startLine: number, startColumn: number, endLine: number, endColumn: number);
     static createFromLocation(line: number, column: number): TextRange;
+    static createUnboundedFromLocation(line: number, column: number): TextRange;
     static fromObject(serializedTextRange: SerializedTextRange): TextRange;
     static comparator(range1: TextRange, range2: TextRange): number;
     static fromEdit(oldRange: TextRange, newText: string): TextRange;
@@ -37,6 +38,14 @@ export declare class TextRange {
     rebaseAfterTextEdit(originalRange: TextRange, editedRange: TextRange): TextRange;
     toString(): string;
     containsLocation(lineNumber: number, columnNumber: number): boolean;
+    get start(): {
+        lineNumber: number;
+        columnNumber: number;
+    };
+    get end(): {
+        lineNumber: number;
+        columnNumber: number;
+    };
 }
 export declare class SourceRange {
     offset: number;

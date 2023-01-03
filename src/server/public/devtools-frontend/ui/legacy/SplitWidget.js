@@ -57,6 +57,8 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
     animationCallback;
     showSidebarButtonTitle;
     hideSidebarButtonTitle;
+    shownSidebarString;
+    hiddenSidebarString;
     showHideSidebarButton;
     isVerticalInternal;
     sidebarMinimized;
@@ -100,6 +102,8 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
         this.animationCallback = null;
         this.showSidebarButtonTitle = Common.UIString.LocalizedEmptyString;
         this.hideSidebarButtonTitle = Common.UIString.LocalizedEmptyString;
+        this.shownSidebarString = Common.UIString.LocalizedEmptyString;
+        this.hiddenSidebarString = Common.UIString.LocalizedEmptyString;
         this.showHideSidebarButton = null;
         this.isVerticalInternal = false;
         this.sidebarMinimized = false;
@@ -460,6 +464,7 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
         // This order of things is important.
         // 1. Resize main element early and force layout.
         this.contentElement.style.setProperty(animatedMarginPropertyName, marginFrom);
+        this.contentElement.style.setProperty('overflow', 'hidden');
         if (!reverse) {
             suppressUnused(this.mainElement.offsetWidth);
             suppressUnused(this.sidebarElementInternal.offsetWidth);
@@ -504,6 +509,7 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
         this.contentElement.style.removeProperty('margin-bottom');
         this.contentElement.style.removeProperty('margin-left');
         this.contentElement.style.removeProperty('transition');
+        this.contentElement.style.removeProperty('overflow');
         if (this.animationFrameHandle) {
             this.contentElement.window().cancelAnimationFrame(this.animationFrameHandle);
             this.animationFrameHandle = 0;
@@ -570,10 +576,10 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
     }
     wasShown() {
         this.forceUpdateLayout();
-        ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomChanged */, this.onZoomChanged, this);
+        ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomManagerEvents.ZoomChanged */, this.onZoomChanged, this);
     }
     willHide() {
-        ZoomManager.instance().removeEventListener("ZoomChanged" /* ZoomChanged */, this.onZoomChanged, this);
+        ZoomManager.instance().removeEventListener("ZoomChanged" /* ZoomManagerEvents.ZoomChanged */, this.onZoomChanged, this);
     }
     onResize() {
         this.updateLayout();
@@ -622,6 +628,7 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
         this.resizeStartSizeDIP = 0;
     }
     hideDefaultResizer(noSplitter) {
+        this.resizerElementInternal.classList.toggle('hidden', Boolean(noSplitter));
         this.uninstallResizer(this.resizerElementInternal);
         this.sidebarElementInternal.classList.toggle('no-default-splitter', Boolean(noSplitter));
     }
@@ -712,20 +719,25 @@ export class SplitWidget extends Common.ObjectWrapper.eventMixin(Widget) {
     createShowHideSidebarButton(showTitle, hideTitle, shownString, hiddenString) {
         this.showSidebarButtonTitle = showTitle;
         this.hideSidebarButtonTitle = hideTitle;
+        this.shownSidebarString = shownString;
+        this.hiddenSidebarString = hiddenString;
         this.showHideSidebarButton = new ToolbarButton('', '');
         this.showHideSidebarButton.addEventListener(ToolbarButton.Events.Click, buttonClicked, this);
         this.updateShowHideSidebarButton();
         function buttonClicked() {
-            if (this.showModeInternal !== ShowMode.Both) {
-                this.showBoth(true);
-                ARIAUtils.alert(shownString);
-            }
-            else {
-                this.hideSidebar(true);
-                ARIAUtils.alert(hiddenString);
-            }
+            this.toggleSidebar();
         }
         return this.showHideSidebarButton;
+    }
+    toggleSidebar() {
+        if (this.showModeInternal !== ShowMode.Both) {
+            this.showBoth(true);
+            ARIAUtils.alert(this.shownSidebarString);
+        }
+        else {
+            this.hideSidebar(true);
+            ARIAUtils.alert(this.hiddenSidebarString);
+        }
     }
     updateShowHideSidebarButton() {
         if (!this.showHideSidebarButton) {

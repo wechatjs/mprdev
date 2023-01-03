@@ -110,10 +110,10 @@ export class SourcesSearchScope {
         for (const project of this.projects()) {
             const weight = project.uiSourceCodes().length;
             const findMatchingFilesInProjectProgress = findMatchingFilesProgress.createSubProgress(weight);
-            const filesMathingFileQuery = this.projectFilesMatchingFileQuery(project, searchConfig);
+            const filesMatchingFileQuery = this.projectFilesMatchingFileQuery(project, searchConfig);
             const promise = project
-                .findFilesMatchingSearchRequest(searchConfig, filesMathingFileQuery, findMatchingFilesInProjectProgress)
-                .then(this.processMatchingFilesForProject.bind(this, this.searchId, project, searchConfig, filesMathingFileQuery));
+                .findFilesMatchingSearchRequest(searchConfig, filesMatchingFileQuery, findMatchingFilesInProjectProgress)
+                .then(this.processMatchingFilesForProject.bind(this, this.searchId, project, searchConfig, filesMatchingFileQuery));
             promises.push(promise);
         }
         void Promise.all(promises).then(this.processMatchingFiles.bind(this, this.searchId, searchContentProgress, this.searchFinishedCallback.bind(this, true)));
@@ -140,13 +140,13 @@ export class SourcesSearchScope {
         result.sort(Platform.StringUtilities.naturalOrderComparator);
         return result;
     }
-    processMatchingFilesForProject(searchId, project, searchConfig, filesMathingFileQuery, files) {
+    processMatchingFilesForProject(searchId, project, searchConfig, filesMatchingFileQuery, files) {
         if (searchId !== this.searchId && this.searchFinishedCallback) {
             this.searchFinishedCallback(false);
             return;
         }
         files.sort(Platform.StringUtilities.naturalOrderComparator);
-        files = Platform.ArrayUtilities.intersectOrdered(files, filesMathingFileQuery, Platform.StringUtilities.naturalOrderComparator);
+        files = Platform.ArrayUtilities.intersectOrdered(files, filesMatchingFileQuery, Platform.StringUtilities.naturalOrderComparator);
         const dirtyFiles = this.projectFilesMatchingFileQuery(project, searchConfig, true);
         files = Platform.ArrayUtilities.mergeOrdered(files, dirtyFiles, Platform.StringUtilities.naturalOrderComparator);
         const uiSourceCodes = [];
@@ -217,6 +217,9 @@ export class SourcesSearchScope {
                 for (let i = 0; i < queries.length; ++i) {
                     const nextMatches = TextUtils.TextUtils.performSearchInContent(content, queries[i], !searchConfig.ignoreCase(), searchConfig.isRegex());
                     matches = Platform.ArrayUtilities.mergeOrdered(matches, nextMatches, matchesComparator);
+                }
+                if (!searchConfig.queries().length) {
+                    matches = [new TextUtils.ContentProvider.SearchMatch(0, (new TextUtils.Text.Text(content)).lineAt(0))];
                 }
             }
             if (matches && this.searchResultCallback) {

@@ -30,6 +30,7 @@
 import * as Common from '../../../../core/common/common.js';
 import * as Host from '../../../../core/host/host.js';
 import * as i18n from '../../../../core/i18n/i18n.js';
+import * as Platform from '../../../../core/platform/platform.js';
 import * as SDK from '../../../../core/sdk/sdk.js';
 import * as Bindings from '../../../../models/bindings/bindings.js';
 import * as TextUtils from '../../../../models/text_utils/text_utils.js';
@@ -174,14 +175,11 @@ export class Linkifier {
         const linkifyURLOptions = {
             lineNumber,
             maxLength: this.maxLength,
-            columnNumber: options ? options.columnNumber : undefined,
+            columnNumber: options?.columnNumber,
             showColumnNumber: Boolean(options?.showColumnNumber),
-            className: options ? options.className : undefined,
-            tabStop: options ? options.tabStop : undefined,
-            inlineFrameIndex: options ? options.inlineFrameIndex : 0,
-            text: undefined,
-            preventClick: undefined,
-            bypassURLTrimming: undefined,
+            className: options?.className,
+            tabStop: options?.tabStop,
+            inlineFrameIndex: options?.inlineFrameIndex ?? 0,
         };
         const { columnNumber, className = '' } = linkifyURLOptions;
         if (sourceURL) {
@@ -203,12 +201,7 @@ export class Linkifier {
             return fallbackAnchor;
         }
         const createLinkOptions = {
-            maxLength: undefined,
-            title: undefined,
-            href: undefined,
-            preventClick: undefined,
-            bypassURLTrimming: undefined,
-            tabStop: options ? options.tabStop : undefined,
+            tabStop: options?.tabStop,
         };
         // Not initialising the anchor element with 'zero width space' (\u200b) causes a crash
         // in the layout engine.
@@ -241,14 +234,11 @@ export class Linkifier {
         const linkifyURLOptions = {
             lineNumber,
             maxLength: this.maxLength,
-            className: options ? options.className : undefined,
-            columnNumber: options ? options.columnNumber : undefined,
+            className: options?.className,
+            columnNumber: options?.columnNumber,
             showColumnNumber: Boolean(options?.showColumnNumber),
-            inlineFrameIndex: options ? options.inlineFrameIndex : 0,
-            tabStop: options ? options.tabStop : undefined,
-            text: undefined,
-            preventClick: undefined,
-            bypassURLTrimming: undefined,
+            inlineFrameIndex: options?.inlineFrameIndex ?? 0,
+            tabStop: options?.tabStop,
         };
         return scriptLink || Linkifier.linkifyURL(sourceURL, linkifyURLOptions);
     }
@@ -256,7 +246,6 @@ export class Linkifier {
         return this.linkifyScriptLocation(rawLocation.debuggerModel.target(), rawLocation.scriptId, fallbackUrl, rawLocation.lineNumber, {
             columnNumber: rawLocation.columnNumber,
             className,
-            tabStop: undefined,
             inlineFrameIndex: rawLocation.inlineFrameIndex,
         });
     }
@@ -264,9 +253,9 @@ export class Linkifier {
         const linkifyOptions = {
             columnNumber: callFrame.columnNumber,
             showColumnNumber: Boolean(options?.showColumnNumber),
-            inlineFrameIndex: options ? options.inlineFrameIndex : 0,
-            tabStop: options ? options.tabStop : undefined,
-            className: options ? options.className : undefined,
+            inlineFrameIndex: options?.inlineFrameIndex ?? 0,
+            tabStop: options?.tabStop,
+            className: options?.className,
         };
         return this.maybeLinkifyScriptLocation(target, callFrame.scriptId, callFrame.url, callFrame.lineNumber, linkifyOptions);
     }
@@ -280,11 +269,12 @@ export class Linkifier {
             showColumnNumber: false,
             inlineFrameIndex: 0,
             maxLength: this.maxLength,
-            text: undefined,
             preventClick: true,
-            tabStop: undefined,
-            bypassURLTrimming: undefined,
         });
+        // HAR imported network logs have no associated NetworkManager.
+        if (!target) {
+            return fallbackAnchor;
+        }
         // The contract is that disposed targets don't have a LiveLocationPool
         // associated, whereas all active targets have one such pool. This ensures
         // that the fallbackAnchor is only ever used when the target was disposed.
@@ -318,11 +308,6 @@ export class Linkifier {
     }
     linkifyCSSLocation(rawLocation, classes) {
         const createLinkOptions = {
-            maxLength: undefined,
-            title: undefined,
-            href: undefined,
-            preventClick: undefined,
-            bypassURLTrimming: undefined,
             tabStop: true,
         };
         // Not initialising the anchor element with 'zero width space' (\u200b) causes a crash
@@ -426,16 +411,8 @@ export class Linkifier {
     }
     static linkifyURL(url, options) {
         options = options || {
-            text: undefined,
-            className: undefined,
-            lineNumber: undefined,
-            columnNumber: undefined,
             showColumnNumber: false,
             inlineFrameIndex: 0,
-            preventClick: undefined,
-            maxLength: undefined,
-            tabStop: undefined,
-            bypassURLTrimming: undefined,
         };
         const text = options.text;
         const className = options.className || '';
@@ -474,25 +451,14 @@ export class Linkifier {
     static linkifyRevealable(revealable, text, fallbackHref, title, className) {
         const createLinkOptions = {
             maxLength: UI.UIUtils.MaxLengthForDisplayedURLs,
-            href: fallbackHref,
+            href: (fallbackHref),
             title,
-            preventClick: undefined,
-            tabStop: undefined,
-            bypassURLTrimming: undefined,
         };
         const { link, linkInfo } = Linkifier.createLink(text, className || '', createLinkOptions);
         linkInfo.revealable = revealable;
         return link;
     }
-    static createLink(text, className, options) {
-        options = options || {
-            maxLength: undefined,
-            title: undefined,
-            href: undefined,
-            preventClick: undefined,
-            tabStop: undefined,
-            bypassURLTrimming: undefined,
-        };
+    static createLink(text, className, options = {}) {
         const { maxLength, title, href, preventClick, tabStop, bypassURLTrimming } = options;
         const link = document.createElement('span');
         if (className) {
@@ -645,7 +611,7 @@ export class Linkifier {
         if (!info) {
             return result;
         }
-        let url = '';
+        let url = Platform.DevToolsPath.EmptyUrlString;
         let uiLocation = null;
         if (info.uiLocation) {
             uiLocation = info.uiLocation;
@@ -814,7 +780,9 @@ export class ContentProviderContextMenuProvider {
         if (!contentUrl) {
             return;
         }
-        contextMenu.revealSection().appendItem(UI.UIUtils.openLinkExternallyLabel(), () => Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(contentUrl.endsWith(':formatted') ? contentUrl.slice(0, contentUrl.lastIndexOf(':')) : contentUrl));
+        contextMenu.revealSection().appendItem(UI.UIUtils.openLinkExternallyLabel(), () => Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(contentUrl.endsWith(':formatted') ?
+            Common.ParsedURL.ParsedURL.slice(contentUrl, 0, contentUrl.lastIndexOf(':')) :
+            contentUrl));
         for (const title of linkHandlers.keys()) {
             const handler = linkHandlers.get(title);
             if (!handler) {

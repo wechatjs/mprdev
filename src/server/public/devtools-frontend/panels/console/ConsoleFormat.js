@@ -134,12 +134,12 @@ export const format = (fmt, args) => {
                         case 48:
                             if (codes.shift() === 2) {
                                 const r = codes.shift() ?? 0, g = codes.shift() ?? 0, b = codes.shift() ?? 0;
-                                currentStyle.set(code === 38 ? 'color' : 'background', `rgb(${r},${g},${b})`);
+                                currentStyle.set(code === 38 ? 'color' : 'background-color', `rgb(${r},${g},${b})`);
                             }
                             break;
                         case 39:
                         case 49:
-                            currentStyle.delete(code === 39 ? 'color' : 'background');
+                            currentStyle.delete(code === 39 ? 'color' : 'background-color');
                             break;
                         case 53:
                             addTextDecoration('overline');
@@ -178,5 +178,30 @@ export const format = (fmt, args) => {
     }
     addStringToken(fmt);
     return { tokens, args: args.slice(argIndex) };
+};
+export const updateStyle = (currentStyle, styleToAdd) => {
+    const ALLOWED_PROPERTY_PREFIXES = ['background', 'border', 'color', 'font', 'line', 'margin', 'padding', 'text'];
+    // We only allow data URLs with the `url()` CSS function.
+    // The capture group is not intended to grab the whole URL exactly, just enough so we can check the scheme.
+    const URL_REGEX = /url\([\'\"]?([^\)]*)/g;
+    currentStyle.clear();
+    const buffer = document.createElement('span');
+    buffer.setAttribute('style', styleToAdd);
+    for (const property of buffer.style) {
+        if (!ALLOWED_PROPERTY_PREFIXES.some(prefix => property.startsWith(prefix) || property.startsWith(`-webkit-${prefix}`))) {
+            continue;
+        }
+        // There could be multiple `url()` functions, so we check them all.
+        // If any of them is not a `data` URL, we skip the whole property.
+        const value = buffer.style.getPropertyValue(property);
+        const potentialUrls = [...value.matchAll(URL_REGEX)].map(match => match[1]);
+        if (potentialUrls.some(potentialUrl => !potentialUrl.startsWith('data:'))) {
+            continue;
+        }
+        currentStyle.set(property, {
+            value,
+            priority: buffer.style.getPropertyPriority(property),
+        });
+    }
 };
 //# sourceMappingURL=ConsoleFormat.js.map

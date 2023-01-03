@@ -89,7 +89,7 @@ export class PerformanceMonitorImpl extends UI.Widget.HBox {
         UI.ARIAUtils.setAccessibleName(this.canvas, i18nString(UIStrings.graphsDisplayingARealtimeViewOf));
         this.contentElement.createChild('div', 'perfmon-chart-suspend-overlay fill').createChild('div').textContent =
             i18nString(UIStrings.paused);
-        this.controlPane.addEventListener("MetricChanged" /* MetricChanged */, this.recalcChartHeight, this);
+        this.controlPane.addEventListener("MetricChanged" /* Events.MetricChanged */, this.recalcChartHeight, this);
         SDK.TargetManager.TargetManager.instance().observeModels(SDK.PerformanceMetricsModel.PerformanceMetricsModel, this);
     }
     static instance(opts = { forceNew: null }) {
@@ -105,6 +105,13 @@ export class PerformanceMonitorImpl extends UI.Widget.HBox {
         }
         this.registerCSSFiles([performanceMonitorStyles]);
         this.controlPane.instantiateMetricData();
+        const themeSupport = ThemeSupport.ThemeSupport.instance();
+        themeSupport.addEventListener(ThemeSupport.ThemeChangeEvent.eventName, () => {
+            // instantiateMetricData sets the colors for the metrics, which we need
+            // to re-evaluate when the theme changes before re-drawing the canvas.
+            this.controlPane.instantiateMetricData();
+            this.draw();
+        });
         SDK.TargetManager.TargetManager.instance().addEventListener(SDK.TargetManager.Events.SuspendStateChanged, this.suspendStateChanged, this);
         void this.model.enable();
         this.suspendStateChanged();
@@ -435,7 +442,7 @@ export class ControlPane extends Common.ObjectWrapper.ObjectWrapper {
                         color: themeSupport.getComputedValue('--override-color-perf-monitor-cpu-recalc-style-duration', this.element),
                     },
                 ],
-                format: "Percent" /* Percent */,
+                format: "Percent" /* Format.Percent */,
                 smooth: true,
                 stacked: true,
                 color: themeSupport.getComputedValue('--override-color-perf-monitor-cpu', this.element),
@@ -455,7 +462,7 @@ export class ControlPane extends Common.ObjectWrapper.ObjectWrapper {
                         color: themeSupport.getComputedValue('--override-color-perf-monitor-jsheap-used-size', this.element),
                     },
                 ],
-                format: "Bytes" /* Bytes */,
+                format: "Bytes" /* Format.Bytes */,
                 color: themeSupport.getComputedValue('--override-color-perf-monitor-jsheap'),
             },
             {
@@ -531,7 +538,7 @@ export class ControlPane extends Common.ObjectWrapper.ObjectWrapper {
             this.enabledCharts.delete(chartName);
         }
         this.enabledChartsSetting.set(Array.from(this.enabledCharts));
-        this.dispatchEventToListeners("MetricChanged" /* MetricChanged */);
+        this.dispatchEventToListeners("MetricChanged" /* Events.MetricChanged */);
     }
     charts() {
         return this.chartsInfo;
@@ -585,9 +592,9 @@ export class MetricIndicator {
             percentFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1, style: 'percent' });
         }
         switch (info.format) {
-            case "Percent" /* Percent */:
+            case "Percent" /* Format.Percent */:
                 return percentFormatter.format(value);
-            case "Bytes" /* Bytes */:
+            case "Bytes" /* Format.Bytes */:
                 return Platform.NumberUtilities.bytesToString(value);
             default:
                 return numberFormatter.format(value);

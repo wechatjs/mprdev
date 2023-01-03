@@ -37,7 +37,7 @@ export class PreviewFactory {
             return new UI.EmptyWidget.EmptyWidget(i18nString(UIStrings.nothingToPreview));
         }
         let content = deferredContent.content;
-        if (await provider.contentEncoded()) {
+        if (deferredContent.isEncoded) {
             content = window.atob(content);
         }
         const parsedXML = XMLView.parseXML(content, mimeType);

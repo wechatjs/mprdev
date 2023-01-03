@@ -26,7 +26,7 @@ export class QuickInput {
             }
             widget.setPromptTitle(options.placeHolder || options.prompt);
             widget.showAsDialog(options.prompt);
-            canceledPromise = widget.once("hidden" /* Hidden */);
+            canceledPromise = widget.once("hidden" /* FilteredListWidgetEvents.Hidden */);
             widget.setQuery(options.value || '');
             if (options.valueSelection) {
                 widget.setQuerySelectedRange(options.valueSelection[0], options.valueSelection[1]);

@@ -1,4 +1,5 @@
 import type * as SDK from '../../../core/sdk/sdk.js';
+import type * as Platform from '../../../core/platform/platform.js';
 import * as NetworkForward from '../../../panels/network/forward/forward.js';
 import type * as Logs from '../../../models/logs/logs.js';
 import * as IconButton from '../../../ui/components/icon_button/icon_button.js';
@@ -20,7 +21,7 @@ export interface RequestLinkIconData {
     additionalOnClickAction?: () => void;
     revealOverride?: (revealable: Object | null, omitFocus?: boolean | undefined) => Promise<void>;
 }
-export declare const extractShortPath: (path: string) => string;
+export declare const extractShortPath: (path: Platform.DevToolsPath.UrlString) => string;
 export declare class RequestLinkIcon extends HTMLElement {
     #private;
     static readonly litTagName: import("../../lit-html/static.js").Static;

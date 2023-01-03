@@ -1,10 +1,10 @@
 import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import type * as Protocol from '../../generated/protocol.js';
+import type * as Platform from '../../core/platform/platform.js';
 import type * as TextUtils from '../text_utils/text_utils.js';
 import * as Workspace from '../workspace/workspace.js';
 import { DebuggerWorkspaceBinding } from './DebuggerWorkspaceBinding.js';
-export declare class BreakpointManager extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
+export declare class BreakpointManager extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements SDK.TargetManager.SDKModelObserver<SDK.DebuggerModel.DebuggerModel> {
     #private;
     readonly storage: Storage;
     readonly targetManager: SDK.TargetManager.TargetManager;
@@ -16,14 +16,19 @@ export declare class BreakpointManager extends Common.ObjectWrapper.ObjectWrappe
         workspace: Workspace.Workspace.WorkspaceImpl | null;
         debuggerWorkspaceBinding: DebuggerWorkspaceBinding | null;
     }): BreakpointManager;
-    static breakpointStorageId(url: string, lineNumber: number, columnNumber?: number): string;
-    copyBreakpoints(fromURL: string, toSourceCode: Workspace.UISourceCode.UISourceCode): Promise<void>;
+    static breakpointStorageId(url: Platform.DevToolsPath.UrlString, lineNumber: number, columnNumber?: number): string;
+    modelAdded(debuggerModel: SDK.DebuggerModel.DebuggerModel): void;
+    modelRemoved(debuggerModel: SDK.DebuggerModel.DebuggerModel): void;
+    addUpdateBindingsCallback(callback: ((uiSourceCode: Workspace.UISourceCode.UISourceCode) => Promise<void>)): void;
+    copyBreakpoints(fromURL: Platform.DevToolsPath.UrlString, toSourceCode: Workspace.UISourceCode.UISourceCode): Promise<void>;
+    restoreBreakpointsForScript(script: SDK.Script.Script): Promise<void>;
+    getUISourceCodeWithUpdatedBreakpointInfo(script: SDK.Script.Script): Promise<Workspace.UISourceCode.UISourceCode>;
     private restoreBreakpoints;
     private uiSourceCodeAdded;
     private uiSourceCodeRemoved;
     private projectRemoved;
     private removeUISourceCode;
-    setBreakpoint(uiSourceCode: Workspace.UISourceCode.UISourceCode, lineNumber: number, columnNumber: number | undefined, condition: string, enabled: boolean): Promise<Breakpoint>;
+    setBreakpoint(uiSourceCode: Workspace.UISourceCode.UISourceCode, lineNumber: number, columnNumber: number | undefined, condition: string, enabled: boolean, origin: BreakpointOrigin): Promise<Breakpoint>;
     private innerSetBreakpoint;
     findBreakpoint(uiLocation: Workspace.UISourceCode.UILocation): BreakpointLocation | null;
     possibleBreakpoints(uiSourceCode: Workspace.UISourceCode.UISourceCode, textRange: TextUtils.TextRange.TextRange): Promise<Workspace.UISourceCode.UILocation[]>;
@@ -32,6 +37,7 @@ export declare class BreakpointManager extends Common.ObjectWrapper.ObjectWrappe
     removeBreakpoint(breakpoint: Breakpoint, removeFromStorage: boolean): void;
     uiLocationAdded(breakpoint: Breakpoint, uiLocation: Workspace.UISourceCode.UILocation): void;
     uiLocationRemoved(breakpoint: Breakpoint, uiLocation: Workspace.UISourceCode.UILocation): void;
+    supportsConditionalBreakpoints(uiSourceCode: Workspace.UISourceCode.UISourceCode): boolean;
 }
 export declare enum Events {
     BreakpointAdded = "breakpoint-added",
@@ -41,21 +47,30 @@ export declare type EventTypes = {
     [Events.BreakpointAdded]: BreakpointLocation;
     [Events.BreakpointRemoved]: BreakpointLocation;
 };
+export declare const enum DebuggerUpdateResult {
+    OK = "OK",
+    ERROR_BREAKPOINT_CLASH = "ERROR_BREAKPOINT_CLASH",
+    ERROR_BACKEND = "ERROR_BACKEND",
+    PENDING = "PENDING"
+}
+export declare type ScheduleUpdateResult = DebuggerUpdateResult.OK | DebuggerUpdateResult.ERROR_BACKEND | DebuggerUpdateResult.ERROR_BREAKPOINT_CLASH;
 export declare class Breakpoint implements SDK.TargetManager.SDKModelObserver<SDK.DebuggerModel.DebuggerModel> {
     #private;
     readonly breakpointManager: BreakpointManager;
-    urlInternal: string;
+    urlInternal: Platform.DevToolsPath.UrlString;
     uiSourceCodes: Set<Workspace.UISourceCode.UISourceCode>;
     isRemoved: boolean;
     currentState: Breakpoint.State | null;
-    constructor(breakpointManager: BreakpointManager, primaryUISourceCode: Workspace.UISourceCode.UISourceCode, url: string, lineNumber: number, columnNumber: number | undefined, condition: string, enabled: boolean);
+    constructor(breakpointManager: BreakpointManager, primaryUISourceCode: Workspace.UISourceCode.UISourceCode, url: Platform.DevToolsPath.UrlString, lineNumber: number, columnNumber: number | undefined, condition: string, enabled: boolean, origin: BreakpointOrigin);
+    get origin(): BreakpointOrigin;
     refreshInDebugger(): Promise<void>;
     modelAdded(debuggerModel: SDK.DebuggerModel.DebuggerModel): void;
     modelRemoved(debuggerModel: SDK.DebuggerModel.DebuggerModel): void;
+    modelBreakpoint(debuggerModel: SDK.DebuggerModel.DebuggerModel): ModelBreakpoint | undefined;
     addUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): void;
     clearUISourceCodes(): void;
     removeUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): void;
-    url(): string;
+    url(): Platform.DevToolsPath.UrlString;
     lineNumber(): number;
     columnNumber(): number | undefined;
     uiLocationAdded(uiLocation: Workspace.UISourceCode.UILocation): void;
@@ -67,10 +82,9 @@ export declare class Breakpoint implements SDK.TargetManager.SDKModelObserver<SD
     condition(): string;
     setCondition(condition: string): void;
     updateState(condition: string, enabled: boolean): void;
-    updateBreakpoint(): void;
-    remove(keepInStorage: boolean): void;
+    updateBreakpoint(): Promise<void>;
+    remove(keepInStorage: boolean): Promise<void>;
     breakpointStorageId(): string;
-    private resetLocations;
     private defaultUILocation;
     private removeAllUnboundLocations;
     private addAllUnboundLocations;
@@ -80,24 +94,26 @@ export declare class Breakpoint implements SDK.TargetManager.SDKModelObserver<SD
 export declare class ModelBreakpoint {
     #private;
     constructor(debuggerModel: SDK.DebuggerModel.DebuggerModel, breakpoint: Breakpoint, debuggerWorkspaceBinding: DebuggerWorkspaceBinding);
+    get currentState(): Breakpoint.State | null;
     resetLocations(): void;
-    scheduleUpdateInDebugger(): Promise<void>;
+    scheduleUpdateInDebugger(): Promise<ScheduleUpdateResult>;
     private scriptDiverged;
-    private updateInDebugger;
-    refreshBreakpoint(): Promise<void>;
+    resetBreakpoint(): Promise<void>;
     private didRemoveFromDebugger;
     private breakpointResolved;
     private locationUpdated;
     private addResolvedLocation;
     cleanUpAfterDebuggerIsGone(): void;
-    removeEventListeners(): void;
 }
 interface Position {
-    url: string;
-    scriptId: Protocol.Runtime.ScriptId;
+    url: Platform.DevToolsPath.UrlString;
     scriptHash: string;
     lineNumber: number;
     columnNumber?: number;
+}
+export declare const enum BreakpointOrigin {
+    USER_ACTION = "USER_ACTION",
+    OTHER = "RESTORED"
 }
 export declare namespace Breakpoint {
     class State {
@@ -113,14 +129,14 @@ declare class Storage {
     get setting(): Common.Settings.Setting<Storage.Item[]>;
     mute(): void;
     unmute(): void;
-    breakpointItems(url: string): Storage.Item[];
+    breakpointItems(url: Platform.DevToolsPath.UrlString): Storage.Item[];
     updateBreakpoint(breakpoint: Breakpoint): void;
     removeBreakpoint(breakpoint: Breakpoint): void;
     private save;
 }
 declare namespace Storage {
     class Item {
-        url: string;
+        url: Platform.DevToolsPath.UrlString;
         lineNumber: number;
         columnNumber?: number;
         condition: string;
@@ -128,8 +144,9 @@ declare namespace Storage {
         constructor(breakpoint: Breakpoint);
     }
 }
-export interface BreakpointLocation {
-    breakpoint: Breakpoint;
-    uiLocation: Workspace.UISourceCode.UILocation;
+export declare class BreakpointLocation {
+    readonly breakpoint: Breakpoint;
+    readonly uiLocation: Workspace.UISourceCode.UILocation;
+    constructor(breakpoint: Breakpoint, uiLocation: Workspace.UISourceCode.UILocation);
 }
 export {};

@@ -1,6 +1,6 @@
 import * as Host from '../../core/host/host.js';
 import * as Root from '../../core/root/root.js';
-import type { SoftContextMenuDescriptor } from './SoftContextMenu.js';
+import { type SoftContextMenuDescriptor } from './SoftContextMenu.js';
 export declare class Item {
     private readonly typeInternal;
     protected readonly label: string | undefined;
@@ -27,7 +27,7 @@ export declare class Section {
     appendSeparator(): Item;
     appendAction(actionId: string, label?: string, optional?: boolean): void;
     appendSubMenuItem(label: string, disabled?: boolean): SubMenu;
-    appendCheckboxItem(label: string, handler: () => void, checked?: boolean, disabled?: boolean): Item;
+    appendCheckboxItem(label: string, handler: () => void, checked?: boolean, disabled?: boolean, additionalElement?: Element): Item;
 }
 export declare class SubMenu extends Item {
     private readonly sections;
@@ -68,6 +68,7 @@ export declare class ContextMenu extends SubMenu {
     private readonly handlers;
     idInternal: number;
     private softMenu?;
+    private contextMenuLabel?;
     constructor(event: Event, options?: ContextMenuOptions);
     static initialize(): void;
     static installHandler(doc: Document): void;
@@ -75,6 +76,7 @@ export declare class ContextMenu extends SubMenu {
     show(): Promise<void>;
     discard(): void;
     private innerShow;
+    setContextMenuLabel(label: string): void;
     setX(x: number): void;
     setY(y: number): void;
     setHandler(id: number, handler: () => void): void;
@@ -84,6 +86,7 @@ export declare class ContextMenu extends SubMenu {
     private menuCleared;
     containsTarget(target: Object): boolean;
     appendApplicableItems(target: Object): void;
+    markAsMenuItemCheckBox(): void;
     private static pendingMenu;
     private static useSoftMenu;
     static readonly groupWeights: string[];

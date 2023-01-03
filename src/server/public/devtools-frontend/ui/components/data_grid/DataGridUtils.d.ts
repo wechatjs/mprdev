@@ -59,7 +59,7 @@ export interface SortState {
 }
 export declare type CellPosition = readonly [columnIndex: number, rowIndex: number];
 export declare function getRowEntryForColumnId(row: Row, id: string): Cell;
-export declare function renderCellValue(cell: Cell): LitHtml.TemplateResult | typeof LitHtml.nothing;
+export declare function renderCellValue(cell: Cell): LitHtml.LitTemplate;
 /**
  * When the user passes in columns we want to know how wide each one should be.
  * We don't work in exact percentages, or pixel values, because it's then

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as ARIAUtils from './ARIAUtils.js';
 import listWidgetStyles from './listWidget.css.legacy.js';
 import { Toolbar, ToolbarButton } from './Toolbar.js';
@@ -166,6 +167,7 @@ export class ListWidget extends VBox {
         this.stopEditing();
         this.focusRestorer = new ElementFocusRestorer(this.element);
         this.list.classList.add('list-editing');
+        this.element.classList.add('list-editing');
         this.editItem = item;
         this.editElement = element;
         if (element) {
@@ -188,6 +190,7 @@ export class ListWidget extends VBox {
     }
     stopEditing() {
         this.list.classList.remove('list-editing');
+        this.element.classList.remove('list-editing');
         if (this.focusRestorer) {
             this.focusRestorer.restore();
         }
@@ -219,7 +222,7 @@ export class Editor {
     constructor() {
         this.element = document.createElement('div');
         this.element.classList.add('editor-container');
-        this.element.addEventListener('keydown', onKeyDown.bind(null, isEscKey, this.cancelClicked.bind(this)), false);
+        this.element.addEventListener('keydown', onKeyDown.bind(null, Platform.KeyboardUtilities.isEscKey, this.cancelClicked.bind(this)), false);
         this.contentElementInternal = this.element.createChild('div', 'editor-content');
         this.contentElementInternal.addEventListener('keydown', onKeyDown.bind(null, event => event.key === 'Enter', this.commitClicked.bind(this)), false);
         const buttonsRow = this.element.createChild('div', 'editor-buttons');

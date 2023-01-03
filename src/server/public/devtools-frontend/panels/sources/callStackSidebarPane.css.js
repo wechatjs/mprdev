@@ -11,7 +11,7 @@ styles.replaceSync(
  * found in the LICENSE file.
  */
 
-.ignore-listed-message {
+.call-frame-warnings-message {
   --override-ignore-message-background-color: #ffffc2;
 
   text-align: center;
@@ -21,6 +21,16 @@ styles.replaceSync(
   background-color: var(--override-ignore-message-background-color);
 }
 
+.ignore-listed-message {
+  padding: 1px;
+}
+
+.ignore-listed-message-label {
+  color: var(--color-text-secondary);
+  align-items: center;
+  display: flex;
+}
+
 .-theme-with-dark-background .ignore-listed-message,
 :host-context(.-theme-with-dark-background) .ignore-listed-message {
   --override-ignore-message-background-color: rgb(72 72 0);
@@ -28,14 +38,6 @@ styles.replaceSync(
 
 .show-more-message > .link {
   margin-left: 5px;
-}
-
-.ignore-listed-message > .link {
-  margin-left: 5px;
-}
-
-.ignore-listed-message > .link:focus {
-  outline-width: unset;
 }
 
 .show-more-message {
@@ -85,6 +87,10 @@ styles.replaceSync(
 .call-frame-item:focus-visible,
 .call-frame-item.async-header:focus-visible .call-frame-item-title {
   background-color: var(--legacy-focus-bg-color);
+}
+
+.ignore-listed-checkbox:focus-visible {
+  outline-width: unset;
 }
 
 .call-frame-item:not(.async-header):hover {

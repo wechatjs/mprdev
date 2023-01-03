@@ -16,7 +16,7 @@ export class QuickPick {
             widget.setHintElement(options.placeHolder);
             widget.setPromptTitle(options.placeHolder);
             widget.showAsDialog(options.placeHolder);
-            canceledPromise = widget.once("hidden" /* Hidden */);
+            canceledPromise = widget.once("hidden" /* FilteredListWidgetEvents.Hidden */);
             widget.setQuery('');
         });
         return Promise.race([fulfilledPromise, canceledPromise]).then(values => {

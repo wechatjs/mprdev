@@ -57,7 +57,7 @@ export class AffectedCookiesView extends AffectedResourcesView {
         const name = document.createElement('td');
         if (hasAssociatedRequest) {
             name.appendChild(UI.UIUtils.createTextButton(cookie.name, () => {
-                Host.userMetrics.issuesPanelResourceOpened(this.issue.getCategory(), "Cookie" /* Cookie */);
+                Host.userMetrics.issuesPanelResourceOpened(this.issue.getCategory(), "Cookie" /* AffectedItem.Cookie */);
                 void Common.Revealer.reveal(NetworkForward.UIFilter.UIRequestFilter.filters([
                     {
                         filterType: NetworkForward.UIFilter.FilterType.CookieDomain,

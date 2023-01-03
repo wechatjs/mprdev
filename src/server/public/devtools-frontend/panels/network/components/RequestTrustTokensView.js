@@ -142,7 +142,7 @@ export class RequestTrustTokensReport extends HTMLElement {
     `;
     }
     #renderRefreshPolicy(params) {
-        if (params.type !== "Redemption" /* Redemption */) {
+        if (params.type !== "Redemption" /* Protocol.Network.TrustTokenOperationType.Redemption */) {
             return LitHtml.nothing;
         }
         return renderRowWithCodeValue(i18nString(UIStrings.refreshPolicy), params.refreshPolicy.toString());
@@ -192,7 +192,7 @@ export class RequestTrustTokensReport extends HTMLElement {
       `;
     }
     #renderIssuedTokenCount(result) {
-        if (result.type !== "Issuance" /* Issuance */) {
+        if (result.type !== "Issuance" /* Protocol.Network.TrustTokenOperationType.Issuance */) {
             return LitHtml.nothing;
         }
         return renderSimpleRowIfValuePresent(i18nString(UIStrings.numberOfIssuedTokens), result.issuedTokenCount);
@@ -209,9 +209,9 @@ const FAILURE_ICON_DATA = {
     width: '12px',
 };
 export function statusConsideredSuccess(status) {
-    return status === "Ok" /* Ok */ ||
-        status === "AlreadyExists" /* AlreadyExists */ ||
-        status === "FulfilledLocally" /* FulfilledLocally */;
+    return status === "Ok" /* Protocol.Network.TrustTokenOperationDoneEventStatus.Ok */ ||
+        status === "AlreadyExists" /* Protocol.Network.TrustTokenOperationDoneEventStatus.AlreadyExists */ ||
+        status === "FulfilledLocally" /* Protocol.Network.TrustTokenOperationDoneEventStatus.FulfilledLocally */;
 }
 function getIconForStatusCode(status) {
     return statusConsideredSuccess(status) ? SUCCESS_ICON_DATA : FAILURE_ICON_DATA;
@@ -221,22 +221,22 @@ function getSimplifiedStatusTextForStatusCode(status) {
 }
 function getDetailedTextForStatusCode(status) {
     switch (status) {
-        case "Ok" /* Ok */:
+        case "Ok" /* Protocol.Network.TrustTokenOperationDoneEventStatus.Ok */:
             return null;
-        case "AlreadyExists" /* AlreadyExists */:
+        case "AlreadyExists" /* Protocol.Network.TrustTokenOperationDoneEventStatus.AlreadyExists */:
             return i18nString(UIStrings.theOperationsResultWasServedFrom);
-        case "FulfilledLocally" /* FulfilledLocally */:
+        case "FulfilledLocally" /* Protocol.Network.TrustTokenOperationDoneEventStatus.FulfilledLocally */:
             return i18nString(UIStrings.theOperationWasFulfilledLocally);
-        case "InvalidArgument" /* InvalidArgument */:
+        case "InvalidArgument" /* Protocol.Network.TrustTokenOperationDoneEventStatus.InvalidArgument */:
             return i18nString(UIStrings.aClientprovidedArgumentWas);
-        case "ResourceExhausted" /* ResourceExhausted */:
+        case "ResourceExhausted" /* Protocol.Network.TrustTokenOperationDoneEventStatus.ResourceExhausted */:
             return i18nString(UIStrings.eitherNoInputsForThisOperation);
-        case "BadResponse" /* BadResponse */:
+        case "BadResponse" /* Protocol.Network.TrustTokenOperationDoneEventStatus.BadResponse */:
             return i18nString(UIStrings.theServersResponseWasMalformedOr);
-        case "FailedPrecondition" /* FailedPrecondition */:
-        case "Unavailable" /* Unavailable */:
-        case "InternalError" /* InternalError */:
-        case "UnknownError" /* UnknownError */:
+        case "FailedPrecondition" /* Protocol.Network.TrustTokenOperationDoneEventStatus.FailedPrecondition */:
+        case "Unavailable" /* Protocol.Network.TrustTokenOperationDoneEventStatus.Unavailable */:
+        case "InternalError" /* Protocol.Network.TrustTokenOperationDoneEventStatus.InternalError */:
+        case "UnknownError" /* Protocol.Network.TrustTokenOperationDoneEventStatus.UnknownError */:
             return i18nString(UIStrings.theOperationFailedForAnUnknown);
     }
 }

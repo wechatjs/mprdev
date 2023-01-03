@@ -76,7 +76,7 @@ export declare const boundsForTransformedPoints: (matrix: DOMMatrix, points: num
     maxX: number;
     minY: number;
     maxY: number;
-} | undefined) => {
+}) => {
     minX: number;
     maxX: number;
     minY: number;

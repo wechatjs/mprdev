@@ -5,9 +5,9 @@ import * as Common from '../../../core/common/common.js';
 import * as ComponentHelpers from '../../../ui/components/helpers/helpers.js';
 import * as UI from '../../../ui/legacy/legacy.js';
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
-import { NodeText } from './NodeText.js';
 import layoutPaneStyles from '../layoutPane.css.js';
 import * as Input from '../../../ui/components/input/input.js';
+import * as NodeText from '../../../ui/components/node_text/node_text.js';
 // eslint-disable-next-line rulesdir/es_modules_import
 import inspectorCommonStyles from '../../../ui/legacy/inspectorCommon.css.js';
 import * as i18n from '../../../core/i18n/i18n.js';
@@ -224,15 +224,15 @@ export class LayoutPane extends HTMLElement {
       <label data-element="true" class="checkbox-label">
         <input data-input="true" type="checkbox" .checked=${element.enabled} @change=${onElementToggle} />
         <span class="node-text-container" data-label="true" @mouseenter=${onMouseEnter} @mouseleave=${onMouseLeave}>
-          <${NodeText.litTagName} .data=${{
+          <${NodeText.NodeText.NodeText.litTagName} .data=${{
             nodeId: element.domId,
             nodeTitle: element.name,
             nodeClasses: element.domClasses,
-        }}></${NodeText.litTagName}>
+        }}></${NodeText.NodeText.NodeText.litTagName}>
         </span>
       </label>
-      <label @keyup=${onColorLabelKeyUp} @keydown=${onColorLabelKeyDown} tabindex="0" title=${i18nString(UIStrings.chooseElementOverlayColor)} class="color-picker-label" style="background: ${element.color};">
-        <input @change=${onColorChange} @input=${onColorChange} class="color-picker" type="color" value=${element.color} />
+      <label @keyup=${onColorLabelKeyUp} @keydown=${onColorLabelKeyDown} tabindex="0" title=${i18nString(UIStrings.chooseElementOverlayColor)} aria-label=${i18nString(UIStrings.chooseElementOverlayColor)} class="color-picker-label" style="background: ${element.color};">
+        <input @change=${onColorChange} @input=${onColorChange} tabindex="-1" class="color-picker" type="color" value=${element.color} />
       </label>
       <button tabindex="0" @click=${onElementClick} title=${i18nString(UIStrings.showElementInTheElementsPanel)} class="show-element"></button>
     </div>`;

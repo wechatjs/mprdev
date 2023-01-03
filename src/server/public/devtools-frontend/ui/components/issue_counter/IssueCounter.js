@@ -62,7 +62,7 @@ export class IssueCounter extends HTMLElement {
     #leadingText = '';
     #throttler;
     #counts = [0, 0, 0];
-    #displayMode = "OmitEmpty" /* OmitEmpty */;
+    #displayMode = "OmitEmpty" /* DisplayMode.OmitEmpty */;
     #issuesManager = undefined;
     #accessibleName = undefined;
     #throttlerTimeout;
@@ -82,14 +82,14 @@ export class IssueCounter extends HTMLElement {
         this.#clickHandler = data.clickHandler;
         this.#leadingText = data.leadingText ?? '';
         this.#tooltipCallback = data.tooltipCallback;
-        this.#displayMode = data.displayMode ?? "OmitEmpty" /* OmitEmpty */;
+        this.#displayMode = data.displayMode ?? "OmitEmpty" /* DisplayMode.OmitEmpty */;
         this.#accessibleName = data.accessibleName;
         this.#throttlerTimeout = data.throttlerTimeout;
         this.#compact = Boolean(data.compact);
         if (this.#issuesManager !== data.issuesManager) {
-            this.#issuesManager?.removeEventListener("IssuesCountUpdated" /* IssuesCountUpdated */, this.scheduleUpdate, this);
+            this.#issuesManager?.removeEventListener("IssuesCountUpdated" /* IssuesManager.IssuesManager.Events.IssuesCountUpdated */, this.scheduleUpdate, this);
             this.#issuesManager = data.issuesManager;
-            this.#issuesManager.addEventListener("IssuesCountUpdated" /* IssuesCountUpdated */, this.scheduleUpdate, this);
+            this.#issuesManager.addEventListener("IssuesCountUpdated" /* IssuesManager.IssuesManager.Events.IssuesCountUpdated */, this.scheduleUpdate, this);
         }
         if (data.throttlerTimeout !== 0) {
             this.#throttler = new Common.Throttler.Throttler(data.throttlerTimeout ?? 100);
@@ -128,11 +128,11 @@ export class IssueCounter extends HTMLElement {
         const mostImportant = importance[this.#counts.findIndex(x => x > 0) ?? 2];
         const countToString = (kind, count) => {
             switch (this.#displayMode) {
-                case "OmitEmpty" /* OmitEmpty */:
+                case "OmitEmpty" /* DisplayMode.OmitEmpty */:
                     return count > 0 ? `${count}` : undefined;
-                case "ShowAlways" /* ShowAlways */:
+                case "ShowAlways" /* DisplayMode.ShowAlways */:
                     return `${count}`;
-                case "OnlyMostImportant" /* OnlyMostImportant */:
+                case "OnlyMostImportant" /* DisplayMode.OnlyMostImportant */:
                     return kind === mostImportant ? `${count}` : undefined;
             }
         };

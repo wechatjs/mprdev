@@ -82,9 +82,9 @@ export class OverlayPersistentHighlighter {
     buildFlexContainerHighlightConfig(nodeId) {
         const mainColor = this.colorOfFlex(nodeId);
         return {
-            containerBorder: { color: mainColor.toProtocolRGBA(), pattern: "dashed" /* Dashed */ },
-            itemSeparator: { color: mainColor.toProtocolRGBA(), pattern: "dotted" /* Dotted */ },
-            lineSeparator: { color: mainColor.toProtocolRGBA(), pattern: "dashed" /* Dashed */ },
+            containerBorder: { color: mainColor.toProtocolRGBA(), pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */ },
+            itemSeparator: { color: mainColor.toProtocolRGBA(), pattern: "dotted" /* Protocol.Overlay.LineStylePattern.Dotted */ },
+            lineSeparator: { color: mainColor.toProtocolRGBA(), pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */ },
             mainDistributedSpace: { hatchColor: mainColor.toProtocolRGBA() },
             crossDistributedSpace: { hatchColor: mainColor.toProtocolRGBA() },
         };
@@ -93,7 +93,7 @@ export class OverlayPersistentHighlighter {
         return {
             snapAreaBorder: {
                 color: Common.Color.PageHighlight.GridBorder.toProtocolRGBA(),
-                pattern: "dashed" /* Dashed */,
+                pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
             },
             snapportBorder: { color: Common.Color.PageHighlight.GridBorder.toProtocolRGBA() },
             scrollMarginColor: Common.Color.PageHighlight.Margin.toProtocolRGBA(),
@@ -178,11 +178,11 @@ export class OverlayPersistentHighlighter {
         return {
             containerBorder: {
                 color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                pattern: "dashed" /* Dashed */,
+                pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
             },
             descendantBorder: {
                 color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                pattern: "dashed" /* Dashed */,
+                pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
             },
         };
     }

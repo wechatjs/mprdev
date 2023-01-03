@@ -93,18 +93,27 @@ export class FormatterWorkerPool {
     }
     format(mimeType, content, indentString) {
         const parameters = { mimeType: mimeType, content: content, indentString: indentString };
-        return this.runTask("format" /* FORMAT */, parameters);
+        return this.runTask("format" /* FormatterActions.FormatterActions.FORMAT */, parameters);
     }
     javaScriptIdentifiers(content) {
-        return this.runTask("javaScriptIdentifiers" /* JAVASCRIPT_IDENTIFIERS */, { content: content })
+        return this.runTask("javaScriptIdentifiers" /* FormatterActions.FormatterActions.JAVASCRIPT_IDENTIFIERS */, { content: content })
             .then(ids => ids || []);
     }
+    javaScriptSubstitute(expression, mapping) {
+        return this
+            .runTask("javaScriptSubstitute" /* FormatterActions.FormatterActions.JAVASCRIPT_SUBSTITUTE */, { content: expression, mapping: Array.from(mapping.entries()) })
+            .then(result => result || '');
+    }
+    javaScriptScopeTree(expression) {
+        return this.runTask("javaScriptScopeTree" /* FormatterActions.FormatterActions.JAVASCRIPT_SCOPE_TREE */, { content: expression })
+            .then(result => result || null);
+    }
     evaluatableJavaScriptSubstring(content) {
-        return this.runTask("evaluatableJavaScriptSubstring" /* EVALUATE_JAVASCRIPT_SUBSTRING */, { content: content })
+        return this.runTask("evaluatableJavaScriptSubstring" /* FormatterActions.FormatterActions.EVALUATE_JAVASCRIPT_SUBSTRING */, { content: content })
             .then(text => text || '');
     }
     parseCSS(content, callback) {
-        this.runChunkedTask("parseCSS" /* PARSE_CSS */, { content: content }, onDataChunk);
+        this.runChunkedTask("parseCSS" /* FormatterActions.FormatterActions.PARSE_CSS */, { content: content }, onDataChunk);
         // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         function onDataChunk(isLastChunk, data) {
@@ -115,10 +124,10 @@ export class FormatterWorkerPool {
     outlineForMimetype(content, mimeType, callback) {
         switch (mimeType) {
             case 'text/html':
-                this.runChunkedTask("htmlOutline" /* HTML_OUTLINE */, { content: content }, callback);
+                this.runChunkedTask("htmlOutline" /* FormatterActions.FormatterActions.HTML_OUTLINE */, { content: content }, callback);
                 return true;
             case 'text/javascript':
-                this.runChunkedTask("javaScriptOutline" /* JAVASCRIPT_OUTLINE */, { content: content }, callback);
+                this.runChunkedTask("javaScriptOutline" /* FormatterActions.FormatterActions.JAVASCRIPT_OUTLINE */, { content: content }, callback);
                 return true;
             case 'text/css':
                 this.parseCSS(content, cssCallback);
@@ -133,7 +142,7 @@ export class FormatterWorkerPool {
         }
     }
     argumentsList(content) {
-        return this.runTask("argumentsList" /* ARGUMENTS_LIST */, { content });
+        return this.runTask("argumentsList" /* FormatterActions.FormatterActions.ARGUMENTS_LIST */, { content });
     }
 }
 class Task {

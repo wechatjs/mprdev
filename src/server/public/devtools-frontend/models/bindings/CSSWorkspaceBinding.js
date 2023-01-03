@@ -4,7 +4,7 @@
 import * as Common from '../../core/common/common.js';
 import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import { LiveLocationWithPool } from './LiveLocation.js';
+import { LiveLocationWithPool, } from './LiveLocation.js';
 import { ResourceMapping } from './ResourceMapping.js';
 import { SASSSourceMapping } from './SASSSourceMapping.js';
 import { StylesSourceMapping } from './StylesSourceMapping.js';
@@ -88,21 +88,10 @@ export class CSSWorkspaceBinding {
         return new SDK.CSSModel.CSSLocation(header, header.lineNumberInSource(lineNumber), header.columnNumberInSource(lineNumber, columnNumber));
     }
     propertyUILocation(cssProperty, forName) {
-        const style = cssProperty.ownerStyle;
-        if (!style || style.type !== SDK.CSSStyleDeclaration.Type.Regular || !style.styleSheetId) {
+        const rawLocation = this.propertyRawLocation(cssProperty, forName);
+        if (!rawLocation) {
             return null;
         }
-        const header = style.cssModel().styleSheetHeaderForId(style.styleSheetId);
-        if (!header) {
-            return null;
-        }
-        const range = forName ? cssProperty.nameRange() : cssProperty.valueRange();
-        if (!range) {
-            return null;
-        }
-        const lineNumber = range.startLine;
-        const columnNumber = range.startColumn;
-        const rawLocation = new SDK.CSSModel.CSSLocation(header, header.lineNumberInSource(lineNumber), header.columnNumberInSource(lineNumber, columnNumber));
         return this.rawLocationToUILocation(rawLocation);
     }
     rawLocationToUILocation(rawLocation) {
@@ -129,6 +118,12 @@ export class CSSWorkspaceBinding {
     }
     addSourceMapping(sourceMapping) {
         this.#sourceMappings.push(sourceMapping);
+    }
+    removeSourceMapping(sourceMapping) {
+        const index = this.#sourceMappings.indexOf(sourceMapping);
+        if (index !== -1) {
+            this.#sourceMappings.splice(index, 1);
+        }
     }
 }
 export class ModelInfo {

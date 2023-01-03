@@ -16,6 +16,12 @@ styles.replaceSync(
   white-space: nowrap;
 }
 
+@media (forced-colors: active) {
+  .icon-basic {
+    background-color: ButtonText !important; /* stylelint-disable-line declaration-no-important */
+  }
+}
+
 /*# sourceURL=icon.css */
 `);
 export default styles;

@@ -6,7 +6,7 @@ export declare class ResourceType {
     static fromMimeTypeOverride(mimeType: string | null): ResourceType | null;
     static fromURL(url: string): ResourceType | null;
     static fromName(name: string): ResourceType | null;
-    static mimeFromURL(url: string): string | undefined;
+    static mimeFromURL(url: Platform.DevToolsPath.UrlString): string | undefined;
     static mimeFromExtension(ext: string): string | undefined;
     name(): string;
     title(): string;
@@ -58,6 +58,7 @@ export declare const resourceTypes: {
     TextTrack: ResourceType;
     XHR: ResourceType;
     Fetch: ResourceType;
+    Prefetch: ResourceType;
     EventSource: ResourceType;
     WebSocket: ResourceType;
     WebTransport: ResourceType;

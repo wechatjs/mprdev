@@ -131,7 +131,7 @@ export default class CSS extends BaseDomain {
       if (value) {
         let range;
         if (cssRange) {
-          const match = cssText.match(new RegExp(`(^|[{;\s\n\/])${style.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`));
+          const match = cssText.match(new RegExp(`(^|[{/;\\s\n])${style.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`));
           const index = (match?.index + match?.[1].length) || 0;
           const leftExcludes = cssText.substring(0, index).split('\n');
           const leftIncludes = (leftExcludes.join('\n') + style).split('\n');

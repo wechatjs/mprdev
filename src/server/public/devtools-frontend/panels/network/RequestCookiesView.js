@@ -152,8 +152,8 @@ export class RequestCookiesView extends UI.Widget.Widget {
             for (const blockedCookie of this.request.blockedResponseCookies()) {
                 const parsedCookies = SDK.CookieParser.CookieParser.parseSetCookie(blockedCookie.cookieLine);
                 if ((parsedCookies && !parsedCookies.length) ||
-                    blockedCookie.blockedReasons.includes("SyntaxError" /* SyntaxError */) ||
-                    blockedCookie.blockedReasons.includes("NameValuePairExceedsMaxSize" /* NameValuePairExceedsMaxSize */)) {
+                    blockedCookie.blockedReasons.includes("SyntaxError" /* Protocol.Network.SetCookieBlockedReason.SyntaxError */) ||
+                    blockedCookie.blockedReasons.includes("NameValuePairExceedsMaxSize" /* Protocol.Network.SetCookieBlockedReason.NameValuePairExceedsMaxSize */)) {
                     malformedResponseCookies.push(blockedCookie);
                     continue;
                 }
@@ -221,12 +221,12 @@ export class RequestCookiesView extends UI.Widget.Widget {
                 const icon = UI.Icon.Icon.create('smallicon-error', 'cookie-warning-icon');
                 listItem.appendChild(icon);
                 UI.UIUtils.createTextChild(listItem, malformedCookie.cookieLine);
-                if (malformedCookie.blockedReasons.includes("NameValuePairExceedsMaxSize" /* NameValuePairExceedsMaxSize */)) {
-                    listItem.title = SDK.NetworkRequest.setCookieBlockedReasonToUiString("NameValuePairExceedsMaxSize" /* NameValuePairExceedsMaxSize */);
+                if (malformedCookie.blockedReasons.includes("NameValuePairExceedsMaxSize" /* Protocol.Network.SetCookieBlockedReason.NameValuePairExceedsMaxSize */)) {
+                    listItem.title = SDK.NetworkRequest.setCookieBlockedReasonToUiString("NameValuePairExceedsMaxSize" /* Protocol.Network.SetCookieBlockedReason.NameValuePairExceedsMaxSize */);
                 }
                 else {
                     listItem.title =
-                        SDK.NetworkRequest.setCookieBlockedReasonToUiString("SyntaxError" /* SyntaxError */);
+                        SDK.NetworkRequest.setCookieBlockedReasonToUiString("SyntaxError" /* Protocol.Network.SetCookieBlockedReason.SyntaxError */);
                 }
             }
         }

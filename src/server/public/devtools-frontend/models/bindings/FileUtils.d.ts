@@ -1,4 +1,5 @@
 import type * as Common from '../../core/common/common.js';
+import type * as Platform from '../../core/platform/platform.js';
 export interface ChunkedReader {
     fileSize(): number;
     loadedSize(): number;
@@ -25,7 +26,7 @@ export declare class ChunkedFileReader implements ChunkedReader {
 export declare class FileOutputStream implements Common.StringOutputStream.OutputStream {
     #private;
     constructor();
-    open(fileName: string): Promise<boolean>;
+    open(fileName: Platform.DevToolsPath.RawPathString | Platform.DevToolsPath.UrlString): Promise<boolean>;
     write(data: string): Promise<void>;
     close(): Promise<void>;
     private onAppendDone;

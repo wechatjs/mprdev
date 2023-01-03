@@ -434,9 +434,9 @@ export class CookiesTable extends UI.Widget.VBox {
         }
         function priorityCompare(cookie1, cookie2) {
             const priorities = [
-                "Low" /* Low */,
-                "Medium" /* Medium */,
-                "High" /* High */,
+                "Low" /* Protocol.Network.CookiePriority.Low */,
+                "Medium" /* Protocol.Network.CookiePriority.Medium */,
+                "High" /* Protocol.Network.CookiePriority.High */,
             ];
             const priority1 = priorities.indexOf(cookie1.priority());
             const priority2 = priorities.indexOf(cookie2.priority());

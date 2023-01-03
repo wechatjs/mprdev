@@ -34,6 +34,19 @@ styles.replaceSync(
   display: none;
 }
 
+.adorner-reveal {
+  margin: 0 3px;
+}
+
+.adorner-with-icon {
+  display: flex;
+  justify-content: center;
+}
+
+.adorner-with-icon *:not(:last-child) {
+  margin-right: 2px;
+}
+
 .elements-disclosure {
   width: 100%;
   display: inline-block;

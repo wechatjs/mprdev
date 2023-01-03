@@ -1,8 +1,8 @@
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import { CategorizedBreakpoint } from './CategorizedBreakpoint.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
-import type { SDKModelObserver } from './TargetManager.js';
+import { type SDKModelObserver } from './TargetManager.js';
 declare const enum InstrumentationNames {
     BeforeBidderWorkletBiddingStart = "beforeBidderWorkletBiddingStart",
     BeforeBidderWorkletReportingStart = "beforeBidderWorkletReportingStart",

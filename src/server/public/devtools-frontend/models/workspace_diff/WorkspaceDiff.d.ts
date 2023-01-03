@@ -1,15 +1,20 @@
 import * as Common from '../../core/common/common.js';
 import * as Diff from '../../third_party/diff/diff.js';
+import * as FormatterModule from '../formatter/formatter.js';
 import * as Workspace from '../workspace/workspace.js';
 interface DiffRequestOptions {
     shouldFormatDiff: boolean;
+}
+interface DiffResponse {
+    diff: Diff.Diff.DiffArray;
+    formattedCurrentMapping?: FormatterModule.ScriptFormatter.FormatterSourceMapping;
 }
 export declare class WorkspaceDiffImpl extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     private readonly uiSourceCodeDiffs;
     private readonly loadingUISourceCodes;
     private readonly modifiedUISourceCodesInternal;
     constructor(workspace: Workspace.Workspace.WorkspaceImpl);
-    requestDiff(uiSourceCode: Workspace.UISourceCode.UISourceCode, diffRequestOptions: DiffRequestOptions): Promise<Diff.Diff.DiffArray | null>;
+    requestDiff(uiSourceCode: Workspace.UISourceCode.UISourceCode, diffRequestOptions: DiffRequestOptions): Promise<DiffResponse | null>;
     subscribeToDiffChange(uiSourceCode: Workspace.UISourceCode.UISourceCode, callback: () => void, thisObj?: Object): void;
     unsubscribeFromDiffChange(uiSourceCode: Workspace.UISourceCode.UISourceCode, callback: () => void, thisObj?: Object): void;
     modifiedUISourceCodes(): Workspace.UISourceCode.UISourceCode[];
@@ -44,7 +49,7 @@ export declare class UISourceCodeDiff extends Common.ObjectWrapper.ObjectWrapper
     dispose: boolean;
     constructor(uiSourceCode: Workspace.UISourceCode.UISourceCode);
     private uiSourceCodeChanged;
-    requestDiff(diffRequestOptions: DiffRequestOptions): Promise<Diff.Diff.DiffArray | null>;
+    requestDiff(diffRequestOptions: DiffRequestOptions): Promise<DiffResponse | null>;
     originalContent(): Promise<string | null>;
     private innerRequestDiff;
 }

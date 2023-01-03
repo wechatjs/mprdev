@@ -35,6 +35,12 @@
   "references": [
     {
       "path": "../../core/common/bundle-tsconfig.json"
+    },
+    {
+      "path": "../../models/formatter/bundle-tsconfig.json"
+    },
+    {
+      "path": "../../ui/components/diff_view/bundle-tsconfig.json"
     }
   ]
 }

@@ -67,11 +67,11 @@ export class AffectedSharedArrayBufferIssueDetailsView extends AffectedResources
     #appendType(element, type) {
         const status = document.createElement('td');
         switch (type) {
-            case "CreationIssue" /* CreationIssue */:
+            case "CreationIssue" /* Protocol.Audits.SharedArrayBufferIssueType.CreationIssue */:
                 status.textContent = i18nString(UIStrings.instantiation);
                 status.title = i18nString(UIStrings.aSharedarraybufferWas);
                 break;
-            case "TransferIssue" /* TransferIssue */:
+            case "TransferIssue" /* Protocol.Audits.SharedArrayBufferIssueType.TransferIssue */:
                 status.textContent = i18nString(UIStrings.transfer);
                 status.title = i18nString(UIStrings.sharedarraybufferWasTransferedTo);
                 break;

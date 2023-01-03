@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { DataDisplayDelegate, ProfileHeader, ProfileType } from './ProfileHeader.js';
+import { type DataDisplayDelegate, type ProfileHeader, type ProfileType } from './ProfileHeader.js';
 import { ProfileLauncherView } from './ProfileLauncherView.js';
 import { ProfileSidebarTreeElement } from './ProfileSidebarTreeElement.js';
 export declare class ProfilesPanel extends UI.Panel.PanelWithSidebar implements DataDisplayDelegate {

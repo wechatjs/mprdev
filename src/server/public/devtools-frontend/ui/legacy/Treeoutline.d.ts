@@ -1,6 +1,8 @@
 import * as Common from '../../core/common/common.js';
-import type { Icon } from './Icon.js';
-import type { Config } from './InplaceEditor.js';
+import type * as IconButton from '../components/icon_button/icon_button.js';
+import { type Icon } from './Icon.js';
+import { type Config } from './InplaceEditor.js';
+declare type AnyIcon = Icon | IconButton.Icon.Icon;
 export declare enum Events {
     ElementAttached = "ElementAttached",
     ElementsDetached = "ElementsDetached",
@@ -74,6 +76,7 @@ export declare class TreeOutlineInShadow extends TreeOutline {
 }
 export declare const treeElementBylistItemNode: WeakMap<Node, TreeElement>;
 export declare class TreeElement {
+    #private;
     treeOutline: TreeOutline | null;
     parent: TreeElement | null;
     previousSibling: TreeElement | null;
@@ -123,12 +126,14 @@ export declare class TreeElement {
     set title(x: string | Node);
     titleAsText(): string;
     startEditingTitle<T>(editingConfig: Config<T>): void;
-    setLeadingIcons(icons: Icon[]): void;
-    setTrailingIcons(icons: Icon[]): void;
+    setLeadingIcons(icons: AnyIcon[]): void;
+    setTrailingIcons(icons: AnyIcon[]): void;
     get tooltip(): string;
     set tooltip(x: string);
     isExpandable(): boolean;
     setExpandable(expandable: boolean): void;
+    isExpandRecursively(): boolean;
+    setExpandRecursively(expandRecursively: boolean): void;
     isCollapsible(): boolean;
     setCollapsible(collapsible: boolean): void;
     get hidden(): boolean;
@@ -174,3 +179,4 @@ export declare class TreeElement {
     isEventWithinDisclosureTriangle(event: MouseEvent): boolean;
     setDisableSelectFocus(toggle: boolean): void;
 }
+export {};

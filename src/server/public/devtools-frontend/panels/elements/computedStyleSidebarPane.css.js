@@ -11,11 +11,6 @@ styles.replaceSync(
  * found in the LICENSE file.
  */
 
-.computed-properties {
-  user-select: text;
-  flex-shrink: 0;
-}
-
 .styles-sidebar-pane-toolbar {
   border-bottom: 1px solid var(--color-details-hairline-light);
   flex-shrink: 0;
@@ -48,6 +43,10 @@ styles.replaceSync(
   .styles-sidebar-pane-filter-box > input {
     border: 1px solid ButtonText;
   }
+}
+
+.styles-sidebar-computed-style-widget {
+  min-height: auto;
 }
 
 /*# sourceURL=computedStyleSidebarPane.css */

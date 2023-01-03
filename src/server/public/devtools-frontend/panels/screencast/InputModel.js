@@ -16,13 +16,13 @@ export class InputModel extends SDK.SDKModel.SDKModel {
         let type;
         switch (event.type) {
             case 'keydown':
-                type = "keyDown" /* KeyDown */;
+                type = "keyDown" /* Protocol.Input.DispatchKeyEventRequestType.KeyDown */;
                 break;
             case 'keyup':
-                type = "keyUp" /* KeyUp */;
+                type = "keyUp" /* Protocol.Input.DispatchKeyEventRequestType.KeyUp */;
                 break;
             case 'keypress':
-                type = "char" /* Char */;
+                type = "char" /* Protocol.Input.DispatchKeyEventRequestType.Char */;
                 break;
             default:
                 return;
@@ -47,10 +47,10 @@ export class InputModel extends SDK.SDKModel.SDKModel {
     emitTouchFromMouseEvent(event, offsetTop, zoom) {
         const buttons = ['none', 'left', 'middle', 'right'];
         const types = {
-            mousedown: "mousePressed" /* MousePressed */,
-            mouseup: "mouseReleased" /* MouseReleased */,
-            mousemove: "mouseMoved" /* MouseMoved */,
-            mousewheel: "mouseWheel" /* MouseWheel */,
+            mousedown: "mousePressed" /* Protocol.Input.EmulateTouchFromMouseEventRequestType.MousePressed */,
+            mouseup: "mouseReleased" /* Protocol.Input.EmulateTouchFromMouseEventRequestType.MouseReleased */,
+            mousemove: "mouseMoved" /* Protocol.Input.EmulateTouchFromMouseEventRequestType.MouseMoved */,
+            mousewheel: "mouseWheel" /* Protocol.Input.EmulateTouchFromMouseEventRequestType.MouseWheel */,
         };
         const eventType = event.type;
         if (!(eventType in types)) {

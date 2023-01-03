@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Bindings from '../../models/bindings/bindings.js';
 import * as Persistence from '../../models/persistence/persistence.js';
+import * as Root from '../../core/root/root.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as QuickOpen from '../../ui/legacy/components/quick_open/quick_open.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -53,6 +55,10 @@ export class FilteredUISourceCodeListProvider extends QuickOpen.FilteredListWidg
         if (this.uiSourceCodeUrls.has(uiSourceCode.url())) {
             return false;
         }
+        if (Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.JUST_MY_CODE) &&
+            Bindings.IgnoreListManager.IgnoreListManager.instance().isUserOrSourceMapIgnoreListedUISourceCode(uiSourceCode)) {
+            return false;
+        }
         const binding = Persistence.Persistence.PersistenceImpl.instance().binding(uiSourceCode);
         return !binding || binding.fileSystem === uiSourceCode;
     }
@@ -90,8 +96,13 @@ export class FilteredUISourceCodeListProvider extends QuickOpen.FilteredListWidg
             !Persistence.Persistence.PersistenceImpl.instance().binding(uiSourceCode)) {
             multiplier = 5;
         }
+        let contentTypeBonus = 0;
+        if (uiSourceCode.contentType().isFromSourceMap()) {
+            contentTypeBonus = 100;
+            // Maybe also have a bonus for being a script?
+        }
         const fullDisplayName = uiSourceCode.fullDisplayName();
-        return score + multiplier * this.scorer.calculateScore(fullDisplayName, null);
+        return score + multiplier * (contentTypeBonus + this.scorer.calculateScore(fullDisplayName, null));
     }
     renderItem(itemIndex, query, titleElement, subtitleElement) {
         query = this.rewriteQuery(query);

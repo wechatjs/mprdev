@@ -26,7 +26,7 @@ export class IssuesModel extends SDKModel {
         await auditsAgent.invoke_enable();
     }
     issueAdded(issueAddedEvent) {
-        this.dispatchEventToListeners("IssueAdded" /* IssueAdded */, { issuesModel: this, inspectorIssue: issueAddedEvent.issue });
+        this.dispatchEventToListeners("IssueAdded" /* Events.IssueAdded */, { issuesModel: this, inspectorIssue: issueAddedEvent.issue });
     }
     dispose() {
         super.dispose();

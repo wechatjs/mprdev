@@ -48,7 +48,7 @@ export class Dialog extends Common.ObjectWrapper.eventMixin(GlassPane) {
         this.contentElement.tabIndex = 0;
         this.contentElement.addEventListener('focus', () => this.widget().focus(), false);
         this.widget().setDefaultFocusedElement(this.contentElement);
-        this.setPointerEventsBehavior("BlockedByGlassPane" /* BlockedByGlassPane */);
+        this.setPointerEventsBehavior("BlockedByGlassPane" /* PointerEventsBehavior.BlockedByGlassPane */);
         this.setOutsideClickCallback(event => {
             this.hide();
             event.consume(true);
@@ -85,7 +85,7 @@ export class Dialog extends Common.ObjectWrapper.eventMixin(GlassPane) {
             this.targetDocument.removeEventListener('keydown', this.targetDocumentKeyDownHandler, true);
         }
         this.restoreTabIndexOnElements();
-        this.dispatchEventToListeners("hidden" /* Hidden */);
+        this.dispatchEventToListeners("hidden" /* Events.Hidden */);
         Dialog.instance = null;
     }
     setCloseOnEscape(close) {

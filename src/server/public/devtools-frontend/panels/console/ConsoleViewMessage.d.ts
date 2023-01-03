@@ -5,7 +5,7 @@ import type * as IssuesManager from '../../models/issues_manager/issues_manager.
 import * as Logs from '../../models/logs/logs.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { ConsoleViewportElement } from './ConsoleViewport.js';
+import { type ConsoleViewportElement } from './ConsoleViewport.js';
 export declare const getMessageForElement: (element: Element) => ConsoleViewMessage | undefined;
 export declare class ConsoleViewMessage implements ConsoleViewportElement {
     #private;
@@ -113,6 +113,7 @@ export declare class ConsoleViewMessage implements ConsoleViewportElement {
     searchHighlightNode(index: number): Element;
     private getInlineFrames;
     private expandInlineStackFrames;
+    private createScriptLocationLinkForSyntaxError;
     private tryFormatAsError;
     private linkifyWithCustomLinkifier;
     private linkifyStringAsFragment;

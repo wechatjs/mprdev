@@ -1,6 +1,6 @@
 import * as Common from '../../../core/common/common.js';
 import { EdgeView } from './EdgeView.js';
-import type { NodeCreationData, NodeParamConnectionData, NodeParamDisconnectionData, NodesConnectionData, NodesDisconnectionData, ParamCreationData } from './GraphStyle.js';
+import { type NodeCreationData, type NodeParamConnectionData, type NodeParamDisconnectionData, type NodesConnectionData, type NodesDisconnectionData, type ParamCreationData } from './GraphStyle.js';
 import { NodeView } from './NodeView.js';
 export declare class GraphView extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     contextId: string;

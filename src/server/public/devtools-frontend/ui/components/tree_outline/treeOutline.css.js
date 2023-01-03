@@ -16,15 +16,21 @@ styles.replaceSync(
 }
 
 li {
+  border: 2px solid transparent;
   list-style: none;
   text-overflow: ellipsis;
   min-height: 12px;
+}
+
+.compact {
+  border: 0;
 }
 
 .tree-node-key {
   white-space: var(--override-key-whitespace-wrapping);
   /* Override the default |min-width: auto| to avoid overflows of flex items */
   min-width: 0;
+  flex-grow: 1;
 }
 
 .arrow-icon {
@@ -39,6 +45,7 @@ li {
   height: 12px;
   width: 13px;
   overflow: hidden;
+  flex: none;
 }
 
 ul {
@@ -86,7 +93,6 @@ li.is-top-level:last-child {
 }
 
 .arrow-and-key-wrapper {
-  border: 2px solid transparent;
   display: flex;
   align-content: center;
   align-items: center;
@@ -96,9 +102,19 @@ li.is-top-level:last-child {
   outline: 0;
 }
 
-[role="treeitem"].selected > .arrow-and-key-wrapper {
+ul[role="tree"]:focus-within [role="treeitem"].selected > .arrow-and-key-wrapper {
   /* stylelint-disable-next-line color-named */
   background-color: var(--legacy-item-selection-bg-color);
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-icon {
+  vertical-align: sub;
 }
 
 /*# sourceURL=treeOutline.css */

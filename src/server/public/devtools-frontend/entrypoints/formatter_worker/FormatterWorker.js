@@ -38,6 +38,7 @@ import { HTMLFormatter } from './HTMLFormatter.js';
 import { IdentityFormatter } from './IdentityFormatter.js';
 import { JavaScriptFormatter } from './JavaScriptFormatter.js';
 import { JSONFormatter } from './JSONFormatter.js';
+import { substituteExpression } from './Substitute.js';
 export function createTokenizer(mimeType) {
     const mode = CodeMirror.getMode({ indentUnit: 2 }, mimeType);
     const state = CodeMirror.startState(mode);
@@ -62,18 +63,16 @@ export function createTokenizer(mimeType) {
 }
 export const AbortTokenization = {};
 export function evaluatableJavaScriptSubstring(content) {
-    const tokenizer = Acorn.tokenizer(content, { ecmaVersion: ECMA_VERSION });
-    let result = '';
     try {
+        const tokenizer = Acorn.tokenizer(content, { ecmaVersion: ECMA_VERSION });
         let token = tokenizer.getToken();
-        while (token.type !== Acorn.tokTypes.eof && AcornTokenizer.punctuator(token)) {
+        while (AcornTokenizer.punctuator(token)) {
             token = tokenizer.getToken();
         }
         const startIndex = token.start;
         let endIndex = token.end;
-        let openBracketsCounter = 0;
         while (token.type !== Acorn.tokTypes.eof) {
-            const isIdentifier = AcornTokenizer.identifier(token);
+            const isIdentifier = token.type === Acorn.tokTypes.name || token.type === Acorn.tokTypes.privateId;
             const isThis = AcornTokenizer.keyword(token, 'this');
             const isString = token.type === Acorn.tokTypes.string;
             if (!isThis && !isIdentifier && !isString) {
@@ -81,23 +80,33 @@ export function evaluatableJavaScriptSubstring(content) {
             }
             endIndex = token.end;
             token = tokenizer.getToken();
-            while (AcornTokenizer.punctuator(token, '.[]')) {
-                if (AcornTokenizer.punctuator(token, '[')) {
-                    openBracketsCounter++;
-                }
-                if (AcornTokenizer.punctuator(token, ']')) {
-                    endIndex = openBracketsCounter > 0 ? token.end : endIndex;
-                    openBracketsCounter--;
-                }
-                token = tokenizer.getToken();
+            while (AcornTokenizer.punctuator(token, '[')) {
+                let openBracketCounter = 0;
+                do {
+                    if (AcornTokenizer.punctuator(token, '[')) {
+                        ++openBracketCounter;
+                    }
+                    token = tokenizer.getToken();
+                    if (AcornTokenizer.punctuator(token, ']')) {
+                        if (--openBracketCounter === 0) {
+                            endIndex = token.end;
+                            token = tokenizer.getToken();
+                            break;
+                        }
+                    }
+                } while (token.type !== Acorn.tokTypes.eof);
             }
+            if (!AcornTokenizer.punctuator(token, '.')) {
+                break;
+            }
+            token = tokenizer.getToken();
         }
-        result = content.substring(startIndex, endIndex);
+        return content.substring(startIndex, endIndex);
     }
     catch (e) {
         console.error(e);
+        return '';
     }
-    return result;
 }
 export function javaScriptIdentifiers(content) {
     let root = null;
@@ -263,4 +272,5 @@ export function argumentsList(content) {
         console.error = () => undefined;
     }
 })();
+export { substituteExpression };
 //# sourceMappingURL=FormatterWorker.js.map

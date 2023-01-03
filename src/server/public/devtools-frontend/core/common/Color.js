@@ -30,15 +30,17 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import * as Platform from '../platform/platform.js';
-import { blendColors, contrastRatioAPCA, desiredLuminanceAPCA, luminance, luminanceAPCA, rgbaToHsla } from './ColorUtils.js';
+import { blendColors, contrastRatioAPCA, desiredLuminanceAPCA, luminance, luminanceAPCA, rgbaToHsla, rgbaToHwba, } from './ColorUtils.js';
 export class Color {
     #hslaInternal;
+    #hwbaInternal;
     #rgbaInternal;
     #originalText;
     #originalTextIsValid;
     #formatInternal;
     constructor(rgba, format, originalText) {
         this.#hslaInternal = undefined;
+        this.#hwbaInternal = undefined;
         this.#rgbaInternal = rgba;
         this.#originalText = originalText || null;
         this.#originalTextIsValid = Boolean(this.#originalText);
@@ -103,29 +105,12 @@ export class Color {
             }
             return null;
         }
-        // rgb/rgba(), hsl/hsla()
-        match = text.toLowerCase().match(/^\s*(?:(rgba?)|(hsla?))\((.*)\)\s*$/);
+        // rgb/rgba(), hsl/hsla(), hwb/hwba()
+        match = text.toLowerCase().match(/^\s*(?:(rgba?)|(hsla?)|(hwba?))\((.*)\)\s*$/);
         if (match) {
-            const components = match[3].trim();
-            let values = components.split(/\s*,\s*/);
-            if (values.length === 1) {
-                values = components.split(/\s+/);
-                if (values[3] === '/') {
-                    values.splice(3, 1);
-                    if (values.length !== 4) {
-                        return null;
-                    }
-                }
-                else if ((values.length > 2 && values[2].indexOf('/') !== -1) ||
-                    (values.length > 3 && values[3].indexOf('/') !== -1)) {
-                    const alpha = values.slice(2, 4).join('');
-                    values = values.slice(0, 2).concat(alpha.split(/\//)).concat(values.slice(4));
-                }
-                else if (values.length >= 4) {
-                    return null;
-                }
-            }
-            if (values.length !== 3 && values.length !== 4 || values.indexOf('') > -1) {
+            // hwb(a) must have white space delimiters between its parameters.
+            const values = this.splitColorFunctionParameters(match[4], !match[3]);
+            if (!values) {
                 return null;
             }
             const hasAlpha = (values[3] !== undefined);
@@ -141,19 +126,23 @@ export class Color {
                 }
                 return new Color(rgba, hasAlpha ? Format.RGBA : Format.RGB, text);
             }
-            if (match[2]) { // hsl/hsla
-                const hsla = [
+            if (match[2] || match[3]) { // hsl/hsla or hwb/hwba
+                const parameters = [
                     Color.parseHueNumeric(values[0]),
                     Color.parseSatLightNumeric(values[1]),
                     Color.parseSatLightNumeric(values[2]),
                     hasAlpha ? Color.parseAlphaNumeric(values[3]) : 1,
                 ];
-                if (hsla.indexOf(null) > -1) {
+                if (parameters.indexOf(null) > -1) {
                     return null;
                 }
                 const rgba = [];
-                Color.hsl2rgb(hsla, rgba);
-                return new Color(rgba, hasAlpha ? Format.HSLA : Format.HSL, text);
+                if (match[2]) {
+                    Color.hsl2rgb(parameters, rgba);
+                    return new Color(rgba, hasAlpha ? Format.HSLA : Format.HSL, text);
+                }
+                Color.hwb2rgb(parameters, rgba);
+                return new Color(rgba, hasAlpha ? Format.HWBA : Format.HWB, text);
             }
         }
         return null;
@@ -165,6 +154,37 @@ export class Color {
         const rgba = [];
         Color.hsva2rgba(hsva, rgba);
         return new Color(rgba, Format.HSLA);
+    }
+    /**
+     * Split the color parameters of (e.g.) rgb(a), hsl(a), hwb(a) functions.
+     */
+    static splitColorFunctionParameters(content, allowCommas) {
+        const components = content.trim();
+        let values = [];
+        if (allowCommas) {
+            values = components.split(/\s*,\s*/);
+        }
+        if (!allowCommas || values.length === 1) {
+            values = components.split(/\s+/);
+            if (values[3] === '/') {
+                values.splice(3, 1);
+                if (values.length !== 4) {
+                    return null;
+                }
+            }
+            else if ((values.length > 2 && values[2].indexOf('/') !== -1) ||
+                (values.length > 3 && values[3].indexOf('/') !== -1)) {
+                const alpha = values.slice(2, 4).join('');
+                values = values.slice(0, 2).concat(alpha.split(/\//)).concat(values.slice(4));
+            }
+            else if (values.length >= 4) {
+                return null;
+            }
+        }
+        if (values.length !== 3 && values.length !== 4 || values.indexOf('') > -1) {
+            return null;
+        }
+        return values;
     }
     static parsePercentOrNumber(value) {
         // @ts-ignore: isNaN can accept strings
@@ -279,6 +299,23 @@ export class Color {
         out_rgb[1] = hue2rgb(p, q, tg);
         out_rgb[2] = hue2rgb(p, q, tb);
         out_rgb[3] = hsl[3];
+    }
+    // See https://drafts.csswg.org/css-color-4/#hwb-to-rgb for formula reference.
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    static hwb2rgb(hwb, out_rgb) {
+        const h = hwb[0];
+        const w = hwb[1];
+        const b = hwb[2];
+        if (w + b >= 1) {
+            out_rgb[0] = out_rgb[1] = out_rgb[2] = w / (w + b);
+            out_rgb[3] = hwb[3];
+        }
+        else {
+            Color.hsl2rgb([h, 1, 0.5, hwb[3]], out_rgb);
+            for (let i = 0; i < 3; ++i) {
+                out_rgb[i] += w - (w + b) * out_rgb[i];
+            }
+        }
     }
     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -415,6 +452,19 @@ export class Color {
         s *= l < 0.5 ? l : 1 - l;
         return [h, s !== 0 ? 2 * s / (l + s) : 0, (l + s), hsla[3]];
     }
+    /** HWBA with components within [0..1]
+       */
+    hwba() {
+        if (this.#hwbaInternal) {
+            return this.#hwbaInternal;
+        }
+        this.#hwbaInternal = rgbaToHwba(this.#rgbaInternal);
+        return this.#hwbaInternal;
+    }
+    canonicalHWBA() {
+        const hwba = this.hwba();
+        return [Math.round(hwba[0] * 360), Math.round(hwba[1] * 100), Math.round(hwba[2] * 100), hwba[3]];
+    }
     hasAlpha() {
         return this.#rgbaInternal[3] !== 1;
     }
@@ -469,6 +519,15 @@ export class Color {
                 const start = Platform.StringUtilities.sprintf('hsl(%ddeg %d% %d%', Math.round(hsla[0] * 360), Math.round(hsla[1] * 100), Math.round(hsla[2] * 100));
                 if (this.hasAlpha()) {
                     return start + Platform.StringUtilities.sprintf(' / %d%)', Math.round(hsla[3] * 100));
+                }
+                return start + ')';
+            }
+            case Format.HWB:
+            case Format.HWBA: {
+                const hwba = this.hwba();
+                const start = Platform.StringUtilities.sprintf('hwb(%ddeg %d% %d%', Math.round(hwba[0] * 360), Math.round(hwba[1] * 100), Math.round(hwba[2] * 100));
+                if (this.hasAlpha()) {
+                    return start + Platform.StringUtilities.sprintf(' / %d%)', Math.round(hwba[3] * 100));
                 }
                 return start + ')';
             }
@@ -565,7 +624,7 @@ export class Color {
             this.#formatInternal === other.#formatInternal;
     }
 }
-export const Regex = /((?:rgb|hsl)a?\([^)]+\)|#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3,4}|\b[a-zA-Z]+\b(?!-))/g;
+export const Regex = /((?:rgb|hsl|hwb)a?\([^)]+\)|#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3,4}|\b[a-zA-Z]+\b(?!-))/g;
 // TODO(crbug.com/1167717): Make this a const enum again
 // eslint-disable-next-line rulesdir/const_enum
 export var Format;
@@ -580,6 +639,8 @@ export var Format;
     Format["RGBA"] = "rgba";
     Format["HSL"] = "hsl";
     Format["HSLA"] = "hsla";
+    Format["HWB"] = "hwb";
+    Format["HWBA"] = "hwba";
 })(Format || (Format = {}));
 const COLOR_TO_RGBA_ENTRIES = [
     ['aliceblue', [240, 248, 255]],

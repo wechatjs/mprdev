@@ -1,12 +1,12 @@
 import * as Protocol from '../../generated/protocol.js';
 import * as Common from '../common/common.js';
+import type * as Platform from '../platform/platform.js';
 import { FrontendMessageSource, FrontendMessageType } from './ConsoleModelTypes.js';
 export { FrontendMessageSource, FrontendMessageType } from './ConsoleModelTypes.js';
 import { RemoteObject } from './RemoteObject.js';
-import type { ExecutionContext } from './RuntimeModel.js';
-import { RuntimeModel } from './RuntimeModel.js';
-import type { Target } from './Target.js';
-import type { Observer } from './TargetManager.js';
+import { RuntimeModel, type ExecutionContext } from './RuntimeModel.js';
+import { type Target } from './Target.js';
+import { type Observer } from './TargetManager.js';
 export declare class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements Observer {
     #private;
     private constructor();
@@ -60,7 +60,7 @@ export interface AffectedResources {
 }
 export interface ConsoleMessageDetails {
     type?: MessageType;
-    url?: string;
+    url?: Platform.DevToolsPath.UrlString;
     line?: number;
     column?: number;
     parameters?: (string | RemoteObject | Protocol.Runtime.RemoteObject)[];
@@ -79,7 +79,7 @@ export declare class ConsoleMessage {
     level: Protocol.Log.LogEntryLevel | null;
     messageText: string;
     readonly type: MessageType;
-    url: string | undefined;
+    url: Platform.DevToolsPath.UrlString | undefined;
     line: number;
     column: number;
     parameters: (string | RemoteObject | Protocol.Runtime.RemoteObject)[] | undefined;
@@ -92,7 +92,7 @@ export declare class ConsoleMessage {
     constructor(runtimeModel: RuntimeModel | null, source: MessageSource, level: Protocol.Log.LogEntryLevel | null, messageText: string, details?: ConsoleMessageDetails);
     getAffectedResources(): AffectedResources | undefined;
     setPageLoadSequenceNumber(pageLoadSequenceNumber: number): void;
-    static fromException(runtimeModel: RuntimeModel, exceptionDetails: Protocol.Runtime.ExceptionDetails, messageType?: Protocol.Runtime.ConsoleAPICalledEventType | FrontendMessageType, timestamp?: number, forceUrl?: string, affectedResources?: AffectedResources): ConsoleMessage;
+    static fromException(runtimeModel: RuntimeModel, exceptionDetails: Protocol.Runtime.ExceptionDetails, messageType?: Protocol.Runtime.ConsoleAPICalledEventType | FrontendMessageType, timestamp?: number, forceUrl?: Platform.DevToolsPath.UrlString, affectedResources?: AffectedResources): ConsoleMessage;
     runtimeModel(): RuntimeModel | null;
     target(): Target | null;
     setOriginatingMessage(originatingMessage: ConsoleMessage): void;

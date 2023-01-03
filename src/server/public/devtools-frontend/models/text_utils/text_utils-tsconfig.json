@@ -26,6 +26,7 @@
     "useUnknownInCatchVariables": false
   },
   "files": [
+    "../../../../../../front_end/models/text_utils/CodeMirrorUtils.ts",
     "../../../../../../front_end/models/text_utils/ContentProvider.ts",
     "../../../../../../front_end/models/text_utils/StaticContentProvider.ts",
     "../../../../../../front_end/models/text_utils/Text.ts",

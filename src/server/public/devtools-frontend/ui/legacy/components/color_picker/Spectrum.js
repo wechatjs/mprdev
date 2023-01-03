@@ -32,6 +32,7 @@ import * as Common from '../../../../core/common/common.js';
 import * as Host from '../../../../core/host/host.js';
 import * as i18n from '../../../../core/i18n/i18n.js';
 import * as Platform from '../../../../core/platform/platform.js';
+import * as Root from '../../../../core/root/root.js';
 import * as SDK from '../../../../core/sdk/sdk.js';
 import * as IconButton from '../../../components/icon_button/icon_button.js';
 import * as UI from '../../legacy.js';
@@ -160,6 +161,7 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
     colorOffset;
     closeButton;
     paletteContainerMutable;
+    eyeDropperExperimentEnabled;
     shadesCloseHandler;
     dragElement;
     dragHotSpotX;
@@ -204,7 +206,7 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         UI.ARIAUtils.markAsSlider(this.alphaElement, 0, 1);
         this.alphaElementBackground = this.alphaElement.createChild('div', 'spectrum-alpha-background');
         this.alphaSlider = this.alphaElement.createChild('div', 'spectrum-slider');
-        // RGBA/HSLA display.
+        // RGBA/HSLA/HWBA display.
         this.displayContainer = toolsContainer.createChild('div', 'spectrum-text source-code');
         UI.ARIAUtils.markAsPoliteLiveRegion(this.displayContainer, true);
         this.textValues = [];
@@ -384,7 +386,7 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
     }
     contrastDetailsBackgroundColorPickedToggled(event) {
         if (event.data) {
-            this.toggleColorPicker(false);
+            void this.toggleColorPicker(false);
         }
     }
     contrastPanelExpanded() {
@@ -419,7 +421,7 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         this.focusInternal();
     }
     onCloseBtnKeydown(event) {
-        if (isEscKey(event) || isEnterOrSpaceKey(event)) {
+        if (Platform.KeyboardUtilities.isEscKey(event) || isEnterOrSpaceKey(event)) {
             this.togglePalettePanel(false);
             event.consume(true);
         }
@@ -741,20 +743,19 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         }
     }
     onShadeColorKeydown(colorElement, event) {
-        const keyboardEvent = event;
-        const target = keyboardEvent.target;
-        if (isEscKey(event) || keyboardEvent.key === 'Tab') {
+        const target = event.target;
+        if (Platform.KeyboardUtilities.isEscKey(event) || event.key === 'Tab') {
             colorElement.focus();
             if (this.shadesCloseHandler) {
                 this.shadesCloseHandler();
             }
             event.consume(true);
         }
-        else if (keyboardEvent.key === 'ArrowUp' && target.previousElementSibling) {
+        else if (event.key === 'ArrowUp' && target.previousElementSibling) {
             target.previousElementSibling.focus();
             event.consume(true);
         }
-        else if (keyboardEvent.key === 'ArrowDown' && target.nextElementSibling) {
+        else if (event.key === 'ArrowDown' && target.nextElementSibling) {
             target.nextElementSibling.focus();
             event.consume(true);
         }
@@ -826,6 +827,9 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
             else if (colorFormat === cf.HSLA) {
                 colorFormat = cf.HSL;
             }
+            else if (colorFormat === cf.HWBA) {
+                colorFormat = cf.HWB;
+            }
             else if (colorFormat === cf.HEXA) {
                 colorFormat = cf.HEX;
             }
@@ -874,6 +878,9 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         else if (this.colorFormat === cf.HSL) {
             colorString = color.asString(cf.HSLA);
         }
+        else if (this.colorFormat === cf.HWB) {
+            colorString = color.asString(cf.HWBA);
+        }
         else {
             colorString = color.asString(cf.RGBA);
         }
@@ -910,12 +917,22 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
             }
         }
         else {
-            // RGBA, HSLA display.
+            // RGBA, HSLA, HWBA display.
             this.hexContainer.hidden = true;
             this.displayContainer.hidden = false;
-            const isRgb = this.colorFormat === cf.RGB;
-            this.textLabels.textContent = isRgb ? 'RGBA' : 'HSLA';
-            const colorValues = isRgb ? this.color().canonicalRGBA() : this.color().canonicalHSLA();
+            let colorValues;
+            if (this.colorFormat === cf.RGB) {
+                this.textLabels.textContent = 'RGBA';
+                colorValues = this.color().canonicalRGBA();
+            }
+            else if (this.colorFormat === cf.HSL) {
+                this.textLabels.textContent = 'HSLA';
+                colorValues = this.color().canonicalHSLA();
+            }
+            else {
+                this.textLabels.textContent = 'HWBA';
+                colorValues = this.color().canonicalHWBA();
+            }
             for (let i = 0; i < 3; ++i) {
                 UI.ARIAUtils.setAccessibleName(this.textValues[i], 
                 /** R in RGBA */ i18nString(UIStrings.sInS, {
@@ -923,7 +940,7 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
                     PH2: this.textLabels.textContent,
                 }));
                 this.textValues[i].value = String(colorValues[i]);
-                if (!isRgb && (i === 1 || i === 2)) {
+                if (this.colorFormat !== cf.RGB && (i === 1 || i === 2)) {
                     this.textValues[i].value += '%';
                 }
             }
@@ -953,6 +970,9 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
             format = cf.HSL;
         }
         else if (this.colorFormat === cf.HSL) {
+            format = cf.HWB;
+        }
+        else if (this.colorFormat === cf.HWB) {
             format = (this.originalFormat === cf.ShortHEX || this.originalFormat === cf.ShortHEXA) ? cf.ShortHEX : cf.HEX;
         }
         this.innerSetColor(undefined, '', undefined /* colorName */, format, ChangeSource.Other);
@@ -990,10 +1010,9 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
             colorString = this.hexValue.value;
         }
         else {
-            const format = this.colorFormat === cf.RGB ? 'rgb' : 'hsl';
             const values = this.textValues.slice(0, -1).map(elementValue).join(' ');
             const alpha = this.textValues.slice(-1).map(elementValue).join(' ');
-            colorString = Platform.StringUtilities.sprintf('%s(%s)', format, [values, alpha].join(' / '));
+            colorString = Platform.StringUtilities.sprintf('%s(%s)', this.colorFormat, [values, alpha].join(' / '));
         }
         const color = Common.Color.Color.parse(colorString);
         if (!color) {
@@ -1013,18 +1032,28 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         this.dragHeight = this.colorElement.offsetHeight;
         this.colorDragElementHeight = this.colorDragElement.offsetHeight / 2;
         this.innerSetColor(undefined, undefined, undefined /* colorName */, undefined, ChangeSource.Model);
-        this.toggleColorPicker(true);
+        this.eyeDropperExperimentEnabled =
+            Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.EYEDROPPER_COLOR_PICKER);
+        // When flag is turned on, eye dropper is not turned on by default.
+        // This is because the global change of the cursor into a dropper will disturb the user.
+        if (!this.eyeDropperExperimentEnabled) {
+            void this.toggleColorPicker(true);
+        }
+        else {
+            this.colorPickerButton.setToggled(false);
+        }
         if (this.contrastDetails && this.contrastDetailsBackgroundColorPickedToggledBound) {
-            this.contrastDetails.addEventListener("BackgroundColorPickerWillBeToggled" /* BackgroundColorPickerWillBeToggled */, this.contrastDetailsBackgroundColorPickedToggledBound);
+            this.contrastDetails.addEventListener("BackgroundColorPickerWillBeToggled" /* ContrastDetailsEvents.BackgroundColorPickerWillBeToggled */, this.contrastDetailsBackgroundColorPickedToggledBound);
         }
     }
     willHide() {
-        this.toggleColorPicker(false);
+        void this.toggleColorPicker(false);
         if (this.contrastDetails && this.contrastDetailsBackgroundColorPickedToggledBound) {
-            this.contrastDetails.removeEventListener("BackgroundColorPickerWillBeToggled" /* BackgroundColorPickerWillBeToggled */, this.contrastDetailsBackgroundColorPickedToggledBound);
+            this.contrastDetails.removeEventListener("BackgroundColorPickerWillBeToggled" /* ContrastDetailsEvents.BackgroundColorPickerWillBeToggled */, this.contrastDetailsBackgroundColorPickedToggledBound);
         }
     }
-    toggleColorPicker(enabled) {
+    async toggleColorPicker(enabled) {
+        const eyeDropperExperimentEnabled = this.eyeDropperExperimentEnabled;
         if (enabled === undefined) {
             enabled = !this.colorPickerButton.toggled();
         }
@@ -1034,12 +1063,32 @@ export class Spectrum extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox) {
         if (this.contrastDetails && enabled && this.contrastDetails.backgroundColorPickerEnabled()) {
             this.contrastDetails.toggleBackgroundColorPicker(false);
         }
-        Host.InspectorFrontendHost.InspectorFrontendHostInstance.setEyeDropperActive(enabled);
-        if (enabled) {
-            Host.InspectorFrontendHost.InspectorFrontendHostInstance.events.addEventListener(Host.InspectorFrontendHostAPI.Events.EyeDropperPickedColor, this.colorPickedBound);
+        // With the old color picker, colors can only be picked up within the page.
+        if (!eyeDropperExperimentEnabled) {
+            Host.InspectorFrontendHost.InspectorFrontendHostInstance.setEyeDropperActive(enabled);
+            if (enabled) {
+                Host.InspectorFrontendHost.InspectorFrontendHostInstance.events.addEventListener(Host.InspectorFrontendHostAPI.Events.EyeDropperPickedColor, this.colorPickedBound);
+            }
+            else {
+                Host.InspectorFrontendHost.InspectorFrontendHostInstance.events.removeEventListener(Host.InspectorFrontendHostAPI.Events.EyeDropperPickedColor, this.colorPickedBound);
+            }
         }
-        else {
-            Host.InspectorFrontendHost.InspectorFrontendHostInstance.events.removeEventListener(Host.InspectorFrontendHostAPI.Events.EyeDropperPickedColor, this.colorPickedBound);
+        else if (eyeDropperExperimentEnabled && enabled) {
+            // Use EyeDropper API, can pick up colors outside the browser window,
+            // Note: The current EyeDropper API is not designed to pick up colors continuously.
+            // Wait for TypeScript to support the definition of EyeDropper API:
+            // https://github.com/microsoft/TypeScript/issues/48638
+            /* eslint-disable  @typescript-eslint/no-explicit-any */
+            const eyeDropper = new window.EyeDropper();
+            try {
+                const hexColor = await eyeDropper.open();
+                const color = Common.Color.Color.parse(hexColor.sRGBHex);
+                this.innerSetColor(color?.hsva(), '', undefined /* colorName */, undefined, ChangeSource.Other);
+            }
+            catch (error) {
+                console.error(error);
+            }
+            this.colorPickerButton.setToggled(false);
         }
     }
     colorPicked({ data: rgbColor, }) {
@@ -1128,7 +1177,7 @@ export class PaletteGenerator {
     async processStylesheet(stylesheet) {
         let text = (await stylesheet.requestContent()).content || '';
         text = text.toLowerCase();
-        const regexResult = text.match(/((?:rgb|hsl)a?\([^)]+\)|#[0-9a-f]{6}|#[0-9a-f]{3})/g) || [];
+        const regexResult = text.match(/((?:rgb|hsl|hwb)a?\([^)]+\)|#[0-9a-f]{6}|#[0-9a-f]{3})/g) || [];
         for (const c of regexResult) {
             let frequency = this.frequencyMap.get(c) || 0;
             this.frequencyMap.set(c, ++frequency);

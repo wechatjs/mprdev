@@ -5,6 +5,7 @@ import * as UI from '../../ui/legacy/legacy.js';
 import type * as Protocol from '../../generated/protocol.js';
 export declare class CallStackSidebarPane extends UI.View.SimpleView implements UI.ContextFlavorListener.ContextFlavorListener, UI.ListControl.ListDelegate<Item> {
     private readonly ignoreListMessageElement;
+    private readonly ignoreListCheckboxElement;
     private readonly notPausedMessageElement;
     private readonly callFrameWarningsElement;
     private readonly items;
@@ -17,11 +18,14 @@ export declare class CallStackSidebarPane extends UI.View.SimpleView implements 
     private readonly updateItemThrottler;
     private readonly scheduledForUpdateItems;
     private muteActivateItem?;
+    private lastDebuggerModel;
     private constructor();
     static instance(opts?: {
         forceNew: boolean | null;
     }): CallStackSidebarPane;
     flavorChanged(_object: Object | null): void;
+    private debugInfoAttached;
+    private setSourceMapSubscription;
     private update;
     private doUpdate;
     private updatedForTest;
@@ -31,7 +35,7 @@ export declare class CallStackSidebarPane extends UI.View.SimpleView implements 
     isItemSelectable(_item: Item): boolean;
     selectedItemChanged(_from: Item | null, _to: Item | null, fromElement: HTMLElement | null, toElement: HTMLElement | null): void;
     updateSelectedItemARIA(_fromElement: Element | null, _toElement: Element | null): boolean;
-    private createIgnoreListMessageElement;
+    private createIgnoreListMessageElementAndCheckbox;
     private createShowMoreMessageElement;
     private onContextMenu;
     private onClick;

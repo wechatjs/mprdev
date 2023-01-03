@@ -54,15 +54,16 @@ export class PlayerDetailView extends UI.TabbedPane.TabbedPane {
         this.propertyView = new PlayerPropertiesView();
         this.messageView = new PlayerMessagesView();
         this.timelineView = new PlayerEventsTimeline();
-        this.appendTab("properties" /* Properties */, i18nString(UIStrings.properties), this.propertyView, i18nString(UIStrings.playerProperties));
-        this.appendTab("events" /* Events */, i18nString(UIStrings.events), this.eventView, i18nString(UIStrings.playerEvents));
-        this.appendTab("messages" /* Messages */, i18nString(UIStrings.messages), this.messageView, i18nString(UIStrings.playerMessages));
-        this.appendTab("timeline" /* Timeline */, i18nString(UIStrings.timeline), this.timelineView, i18nString(UIStrings.playerTimeline));
+        this.appendTab("properties" /* PlayerDetailViewTabs.Properties */, i18nString(UIStrings.properties), this.propertyView, i18nString(UIStrings.playerProperties));
+        this.appendTab("events" /* PlayerDetailViewTabs.Events */, i18nString(UIStrings.events), this.eventView, i18nString(UIStrings.playerEvents));
+        this.appendTab("messages" /* PlayerDetailViewTabs.Messages */, i18nString(UIStrings.messages), this.messageView, i18nString(UIStrings.playerMessages));
+        this.appendTab("timeline" /* PlayerDetailViewTabs.Timeline */, i18nString(UIStrings.timeline), this.timelineView, i18nString(UIStrings.playerTimeline));
     }
     onProperty(property) {
         this.propertyView.onProperty(property);
     }
-    onError(_error) {
+    onError(error) {
+        this.messageView.addError(error);
     }
     onMessage(message) {
         this.messageView.addMessage(message);

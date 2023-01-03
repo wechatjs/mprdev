@@ -18,8 +18,10 @@ import { ElementsPanel } from './ElementsPanel.js';
 import { StyleEditorWidget } from './StyleEditorWidget.js';
 import { CSSPropertyPrompt, StylesSidebarPane, StylesSidebarPropertyRenderer } from './StylesSidebarPane.js';
 import { getCssDeclarationAsJavascriptProperty } from './StylePropertyUtils.js';
+import { cssRuleValidatorsMap } from './CSSRuleValidator.js';
 const FlexboxEditor = ElementsComponents.StylePropertyEditor.FlexboxEditor;
 const GridEditor = ElementsComponents.StylePropertyEditor.GridEditor;
+export const activeHints = new WeakMap();
 const UIStrings = {
     /**
     *@description Text in Color Swatch Popover Icon of the Elements panel
@@ -68,6 +70,10 @@ const UIStrings = {
     */
     copyAllDeclarations: 'Copy all declarations',
     /**
+    *@description  A context menu item in Styles panel to copy all the CSS changes
+    */
+    copyAllCSSChanges: 'Copy all CSS changes',
+    /**
     *@description A context menu item in Styles panel to view the computed CSS property value.
     */
     viewComputedValue: 'View computed value',
@@ -109,6 +115,8 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
     hasBeenEditedIncrementally;
     prompt;
     lastComputedValue;
+    computedStyles = null;
+    parentsComputedStyles = null;
     contextForTest;
     #propertyTextFromSource;
     constructor(stylesPane, matchedStyles, property, isShorthand, inherited, overloaded, newProperty) {
@@ -155,6 +163,12 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         }
         this.overloadedInternal = x;
         this.updateState();
+    }
+    setComputedStyles(computedStyles) {
+        this.computedStyles = computedStyles;
+    }
+    setParentsComputedStyles(parentsComputedStyles) {
+        this.parentsComputedStyles = parentsComputedStyles;
     }
     get name() {
         return this.property.name;
@@ -241,7 +255,7 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         const cssModel = this.parentPaneInternal.cssModel();
         const node = this.node();
         if (cssModel && node && typeof node.id !== 'undefined') {
-            const contrastInfo = new ColorPicker.ContrastInfo.ContrastInfo(await cssModel.backgroundColorsPromise(node.id));
+            const contrastInfo = new ColorPicker.ContrastInfo.ContrastInfo(await cssModel.getBackgroundColors(node.id));
             swatchIcon.setContrastInfo(contrastInfo);
         }
     }
@@ -468,23 +482,25 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         if (this.childCount() || !this.isShorthand) {
             return;
         }
-        const longhandProperties = this.style.longhandProperties(this.name);
+        const longhandProperties = this.property.getLonghandProperties();
         const leadingProperties = this.style.leadingProperties();
-        for (let i = 0; i < longhandProperties.length; ++i) {
-            const name = longhandProperties[i].name;
+        for (const property of longhandProperties) {
+            const name = property.name;
             let inherited = false;
             let overloaded = false;
             const section = this.section();
             if (section) {
                 inherited = section.isPropertyInherited(name);
-                overloaded = this.matchedStylesInternal.propertyState(longhandProperties[i]) ===
-                    SDK.CSSMatchedStyles.PropertyState.Overloaded;
+                overloaded =
+                    this.matchedStylesInternal.propertyState(property) === SDK.CSSMatchedStyles.PropertyState.Overloaded;
             }
             const leadingProperty = leadingProperties.find(property => property.name === name && property.activeInStyle());
             if (leadingProperty) {
                 overloaded = true;
             }
-            const item = new StylePropertyTreeElement(this.parentPaneInternal, this.matchedStylesInternal, longhandProperties[i], false, inherited, overloaded, false);
+            const item = new StylePropertyTreeElement(this.parentPaneInternal, this.matchedStylesInternal, property, false, inherited, overloaded, false);
+            item.setComputedStyles(this.computedStyles);
+            item.setParentsComputedStyles(this.parentsComputedStyles);
             this.appendChild(item);
         }
     }
@@ -599,14 +615,15 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
                 }
             }
         }
-        if (!this.property.parsedOk) {
+        if (this.property.parsedOk) {
+            void this.updateFontVariationSettingsWarning();
+            this.updateAuthoringHint();
+        }
+        else {
             // Avoid having longhands under an invalid shorthand.
             this.listItemElement.classList.add('not-parsed-ok');
             // Add a separate exclamation mark IMG element with a tooltip.
             this.listItemElement.insertBefore(StylesSidebarPane.createExclamationMark(this.property, null), this.listItemElement.firstChild);
-        }
-        else {
-            void this.updateFontVariationSettingsWarning();
         }
         if (!this.property.activeInStyle()) {
             this.listItemElement.classList.add('inactive');
@@ -630,9 +647,36 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
             copyIcon.addEventListener('click', () => {
                 const propertyText = `${this.property.name}: ${this.property.value};`;
                 Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(propertyText);
+                Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.DeclarationViaChangedLine);
             });
             this.listItemElement.append(copyIcon);
             this.listItemElement.insertBefore(enabledCheckboxElement, this.listItemElement.firstChild);
+        }
+    }
+    updateAuthoringHint() {
+        this.listItemElement.classList.remove('inactive-property');
+        if (!Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.CSS_AUTHORING_HINTS)) {
+            return;
+        }
+        const existingElement = this.listItemElement.querySelector('.hint');
+        if (existingElement) {
+            activeHints.delete(existingElement);
+            existingElement.parentElement?.removeChild(existingElement);
+        }
+        const propertyName = this.property.name;
+        if (!cssRuleValidatorsMap.has(propertyName)) {
+            return;
+        }
+        for (const validator of cssRuleValidatorsMap.get(propertyName) || []) {
+            const hint = validator.getHint(propertyName, this.computedStyles || undefined, this.parentsComputedStyles || undefined);
+            if (hint) {
+                Host.userMetrics.cssHintShown(validator.getMetricType());
+                const hintIcon = UI.Icon.Icon.create('mediumicon-info', 'hint');
+                activeHints.set(hintIcon, hint);
+                this.listItemElement.append(hintIcon);
+                this.listItemElement.classList.add('inactive-property');
+                break;
+            }
         }
     }
     async updateFontVariationSettingsWarning() {
@@ -727,33 +771,48 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         if (!target) {
             return;
         }
+        const contextMenu = this.createCopyContextMenu(event);
+        void contextMenu.show();
+    }
+    createCopyContextMenu(event) {
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
-        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyDeclaration), () => {
+        contextMenu.headerSection().appendItem(i18nString(UIStrings.copyDeclaration), () => {
             const propertyText = `${this.property.name}: ${this.property.value};`;
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(propertyText);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.DeclarationViaContextMenu);
         });
-        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyProperty), () => {
+        contextMenu.headerSection().appendItem(i18nString(UIStrings.copyProperty), () => {
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(this.property.name);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.PropertyViaContextMenu);
         });
-        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyValue), () => {
+        contextMenu.headerSection().appendItem(i18nString(UIStrings.copyValue), () => {
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(this.property.value);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.ValueViaContextMenu);
         });
-        contextMenu.defaultSection().appendItem(i18nString(UIStrings.copyRule), () => {
+        contextMenu.headerSection().appendItem(i18nString(UIStrings.copyRule), () => {
             const section = this.section();
             const ruleText = StylesSidebarPane.formatLeadingProperties(section).ruleText;
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(ruleText);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.RuleViaContextMenu);
         });
-        contextMenu.defaultSection().appendItem(i18nString(UIStrings.copyAllDeclarations), () => {
+        contextMenu.headerSection().appendItem(i18nString(UIStrings.copyCssDeclarationAsJs), this.copyCssDeclarationAsJs.bind(this));
+        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyAllDeclarations), () => {
             const section = this.section();
             const allDeclarationText = StylesSidebarPane.formatLeadingProperties(section).allDeclarationText;
             Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(allDeclarationText);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.AllDeclarationsViaContextMenu);
         });
-        contextMenu.defaultSection().appendItem(i18nString(UIStrings.viewComputedValue), () => {
+        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyAllCssDeclarationsAsJs), this.copyAllCssDeclarationAsJs.bind(this));
+        // TODO(changhaohan): conditionally add this item only when there are changes to copy
+        contextMenu.defaultSection().appendItem(i18nString(UIStrings.copyAllCSSChanges), async () => {
+            const allChanges = await this.parentPane().getFormattedChanges();
+            Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(allChanges);
+            Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.AllChangesViaStylesPane);
+        });
+        contextMenu.footerSection().appendItem(i18nString(UIStrings.viewComputedValue), () => {
             void this.viewComputedValue();
         });
-        contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyCssDeclarationAsJs), this.copyCssDeclarationAsJs.bind(this));
-        contextMenu.defaultSection().appendItem(i18nString(UIStrings.copyAllCssDeclarationsAsJs), this.copyAllCssDeclarationAsJs.bind(this));
-        void contextMenu.show();
+        return contextMenu;
     }
     async viewComputedValue() {
         const computedStyleWidget = ElementsPanel.instance().getComputedStyleWidget();
@@ -768,7 +827,7 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
             propertyNamePattern = '^' + this.property.name + '$';
         }
         const regex = new RegExp(propertyNamePattern, 'i');
-        computedStyleWidget.filterComputedStyles(regex);
+        await computedStyleWidget.filterComputedStyles(regex);
         const filterInput = computedStyleWidget.input;
         filterInput.value = this.property.name;
         filterInput.focus();
@@ -776,12 +835,14 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
     copyCssDeclarationAsJs() {
         const cssDeclarationValue = getCssDeclarationAsJavascriptProperty(this.property);
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(cssDeclarationValue);
+        Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.DeclarationAsJSViaContextMenu);
     }
     copyAllCssDeclarationAsJs() {
         const section = this.section();
         const leadingProperties = (section.style()).leadingProperties();
         const cssDeclarationsAsJsProperties = leadingProperties.filter(property => !property.disabled).map(getCssDeclarationAsJavascriptProperty);
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(cssDeclarationsAsJsProperties.join(',\n'));
+        Host.userMetrics.styleTextCopied(Host.UserMetrics.StyleTextCopied.AllDeclarationsAsJSViaContextMenu);
     }
     navigateToSource(element, omitFocus) {
         const section = this.section();
@@ -942,7 +1003,8 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         const keyboardEvent = event;
         const target = keyboardEvent.target;
         let result;
-        if (keyboardEvent.key === 'Enter' && !keyboardEvent.shiftKey) {
+        if ((keyboardEvent.key === 'Enter' && !keyboardEvent.shiftKey) ||
+            (context.isEditingName && keyboardEvent.key === ' ')) {
             result = 'forward';
         }
         else if (keyboardEvent.keyCode === UI.KeyboardShortcut.Keys.Esc.code ||
@@ -1297,6 +1359,7 @@ export class StylePropertyTreeElement extends UI.TreeOutline.TreeElement {
         }
         if (updatedProperty) {
             this.listItemElement.classList.toggle('changed', this.isPropertyChanged(updatedProperty));
+            this.parentPane().updateChangeStatus();
         }
         this.matchedStylesInternal.resetActiveProperties();
         this.hasBeenEditedIncrementally = true;

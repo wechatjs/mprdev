@@ -1,6 +1,7 @@
 // Copyright 2022 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -9,6 +10,9 @@ import { InterestGroupStorageView } from './InterestGroupStorageView.js';
 const UIStrings = {
     /**
     *@description Label for an item in the Application Panel Sidebar of the Application panel
+    * An interest group is an ad targeting group stored on the browser that can
+    * be used to show a certain set of advertisements in the future as the
+    * outcome of a FLEDGE auction. (https://developer.chrome.com/blog/fledge-api/)
     */
     interestGroups: 'Interest Groups',
 };
@@ -36,6 +40,7 @@ export class InterestGroupTreeElement extends ApplicationPanelTreeElement {
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.interest_groups]);
         return false;
     }
     addEvent(event) {

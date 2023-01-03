@@ -33,6 +33,8 @@
     "../../../../../../../front_end/panels/application/components/InterestGroupAccessGrid.ts",
     "../../../../../../../front_end/panels/application/components/OriginTrialTreeView.ts",
     "../../../../../../../front_end/panels/application/components/PermissionsPolicySection.ts",
+    "../../../../../../../front_end/panels/application/components/Prerender2.ts",
+    "../../../../../../../front_end/panels/application/components/ProtocolHandlersView.ts",
     "../../../../../../../front_end/panels/application/components/ReportsGrid.ts",
     "../../../../../../../front_end/panels/application/components/StackTrace.ts",
     "../../../../../../../front_end/panels/application/components/TrustTokensView.ts",
@@ -73,6 +75,9 @@
       "path": "../../../ui/components/buttons/bundle-tsconfig.json"
     },
     {
+      "path": "../../../ui/components/chrome_link/bundle-tsconfig.json"
+    },
+    {
       "path": "../../../ui/components/data_grid/bundle-tsconfig.json"
     },
     {
@@ -83,6 +88,9 @@
     },
     {
       "path": "../../../ui/components/report_view/bundle-tsconfig.json"
+    },
+    {
+      "path": "../../../ui/components/text_prompt/bundle-tsconfig.json"
     },
     {
       "path": "../../../ui/components/tree_outline/bundle-tsconfig.json"

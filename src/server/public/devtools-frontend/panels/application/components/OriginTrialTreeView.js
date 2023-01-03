@@ -8,7 +8,6 @@ import * as TreeOutline from '../../../ui/components/tree_outline/tree_outline.j
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
 import badgeStyles from './badge.css.js';
 import originTrialTokenRowsStyles from './originTrialTokenRows.css.js';
-import originTrialTreeViewStyles from './originTrialTreeView.css.js';
 const UIStrings = {
     /**
     *@description Label for the 'origin' field in a parsed Origin Trial Token.
@@ -102,7 +101,7 @@ function constructOriginTrialTree(originTrial) {
         ${trial.trialName}
         <${Badge.litTagName} .data=${{
                 badgeContent: trial.status,
-                style: trial.status === "Enabled" /* Enabled */ ? 'success' : 'error',
+                style: trial.status === "Enabled" /* Protocol.Page.OriginTrialStatus.Enabled */ ? 'success' : 'error',
             }}></${Badge.litTagName}>
         ${trial.tokensWithStatus.length > 1 ? tokenCountBadge : LitHtml.nothing}
       `;
@@ -119,7 +118,7 @@ function constructTokenNode(token) {
             const statusBadge = LitHtml.html `
         <${Badge.litTagName} .data=${{
                 badgeContent: tokenStatus,
-                style: tokenStatus === "Success" /* Success */ ? 'success' : 'error',
+                style: tokenStatus === "Success" /* Protocol.Page.OriginTrialTokenStatus.Success */ ? 'success' : 'error',
             }}></${Badge.litTagName}>
       `;
             // Only display token status for convenience when the node is not expanded.
@@ -189,11 +188,11 @@ export class OriginTrialTokenRows extends HTMLElement {
         this.#parsedTokenDetails = [
             {
                 name: i18nString(UIStrings.origin),
-                value: this.#renderTokenField(this.#tokenWithStatus.parsedToken.origin, this.#tokenWithStatus.status === "WrongOrigin" /* WrongOrigin */),
+                value: this.#renderTokenField(this.#tokenWithStatus.parsedToken.origin, this.#tokenWithStatus.status === "WrongOrigin" /* Protocol.Page.OriginTrialTokenStatus.WrongOrigin */),
             },
             {
                 name: i18nString(UIStrings.expiryTime),
-                value: this.#renderTokenField(this.#dateFormatter.format(this.#tokenWithStatus.parsedToken.expiryTime * 1000), this.#tokenWithStatus.status === "Expired" /* Expired */),
+                value: this.#renderTokenField(this.#dateFormatter.format(this.#tokenWithStatus.parsedToken.expiryTime * 1000), this.#tokenWithStatus.status === "Expired" /* Protocol.Page.OriginTrialTokenStatus.Expired */),
             },
             {
                 name: i18nString(UIStrings.usageRestriction),
@@ -208,7 +207,7 @@ export class OriginTrialTokenRows extends HTMLElement {
                 value: this.#renderTokenField(this.#tokenWithStatus.parsedToken.matchSubDomains.toString()),
             },
         ];
-        if (this.#tokenWithStatus.status === "UnknownTrial" /* UnknownTrial */) {
+        if (this.#tokenWithStatus.status === "UnknownTrial" /* Protocol.Page.OriginTrialTokenStatus.UnknownTrial */) {
             this.#parsedTokenDetails = [
                 {
                     name: i18nString(UIStrings.trialName),
@@ -228,7 +227,7 @@ export class OriginTrialTokenRows extends HTMLElement {
                 value: LitHtml.html `
           <${Badge.litTagName} .data=${{
                     badgeContent: this.#tokenWithStatus.status,
-                    style: this.#tokenWithStatus.status === "Success" /* Success */ ? 'success' : 'error',
+                    style: this.#tokenWithStatus.status === "Success" /* Protocol.Page.OriginTrialTokenStatus.Success */ ? 'success' : 'error',
                 }}></${Badge.litTagName}>`,
             },
             ...this.#parsedTokenDetails,
@@ -252,9 +251,6 @@ export class OriginTrialTreeView extends HTMLElement {
     #shadow = this.attachShadow({ mode: 'open' });
     set data(data) {
         this.#render(data.trials);
-    }
-    connectedCallback() {
-        this.#shadow.adoptedStyleSheets = [originTrialTreeViewStyles];
     }
     #render(trials) {
         if (!trials.length) {

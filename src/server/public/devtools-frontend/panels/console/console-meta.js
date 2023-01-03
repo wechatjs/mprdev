@@ -122,7 +122,7 @@ function maybeRetrieveContextTypes(getClassCallBack) {
     return getClassCallBack(loadedConsoleModule);
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'console',
     title: i18nLazyString(UIStrings.console),
     commandPrompt: i18nLazyString(UIStrings.showConsole),
@@ -133,11 +133,11 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'console-view',
     title: i18nLazyString(UIStrings.console),
     commandPrompt: i18nLazyString(UIStrings.showConsole),
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     order: 0,
     async loadView() {
         const Console = await loadConsoleModule();
@@ -156,8 +156,8 @@ UI.ActionRegistration.registerActionExtension({
         {
             shortcut: 'Ctrl+`',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
     ],
@@ -166,7 +166,7 @@ UI.ActionRegistration.registerActionExtension({
     actionId: 'console.clear',
     category: UI.ActionRegistration.ActionCategory.CONSOLE,
     title: i18nLazyString(UIStrings.clearConsole),
-    iconClass: "largeicon-clear" /* LARGEICON_CLEAR */,
+    iconClass: "largeicon-clear" /* UI.ActionRegistration.IconClass.LARGEICON_CLEAR */,
     async loadActionDelegate() {
         const Console = await loadConsoleModule();
         return Console.ConsoleView.ActionDelegate.instance();
@@ -180,7 +180,7 @@ UI.ActionRegistration.registerActionExtension({
         },
         {
             shortcut: 'Meta+K',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -197,7 +197,7 @@ UI.ActionRegistration.registerActionExtension({
     actionId: 'console.create-pin',
     category: UI.ActionRegistration.ActionCategory.CONSOLE,
     title: i18nLazyString(UIStrings.createLiveExpression),
-    iconClass: "largeicon-visibility" /* LARGEICON_VISIBILITY */,
+    iconClass: "largeicon-visibility" /* UI.ActionRegistration.IconClass.LARGEICON_VISIBILITY */,
     async loadActionDelegate() {
         const Console = await loadConsoleModule();
         return Console.ConsoleView.ActionDelegate.instance();

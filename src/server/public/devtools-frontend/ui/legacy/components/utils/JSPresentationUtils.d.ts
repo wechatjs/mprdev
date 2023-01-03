@@ -14,10 +14,8 @@ export interface StackTraceRegularRow {
     functionName: string;
     ignoreListHide: boolean;
     link: HTMLElement | null;
-    rowCountHide: boolean;
 }
 export interface StackTraceAsyncRow {
     asyncDescription: string;
     ignoreListHide: boolean;
-    rowCountHide: boolean;
 }

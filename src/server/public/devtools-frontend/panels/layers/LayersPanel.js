@@ -64,7 +64,7 @@ export class LayersPanel extends UI.Panel.PanelWithSidebar {
         SDK.TargetManager.TargetManager.instance().observeTargets(this);
         this.layerViewHost = new LayerViewer.LayerViewHost.LayerViewHost();
         this.layerTreeOutline = new LayerViewer.LayerTreeOutline.LayerTreeOutline(this.layerViewHost);
-        this.layerTreeOutline.addEventListener("PaintProfilerRequested" /* PaintProfilerRequested */, this.onPaintProfileRequested, this);
+        this.layerTreeOutline.addEventListener("PaintProfilerRequested" /* LayerViewer.LayerTreeOutline.Events.PaintProfilerRequested */, this.onPaintProfileRequested, this);
         this.panelSidebarElement().appendChild(this.layerTreeOutline.element);
         this.setDefaultFocusedElement(this.layerTreeOutline.element);
         this.rightSplitWidget = new UI.SplitWidget.SplitWidget(false, true, 'layerDetailsSplitViewState');

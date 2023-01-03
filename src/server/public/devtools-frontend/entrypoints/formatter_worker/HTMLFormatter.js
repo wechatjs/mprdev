@@ -182,7 +182,7 @@ export class HTMLModel {
     #tagStartOffset;
     #tagEndOffset;
     constructor(text) {
-        this.#state = "Initial" /* Initial */;
+        this.#state = "Initial" /* ParseState.Initial */;
         this.#documentInternal = new FormatterElement('document');
         this.#documentInternal.openTag = new Tag('document', 0, 0, new Map(), true, false);
         this.#documentInternal.closeTag = new Tag('document', text.length, text.length, new Map(), false, false);
@@ -247,43 +247,43 @@ export class HTMLModel {
         const value = token.value;
         const type = token.type;
         switch (this.#state) {
-            case "Initial" /* Initial */:
+            case "Initial" /* ParseState.Initial */:
                 if (hasTokenInSet(type, 'bracket') && (value === '<' || value === '</')) {
                     this.#onStartTag(token);
-                    this.#state = "Tag" /* Tag */;
+                    this.#state = "Tag" /* ParseState.Tag */;
                 }
                 return;
-            case "Tag" /* Tag */:
+            case "Tag" /* ParseState.Tag */:
                 if (hasTokenInSet(type, 'tag') && !hasTokenInSet(type, 'bracket')) {
                     this.#tagName = value.trim().toLowerCase();
                 }
                 else if (hasTokenInSet(type, 'attribute')) {
                     this.#attributeName = value.trim().toLowerCase();
                     this.#attributes.set(this.#attributeName, '');
-                    this.#state = "AttributeName" /* AttributeName */;
+                    this.#state = "AttributeName" /* ParseState.AttributeName */;
                 }
                 else if (hasTokenInSet(type, 'bracket') && (value === '>' || value === '/>')) {
                     this.#onEndTag(token);
-                    this.#state = "Initial" /* Initial */;
+                    this.#state = "Initial" /* ParseState.Initial */;
                 }
                 return;
-            case "AttributeName" /* AttributeName */:
+            case "AttributeName" /* ParseState.AttributeName */:
                 if (!type.size && value === '=') {
-                    this.#state = "AttributeValue" /* AttributeValue */;
+                    this.#state = "AttributeValue" /* ParseState.AttributeValue */;
                 }
                 else if (hasTokenInSet(type, 'bracket') && (value === '>' || value === '/>')) {
                     this.#onEndTag(token);
-                    this.#state = "Initial" /* Initial */;
+                    this.#state = "Initial" /* ParseState.Initial */;
                 }
                 return;
-            case "AttributeValue" /* AttributeValue */:
+            case "AttributeValue" /* ParseState.AttributeValue */:
                 if (hasTokenInSet(type, 'string')) {
                     this.#attributes.set(this.#attributeName, value);
-                    this.#state = "Tag" /* Tag */;
+                    this.#state = "Tag" /* ParseState.Tag */;
                 }
                 else if (hasTokenInSet(type, 'bracket') && (value === '>' || value === '/>')) {
                     this.#onEndTag(token);
-                    this.#state = "Initial" /* Initial */;
+                    this.#state = "Initial" /* ParseState.Initial */;
                 }
                 return;
         }

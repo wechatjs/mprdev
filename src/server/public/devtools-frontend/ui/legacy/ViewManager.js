@@ -9,7 +9,7 @@ import { Icon } from './Icon.js';
 import { Events as TabbedPaneEvents, TabbedPane } from './TabbedPane.js';
 import { Toolbar, ToolbarMenuButton } from './Toolbar.js';
 import { createTextChild } from './UIUtils.js';
-import { getRegisteredLocationResolvers, getRegisteredViewExtensions, maybeRemoveViewExtension, registerLocationResolver, registerViewExtension, ViewLocationCategoryValues } from './ViewRegistration.js';
+import { getRegisteredLocationResolvers, getRegisteredViewExtensions, maybeRemoveViewExtension, registerLocationResolver, registerViewExtension, ViewLocationCategoryValues, resetViewRegistration, } from './ViewRegistration.js';
 import { VBox } from './Widget.js';
 import viewContainersStyles from './viewContainers.css.legacy.js';
 const UIStrings = {
@@ -38,13 +38,13 @@ export class PreRegisteredView {
         return this.viewRegistration.commandPrompt();
     }
     isCloseable() {
-        return this.viewRegistration.persistence === "closeable" /* CLOSEABLE */;
+        return this.viewRegistration.persistence === "closeable" /* ViewPersistence.CLOSEABLE */;
     }
     isPreviewFeature() {
         return Boolean(this.viewRegistration.isPreviewFeature);
     }
     isTransient() {
-        return this.viewRegistration.persistence === "transient" /* TRANSIENT */;
+        return this.viewRegistration.persistence === "transient" /* ViewPersistence.TRANSIENT */;
     }
     viewId() {
         return this.viewRegistration.id;
@@ -348,7 +348,7 @@ export class _ExpandableContainerWidget extends VBox {
         this.registerRequiredCSS(viewContainersStyles);
         this.titleElement = document.createElement('div');
         this.titleElement.classList.add('expandable-view-title');
-        ARIAUtils.markAsButton(this.titleElement);
+        ARIAUtils.markAsTreeitem(this.titleElement);
         this.titleExpandIcon = Icon.create('smallicon-triangle-right', 'title-expand-icon');
         this.titleElement.appendChild(this.titleExpandIcon);
         const titleText = view.title();
@@ -720,6 +720,7 @@ class _StackLocation extends Location {
         const vbox = new VBox();
         super(manager, vbox, revealCallback);
         this.vbox = vbox;
+        ARIAUtils.markAsTree(vbox.element);
         this.expandableContainers = new Map();
         if (location) {
             this.appendApplicableItems(location);
@@ -767,5 +768,5 @@ class _StackLocation extends Location {
         }
     }
 }
-export { getRegisteredViewExtensions, maybeRemoveViewExtension, registerViewExtension, getRegisteredLocationResolvers, registerLocationResolver, ViewLocationCategoryValues, };
+export { getRegisteredViewExtensions, maybeRemoveViewExtension, registerViewExtension, getRegisteredLocationResolvers, registerLocationResolver, ViewLocationCategoryValues, resetViewRegistration, };
 //# sourceMappingURL=ViewManager.js.map

@@ -5,7 +5,7 @@ import * as i18n from '../../core/i18n/i18n.js';
 import * as Formatter from '../../models/formatter/formatter.js';
 import * as Persistence from '../../models/persistence/persistence.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { Events, registerEditorAction } from './SourcesView.js';
+import { Events, registerEditorAction, } from './SourcesView.js';
 const UIStrings = {
     /**
     *@description Title of the format button in the Sources panel

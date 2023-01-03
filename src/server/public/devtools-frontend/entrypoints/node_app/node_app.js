@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import '../shell/shell.js';
+import '../../panels/mobile_throttling/mobile_throttling-meta.js';
 import '../../panels/js_profiler/js_profiler-meta.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -42,7 +43,7 @@ async function loadSourcesModule() {
     return loadedSourcesModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'node-connection',
     title: i18nLazyString(UIStrings.connection),
     commandPrompt: i18nLazyString(UIStrings.showConnection),
@@ -53,12 +54,12 @@ UI.ViewManager.registerViewExtension({
     tags: [i18nLazyString(UIStrings.node)],
 });
 UI.ViewManager.registerViewExtension({
-    location: "navigator-view" /* NAVIGATOR_VIEW */,
+    location: "navigator-view" /* UI.ViewManager.ViewLocationValues.NAVIGATOR_VIEW */,
     id: 'navigator-network',
     title: i18nLazyString(UIStrings.networkTitle),
     commandPrompt: i18nLazyString(UIStrings.showNode),
     order: 2,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Sources = await loadSourcesModule();
         return Sources.SourcesNavigator.NetworkNavigatorView.instance();

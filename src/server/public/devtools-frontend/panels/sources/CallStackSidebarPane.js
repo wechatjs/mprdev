@@ -32,6 +32,7 @@ import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as Persistence from '../../models/persistence/persistence.js';
+import * as SourceMapScopes from '../../models/source_map_scopes/source_map_scopes.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import callStackSidebarPaneStyles from './callStackSidebarPane.css.js';
@@ -80,12 +81,24 @@ const UIStrings = {
     *@description Text in Call Stack Sidebar Pane of the Sources panel when some call frames have warnings
     */
     callFrameWarnings: 'Some call frames have warnings',
+    /**
+    *@description Error message that is displayed in UI when a file needed for debugging information for a call frame is missing
+    *@example {src/myapp.debug.wasm.dwp} PH1
+    */
+    debugFileNotFound: 'Failed to load debug file "{PH1}".',
+    /**
+     * @description A contex menu item in the Call Stack Sidebar Pane. "Restart" is a verb and
+     * "frame" is a noun. "Frame" refers to an individual item in the call stack, i.e. a call frame.
+     * The user opens this context menu by selecting a specific call frame in the call stack sidebar pane.
+     */
+    restartFrame: 'Restart frame',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/sources/CallStackSidebarPane.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 let callstackSidebarPaneInstance;
 export class CallStackSidebarPane extends UI.View.SimpleView {
     ignoreListMessageElement;
+    ignoreListCheckboxElement;
     notPausedMessageElement;
     callFrameWarningsElement;
     items;
@@ -98,14 +111,16 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
     updateItemThrottler;
     scheduledForUpdateItems;
     muteActivateItem;
+    lastDebuggerModel = null;
     constructor() {
         super(i18nString(UIStrings.callStack), true);
-        this.ignoreListMessageElement = this.createIgnoreListMessageElement();
+        ({ element: this.ignoreListMessageElement, checkbox: this.ignoreListCheckboxElement } =
+            this.createIgnoreListMessageElementAndCheckbox());
         this.contentElement.appendChild(this.ignoreListMessageElement);
         this.notPausedMessageElement = this.contentElement.createChild('div', 'gray-info-message');
         this.notPausedMessageElement.textContent = i18nString(UIStrings.notPaused);
         this.notPausedMessageElement.tabIndex = -1;
-        this.callFrameWarningsElement = this.contentElement.createChild('div', 'ignore-listed-message');
+        this.callFrameWarningsElement = this.contentElement.createChild('div', 'call-frame-warnings-message');
         const icon = UI.Icon.Icon.create('smallicon-warning', 'call-frame-warning-icon');
         this.callFrameWarningsElement.appendChild(icon);
         this.callFrameWarningsElement.appendChild(document.createTextNode(i18nString(UIStrings.callFrameWarnings)));
@@ -131,6 +146,7 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
         this.update();
         this.updateItemThrottler = new Common.Throttler.Throttler(100);
         this.scheduledForUpdateItems = new Set();
+        SDK.TargetManager.TargetManager.instance().addModelListener(SDK.DebuggerModel.DebuggerModel, SDK.DebuggerModel.Events.DebugInfoAttached, this.debugInfoAttached, this);
     }
     static instance(opts = { forceNew: null }) {
         const { forceNew } = opts;
@@ -141,8 +157,25 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
     }
     flavorChanged(_object) {
         this.showIgnoreListed = false;
+        this.ignoreListCheckboxElement.checked = false;
         this.maxAsyncStackChainDepth = defaultMaxAsyncStackChainDepth;
         this.update();
+    }
+    debugInfoAttached() {
+        this.update();
+    }
+    setSourceMapSubscription(debuggerModel) {
+        // Shortcut for the case when we are listening to the same model.
+        if (this.lastDebuggerModel === debuggerModel) {
+            return;
+        }
+        if (this.lastDebuggerModel) {
+            this.lastDebuggerModel.sourceMapManager().removeEventListener(SDK.SourceMapManager.Events.SourceMapAttached, this.debugInfoAttached, this);
+        }
+        this.lastDebuggerModel = debuggerModel;
+        if (this.lastDebuggerModel) {
+            this.lastDebuggerModel.sourceMapManager().addEventListener(SDK.SourceMapManager.Events.SourceMapAttached, this.debugInfoAttached, this);
+        }
     }
     update() {
         void this.updateThrottler.schedule(() => this.doUpdate());
@@ -151,6 +184,7 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
         this.locationPool.disposeAll();
         this.callFrameWarningsElement.classList.add('hidden');
         const details = UI.Context.Context.instance().flavor(SDK.DebuggerModel.DebuggerPausedDetails);
+        this.setSourceMapSubscription(details?.debuggerModel ?? null);
         if (!details) {
             this.notPausedMessageElement.classList.remove('hidden');
             this.ignoreListMessageElement.classList.add('hidden');
@@ -168,8 +202,8 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
                 return item;
             });
             itemPromises.push(itemPromise);
-            for (const warning of frame.warnings) {
-                uniqueWarnings.add(warning);
+            if (frame.missingDebugInfoDetails) {
+                uniqueWarnings.add(frame.missingDebugInfoDetails.details);
             }
         }
         const items = await Promise.all(itemPromises);
@@ -206,6 +240,9 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
         }
         this.showMoreMessageElement.classList.toggle('hidden', !asyncStackTrace);
         this.items.replaceAll(items);
+        for (const item of this.items) {
+            this.refreshItem(item);
+        }
         if (this.maxAsyncStackChainDepth === defaultMaxAsyncStackChainDepth) {
             this.list.selectNextItem(true /* canWrap */, false /* center */);
             const selectedItem = this.list.selectedItem();
@@ -231,6 +268,7 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
                 this.ignoreListMessageElement.classList.toggle('hidden', true);
             }
             else {
+                this.showIgnoreListed = this.ignoreListCheckboxElement.checked;
                 const itemsSet = new Set(items);
                 let hasIgnoreListed = false;
                 for (let i = 0; i < this.items.length; ++i) {
@@ -240,7 +278,7 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
                     }
                     hasIgnoreListed = hasIgnoreListed || item.isIgnoreListed;
                 }
-                this.ignoreListMessageElement.classList.toggle('hidden', this.showIgnoreListed || !hasIgnoreListed);
+                this.ignoreListMessageElement.classList.toggle('hidden', !hasIgnoreListed);
             }
             delete this.muteActivateItem;
         });
@@ -274,9 +312,10 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
         element.classList.toggle('hidden', !this.showIgnoreListed && item.isIgnoreListed);
         element.appendChild(UI.Icon.Icon.create('smallicon-thick-right-arrow', 'selected-call-frame-icon'));
         element.tabIndex = item === this.list.selectedItem() ? 0 : -1;
-        if (callframe && callframe.warnings.length) {
+        if (callframe && callframe.missingDebugInfoDetails) {
             const icon = UI.Icon.Icon.create('smallicon-warning', 'call-frame-warning-icon');
-            UI.Tooltip.Tooltip.install(icon, callframe.warnings.join('\n'));
+            const messages = callframe.missingDebugInfoDetails.resources.map(r => i18nString(UIStrings.debugFileNotFound, { PH1: r }));
+            UI.Tooltip.Tooltip.install(icon, [callframe.missingDebugInfoDetails.details, ...messages].join('\n'));
             element.appendChild(icon);
         }
         return element;
@@ -303,24 +342,24 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
     updateSelectedItemARIA(_fromElement, _toElement) {
         return true;
     }
-    createIgnoreListMessageElement() {
+    createIgnoreListMessageElementAndCheckbox() {
         const element = document.createElement('div');
         element.classList.add('ignore-listed-message');
-        element.createChild('span');
-        const showAllLink = element.createChild('span', 'link');
-        showAllLink.textContent = i18nString(UIStrings.showIgnorelistedFrames);
-        UI.ARIAUtils.markAsLink(showAllLink);
-        showAllLink.tabIndex = 0;
+        const label = element.createChild('label');
+        label.classList.add('ignore-listed-message-label');
+        const checkbox = label.createChild('input');
+        checkbox.tabIndex = 0;
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('ignore-listed-checkbox');
+        label.append(i18nString(UIStrings.showIgnorelistedFrames));
         const showAll = () => {
-            this.showIgnoreListed = true;
+            this.showIgnoreListed = checkbox.checked;
             for (const item of this.items) {
                 this.refreshItem(item);
             }
-            this.ignoreListMessageElement.classList.toggle('hidden', true);
         };
-        showAllLink.addEventListener('click', showAll);
-        showAllLink.addEventListener('keydown', event => event.key === 'Enter' && showAll());
-        return element;
+        checkbox.addEventListener('click', showAll);
+        return { element, checkbox };
     }
     createShowMoreMessageElement() {
         const element = document.createElement('div');
@@ -340,6 +379,13 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
             return;
         }
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
+        const debuggerCallFrame = itemToCallFrame.get(item);
+        if (debuggerCallFrame) {
+            contextMenu.defaultSection().appendItem(i18nString(UIStrings.restartFrame), () => {
+                Host.userMetrics.actionTaken(Host.UserMetrics.Action.StackFrameRestarted);
+                void debuggerCallFrame.restart();
+            }, !debuggerCallFrame.canBeRestarted);
+        }
         contextMenu.defaultSection().appendItem(i18nString(UIStrings.copyStackTrace), this.copyStackTrace.bind(this));
         if (item.uiLocation) {
             this.appendIgnoreListURLContextMenuItems(contextMenu, item.uiLocation.uiSourceCode);
@@ -388,7 +434,7 @@ export class CallStackSidebarPane extends UI.View.SimpleView {
             return;
         }
         const canIgnoreList = Bindings.IgnoreListManager.IgnoreListManager.instance().canIgnoreListUISourceCode(uiSourceCode);
-        const isIgnoreListed = Bindings.IgnoreListManager.IgnoreListManager.instance().isIgnoreListedUISourceCode(uiSourceCode);
+        const isIgnoreListed = Bindings.IgnoreListManager.IgnoreListManager.instance().isUserIgnoreListedURL(uiSourceCode.url());
         const isContentScript = uiSourceCode.project().type() === Workspace.Workspace.projectTypes.ContentScripts;
         const manager = Bindings.IgnoreListManager.IgnoreListManager.instance();
         if (canIgnoreList) {
@@ -478,8 +524,18 @@ export class Item {
     isAsyncHeader;
     updateDelegate;
     static async createForDebuggerCallFrame(frame, locationPool, updateDelegate) {
-        const item = new Item(UI.UIUtils.beautifyFunctionName(frame.functionName), updateDelegate);
+        const name = frame.functionName;
+        const item = new Item(UI.UIUtils.beautifyFunctionName(name), updateDelegate);
         await Bindings.DebuggerWorkspaceBinding.DebuggerWorkspaceBinding.instance().createCallFrameLiveLocation(frame.location(), item.update.bind(item), locationPool);
+        void SourceMapScopes.NamesResolver.resolveFrameFunctionName(frame).then(functionName => {
+            if (functionName && functionName !== name) {
+                // Just update the item's title and call the update delegate directly,
+                // instead of going through the update method below, since location
+                // didn't change.
+                item.title = functionName;
+                item.updateDelegate(item);
+            }
+        });
         return item;
     }
     static async createItemsForAsyncStack(title, debuggerModel, frames, locationPool, updateDelegate) {

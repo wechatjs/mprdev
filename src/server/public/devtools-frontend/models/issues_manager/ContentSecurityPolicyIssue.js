@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { resolveLazyDescription } from './MarkdownIssueDescription.js';
+import { resolveLazyDescription, } from './MarkdownIssueDescription.js';
 const UIStrings = {
     /**
     *@description Title for CSP url link
@@ -32,7 +32,7 @@ export class ContentSecurityPolicyIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel, issueId) {
         const issueCode = [
-            "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
+            "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
             issueDetails.contentSecurityPolicyViolationType,
         ].join('::');
         super(issueCode, issuesModel, issueId);
@@ -112,30 +112,30 @@ const cspTrustedTypesPolicyViolation = {
     links: [{ link: 'https://web.dev/trusted-types/', linkTitle: i18nLazyString(UIStrings.trustedTypesPolicyViolation) }],
 };
 export const urlViolationCode = [
-    "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
-    "kURLViolation" /* KURLViolation */,
+    "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
+    "kURLViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KURLViolation */,
 ].join('::');
 export const inlineViolationCode = [
-    "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
-    "kInlineViolation" /* KInlineViolation */,
+    "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
+    "kInlineViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KInlineViolation */,
 ].join('::');
 export const evalViolationCode = [
-    "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
-    "kEvalViolation" /* KEvalViolation */,
+    "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
+    "kEvalViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KEvalViolation */,
 ].join('::');
 export const trustedTypesSinkViolationCode = [
-    "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
-    "kTrustedTypesSinkViolation" /* KTrustedTypesSinkViolation */,
+    "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
+    "kTrustedTypesSinkViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KTrustedTypesSinkViolation */,
 ].join('::');
 export const trustedTypesPolicyViolationCode = [
-    "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
-    "kTrustedTypesPolicyViolation" /* KTrustedTypesPolicyViolation */,
+    "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
+    "kTrustedTypesPolicyViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KTrustedTypesPolicyViolation */,
 ].join('::');
 const issueDescriptions = new Map([
-    ["kURLViolation" /* KURLViolation */, cspURLViolation],
-    ["kInlineViolation" /* KInlineViolation */, cspInlineViolation],
-    ["kEvalViolation" /* KEvalViolation */, cspEvalViolation],
-    ["kTrustedTypesSinkViolation" /* KTrustedTypesSinkViolation */, cspTrustedTypesSinkViolation],
-    ["kTrustedTypesPolicyViolation" /* KTrustedTypesPolicyViolation */, cspTrustedTypesPolicyViolation],
+    ["kURLViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KURLViolation */, cspURLViolation],
+    ["kInlineViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KInlineViolation */, cspInlineViolation],
+    ["kEvalViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KEvalViolation */, cspEvalViolation],
+    ["kTrustedTypesSinkViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KTrustedTypesSinkViolation */, cspTrustedTypesSinkViolation],
+    ["kTrustedTypesPolicyViolation" /* Protocol.Audits.ContentSecurityPolicyViolationType.KTrustedTypesPolicyViolation */, cspTrustedTypesPolicyViolation],
 ]);
 //# sourceMappingURL=ContentSecurityPolicyIssue.js.map

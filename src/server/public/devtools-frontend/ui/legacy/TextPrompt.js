@@ -130,7 +130,7 @@ export class TextPrompt extends Common.ObjectWrapper.ObjectWrapper {
         this.elementInternal.classList.add('text-prompt');
         ARIAUtils.markAsTextBox(this.elementInternal);
         ARIAUtils.setAutocomplete(this.elementInternal, ARIAUtils.AutocompleteInteractionModel.both);
-        ARIAUtils.setHasPopup(this.elementInternal, "listbox" /* ListBox */);
+        ARIAUtils.setHasPopup(this.elementInternal, "listbox" /* ARIAUtils.PopupRole.ListBox */);
         this.elementInternal.setAttribute('contenteditable', 'plaintext-only');
         this.element().addEventListener('keydown', this.boundOnKeyDown, false);
         this.elementInternal.addEventListener('input', this.boundOnInput, false);
@@ -163,7 +163,7 @@ export class TextPrompt extends Common.ObjectWrapper.ObjectWrapper {
         this.element().removeAttribute('contenteditable');
         this.element().removeAttribute('role');
         ARIAUtils.clearAutocomplete(this.element());
-        ARIAUtils.setHasPopup(this.element(), "false" /* False */);
+        ARIAUtils.setHasPopup(this.element(), "false" /* ARIAUtils.PopupRole.False */);
     }
     textWithCurrentSuggestion() {
         const text = this.text();

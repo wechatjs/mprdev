@@ -2,25 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as puppeteer from '../../third_party/puppeteer/puppeteer.js';
-export class Transport {
+class Transport {
     #connection;
     #knownIds = new Set();
     constructor(connection) {
         this.#connection = connection;
     }
-    send(message) {
-        const data = JSON.parse(message);
-        this.#knownIds.add(data.id);
-        this.#connection.sendRawMessage(JSON.stringify(data));
+    send(data) {
+        const message = JSON.parse(data);
+        this.#knownIds.add(message.id);
+        this.#connection.sendRawMessage(data);
     }
     close() {
         void this.#connection.disconnect();
     }
     set onmessage(cb) {
         this.#connection.setOnMessage((message) => {
-            if (!cb) {
-                return;
-            }
             const data = (message);
             if (data.id && !this.#knownIds.has(data.id)) {
                 return;
@@ -49,32 +46,37 @@ export class Transport {
         });
     }
 }
-export class PuppeteerConnection extends puppeteer.Connection {
-    // Overriding Puppeteer's API here.
-    // eslint-disable-next-line rulesdir/no_underscored_properties
-    async _onMessage(message) {
+class PuppeteerConnection extends puppeteer.Connection {
+    async onMessage(message) {
         const msgObj = JSON.parse(message);
         if (msgObj.sessionId && !this._sessions.has(msgObj.sessionId)) {
             return;
         }
-        void super._onMessage(message);
+        void super.onMessage(message);
     }
 }
-export async function getPuppeteerConnection(rawConnection, mainFrameId, mainTargetId) {
-    const transport = new Transport(rawConnection);
-    // url is an empty string in this case parallel to:
-    // https://github.com/puppeteer/puppeteer/blob/f63a123ecef86693e6457b07437a96f108f3e3c5/src/common/BrowserConnector.ts#L72
-    const connection = new PuppeteerConnection('', transport);
-    const targetFilterCallback = (targetInfo) => {
-        if (targetInfo.type !== 'page' && targetInfo.type !== 'iframe') {
-            return false;
-        }
-        // TODO only connect to iframes that are related to the main target. This requires refactoring in Puppeteer: https://github.com/puppeteer/puppeteer/issues/3667.
-        return targetInfo.targetId === mainTargetId || targetInfo.openerId === mainTargetId || targetInfo.type === 'iframe';
-    };
-    const browser = await puppeteer.Browser.create(connection, [] /* contextIds */, false /* ignoreHTTPSErrors */, undefined /* defaultViewport */, undefined /* process */, undefined /* closeCallback */, targetFilterCallback);
-    const pages = await browser.pages();
-    const page = pages.find(p => p.mainFrame()._id === mainFrameId) || null;
-    return { page, browser };
+export class PuppeteerConnectionHelper {
+    static async connectPuppeteerToConnection(options) {
+        const { connection, mainFrameId, targetInfos, targetFilterCallback, isPageTargetCallback } = options;
+        // Pass an empty message handler because it will be overwritten by puppeteer anyways.
+        const transport = new Transport(connection);
+        // url is an empty string in this case parallel to:
+        // https://github.com/puppeteer/puppeteer/blob/f63a123ecef86693e6457b07437a96f108f3e3c5/src/common/BrowserConnector.ts#L72
+        const puppeteerConnection = new PuppeteerConnection('', transport);
+        const targetIdsForAutoAttachEmulation = targetInfos.filter(targetFilterCallback).map(t => t.targetId);
+        const browserPromise = puppeteer.Browser._create('chrome', puppeteerConnection, [] /* contextIds */, false /* ignoreHTTPSErrors */, undefined /* defaultViewport */, undefined /* process */, undefined /* closeCallback */, targetFilterCallback, isPageTargetCallback);
+        const [, browser] = await Promise.all([
+            Promise.all(targetIdsForAutoAttachEmulation.map(targetId => puppeteerConnection._createSession({ targetId }, /* emulateAutoAttach= */ true))),
+            browserPromise,
+        ]);
+        // TODO: replace this with browser.pages() once the Puppeteer version is rolled.
+        const pages = await Promise.all(browser.browserContexts()
+            .map(ctx => ctx.targets())
+            .flat()
+            .filter(target => target.type() === 'page' || target.url().startsWith('devtools://'))
+            .map(target => target.page()));
+        const page = pages.filter((p) => p !== null).find(p => p.mainFrame()._id === mainFrameId) || null;
+        return { page, browser, puppeteerConnection };
+    }
 }
 //# sourceMappingURL=PuppeteerConnection.js.map

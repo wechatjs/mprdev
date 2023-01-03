@@ -1,5 +1,5 @@
 import type * as SDK from '../../../core/sdk/sdk.js';
-import type { DOMNode } from './Helper.js';
+import { type DOMNode } from './Helper.js';
 export declare class NodeSelectedEvent extends Event {
     static readonly eventName = "breadcrumbsnodeselected";
     legacyDomNode: SDK.DOMModel.DOMNode;

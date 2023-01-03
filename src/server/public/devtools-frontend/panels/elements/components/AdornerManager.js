@@ -10,6 +10,9 @@ export var RegisteredAdorners;
     RegisteredAdorners["AD"] = "ad";
     RegisteredAdorners["SCROLL_SNAP"] = "scroll-snap";
     RegisteredAdorners["CONTAINER"] = "container";
+    RegisteredAdorners["SLOT"] = "slot";
+    RegisteredAdorners["TOP_LAYER"] = "top-layer";
+    RegisteredAdorners["REVEAL"] = "reveal";
 })(RegisteredAdorners || (RegisteredAdorners = {}));
 // This enum-like const object serves as the authoritative registry for all the
 // adorners available.
@@ -18,31 +21,49 @@ export function getRegisteredAdorner(which) {
         case RegisteredAdorners.GRID:
             return {
                 name: 'grid',
-                category: "Layout" /* LAYOUT */,
+                category: "Layout" /* AdornerCategories.LAYOUT */,
                 enabledByDefault: true,
             };
         case RegisteredAdorners.FLEX:
             return {
                 name: 'flex',
-                category: "Layout" /* LAYOUT */,
+                category: "Layout" /* AdornerCategories.LAYOUT */,
                 enabledByDefault: true,
             };
         case RegisteredAdorners.AD:
             return {
                 name: 'ad',
-                category: "Security" /* SECURITY */,
+                category: "Security" /* AdornerCategories.SECURITY */,
                 enabledByDefault: true,
             };
         case RegisteredAdorners.SCROLL_SNAP:
             return {
                 name: 'scroll-snap',
-                category: "Layout" /* LAYOUT */,
+                category: "Layout" /* AdornerCategories.LAYOUT */,
                 enabledByDefault: true,
             };
         case RegisteredAdorners.CONTAINER:
             return {
                 name: 'container',
-                category: "Layout" /* LAYOUT */,
+                category: "Layout" /* AdornerCategories.LAYOUT */,
+                enabledByDefault: true,
+            };
+        case RegisteredAdorners.SLOT:
+            return {
+                name: 'slot',
+                category: "Layout" /* AdornerCategories.LAYOUT */,
+                enabledByDefault: true,
+            };
+        case RegisteredAdorners.TOP_LAYER:
+            return {
+                name: 'top-layer',
+                category: "Layout" /* AdornerCategories.LAYOUT */,
+                enabledByDefault: true,
+            };
+        case RegisteredAdorners.REVEAL:
+            return {
+                name: 'reveal',
+                category: "Default" /* AdornerCategories.DEFAULT */,
                 enabledByDefault: true,
             };
     }
@@ -55,7 +76,7 @@ function getCategoryFromAdornerName(name) {
             adornerNameToCategoryMap.set(name, category);
         }
     }
-    return adornerNameToCategoryMap.get(name) || "Default" /* DEFAULT */;
+    return adornerNameToCategoryMap.get(name) || "Default" /* AdornerCategories.DEFAULT */;
 }
 export const DefaultAdornerSettings = Object.values(RegisteredAdorners).map(getRegisteredAdorner).map(({ name, enabledByDefault }) => ({
     adorner: name,
@@ -108,9 +129,9 @@ export class AdornerManager {
     }
 }
 const OrderedAdornerCategories = [
-    "Security" /* SECURITY */,
-    "Layout" /* LAYOUT */,
-    "Default" /* DEFAULT */,
+    "Security" /* AdornerCategories.SECURITY */,
+    "Layout" /* AdornerCategories.LAYOUT */,
+    "Default" /* AdornerCategories.DEFAULT */,
 ];
 // Use idx + 1 for the order to avoid JavaScript's 0 == false issue
 export const AdornerCategoryOrder = new Map(OrderedAdornerCategories.map((category, idx) => [category, idx + 1]));

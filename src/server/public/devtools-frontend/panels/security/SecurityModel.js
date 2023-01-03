@@ -65,12 +65,12 @@ const getOrCreateSecurityStateOrdinalMap = () => {
     if (!securityStateToOrdinal) {
         securityStateToOrdinal = new Map();
         const ordering = [
-            "info" /* Info */,
-            "insecure-broken" /* InsecureBroken */,
-            "insecure" /* Insecure */,
-            "neutral" /* Neutral */,
-            "secure" /* Secure */,
-            "unknown" /* Unknown */,
+            "info" /* Protocol.Security.SecurityState.Info */,
+            "insecure-broken" /* Protocol.Security.SecurityState.InsecureBroken */,
+            "insecure" /* Protocol.Security.SecurityState.Insecure */,
+            "neutral" /* Protocol.Security.SecurityState.Neutral */,
+            "secure" /* Protocol.Security.SecurityState.Secure */,
+            "unknown" /* Protocol.Security.SecurityState.Unknown */,
         ];
         for (let i = 0; i < ordering.length; i++) {
             securityStateToOrdinal.set(ordering[i], i + 1);
@@ -86,11 +86,11 @@ export var Events;
     Events["VisibleSecurityStateChanged"] = "VisibleSecurityStateChanged";
 })(Events || (Events = {}));
 export const SummaryMessages = {
-    ["unknown" /* Unknown */]: i18nLazyString(UIStrings.theSecurityOfThisPageIsUnknown),
-    ["insecure" /* Insecure */]: i18nLazyString(UIStrings.thisPageIsNotSecure),
-    ["neutral" /* Neutral */]: i18nLazyString(UIStrings.thisPageIsNotSecure),
-    ["secure" /* Secure */]: i18nLazyString(UIStrings.thisPageIsSecureValidHttps),
-    ["insecure-broken" /* InsecureBroken */]: i18nLazyString(UIStrings.thisPageIsNotSecureBrokenHttps),
+    ["unknown" /* Protocol.Security.SecurityState.Unknown */]: i18nLazyString(UIStrings.theSecurityOfThisPageIsUnknown),
+    ["insecure" /* Protocol.Security.SecurityState.Insecure */]: i18nLazyString(UIStrings.thisPageIsNotSecure),
+    ["neutral" /* Protocol.Security.SecurityState.Neutral */]: i18nLazyString(UIStrings.thisPageIsNotSecure),
+    ["secure" /* Protocol.Security.SecurityState.Secure */]: i18nLazyString(UIStrings.thisPageIsSecureValidHttps),
+    ["insecure-broken" /* Protocol.Security.SecurityState.InsecureBroken */]: i18nLazyString(UIStrings.thisPageIsNotSecureBrokenHttps),
 };
 export class PageVisibleSecurityState {
     securityState;
@@ -176,7 +176,7 @@ export class SecurityStyleExplanation {
     certificate;
     mixedContentType;
     recommendations;
-    constructor(securityState, title, summary, description, certificate = [], mixedContentType = "none" /* None */, recommendations = []) {
+    constructor(securityState, title, summary, description, certificate = [], mixedContentType = "none" /* Protocol.Security.MixedContentType.None */, recommendations = []) {
         this.securityState = securityState;
         this.title = title;
         this.summary = summary;

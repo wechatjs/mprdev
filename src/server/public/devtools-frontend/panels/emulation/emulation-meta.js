@@ -75,14 +75,14 @@ UI.ActionRegistration.registerActionExtension({
     },
     condition: Root.Runtime.ConditionName.CAN_DOCK,
     title: i18nLazyString(UIStrings.toggleDeviceToolbar),
-    iconClass: "largeicon-phone" /* LARGEICON_PHONE */,
+    iconClass: "largeicon-phone" /* UI.ActionRegistration.IconClass.LARGEICON_PHONE */,
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Shift+Ctrl+M',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Shift+Meta+M',
         },
     ],

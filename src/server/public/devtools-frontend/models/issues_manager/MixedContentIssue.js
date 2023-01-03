@@ -14,7 +14,7 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export class MixedContentIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel) {
-        super("MixedContentIssue" /* MixedContentIssue */, issuesModel);
+        super("MixedContentIssue" /* Protocol.Audits.InspectorIssueCode.MixedContentIssue */, issuesModel);
         this.#issueDetails = issueDetails;
     }
     requests() {
@@ -40,11 +40,11 @@ export class MixedContentIssue extends Issue {
     }
     getKind() {
         switch (this.#issueDetails.resolutionStatus) {
-            case "MixedContentAutomaticallyUpgraded" /* MixedContentAutomaticallyUpgraded */:
+            case "MixedContentAutomaticallyUpgraded" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentAutomaticallyUpgraded */:
                 return IssueKind.Improvement;
-            case "MixedContentBlocked" /* MixedContentBlocked */:
+            case "MixedContentBlocked" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentBlocked */:
                 return IssueKind.PageError;
-            case "MixedContentWarning" /* MixedContentWarning */:
+            case "MixedContentWarning" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentWarning */:
                 return IssueKind.Improvement;
         }
     }

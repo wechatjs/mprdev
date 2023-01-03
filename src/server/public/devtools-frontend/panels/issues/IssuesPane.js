@@ -10,7 +10,7 @@ import * as UI from '../../ui/legacy/legacy.js';
 import { HiddenIssuesRow } from './HiddenIssuesRow.js';
 import issuesPaneStyles from './issuesPane.css.js';
 import issuesTreeStyles from './issuesTree.css.js';
-import { IssueAggregator } from './IssueAggregator.js';
+import { IssueAggregator, } from './IssueAggregator.js';
 import { IssueView } from './IssueView.js';
 import { IssueKindView, getGroupIssuesByKindSetting, issueKindViewSortPriority } from './IssueKindView.js';
 const UIStrings = {
@@ -118,7 +118,7 @@ class IssueCategoryView extends UI.TreeOutline.TreeElement {
                 return i18nString(UIStrings.crossOriginEmbedderPolicy);
             case IssuesManager.Issue.IssueCategory.MixedContent:
                 return i18nString(UIStrings.mixedContent);
-            case IssuesManager.Issue.IssueCategory.SameSiteCookie:
+            case IssuesManager.Issue.IssueCategory.Cookie:
                 return i18nString(UIStrings.samesiteCookie);
             case IssuesManager.Issue.IssueCategory.HeavyAd:
                 return i18nString(UIStrings.heavyAds);
@@ -187,11 +187,11 @@ export class IssuesPane extends UI.Widget.VBox {
         this.contentElement.appendChild(this.#noIssuesMessageDiv);
         this.#issuesManager = IssuesManager.IssuesManager.IssuesManager.instance();
         this.#aggregator = new IssueAggregator(this.#issuesManager);
-        this.#aggregator.addEventListener("AggregatedIssueUpdated" /* AggregatedIssueUpdated */, this.#issueUpdated, this);
-        this.#aggregator.addEventListener("FullUpdateRequired" /* FullUpdateRequired */, this.#onFullUpdate, this);
+        this.#aggregator.addEventListener("AggregatedIssueUpdated" /* IssueAggregatorEvents.AggregatedIssueUpdated */, this.#issueUpdated, this);
+        this.#aggregator.addEventListener("FullUpdateRequired" /* IssueAggregatorEvents.FullUpdateRequired */, this.#onFullUpdate, this);
         this.#hiddenIssuesRow.hidden = this.#issuesManager.numberOfHiddenIssues() === 0;
         this.#onFullUpdate();
-        this.#issuesManager.addEventListener("IssuesCountUpdated" /* IssuesCountUpdated */, this.#updateCounts, this);
+        this.#issuesManager.addEventListener("IssuesCountUpdated" /* IssuesManager.IssuesManager.Events.IssuesCountUpdated */, this.#updateCounts, this);
     }
     static instance(opts = { forceNew: null }) {
         const { forceNew } = opts;
@@ -233,7 +233,7 @@ export class IssuesPane extends UI.Widget.VBox {
                 const issueEnumeration = IssueCounter.IssueCounter.getIssueCountsEnumeration(IssuesManager.IssuesManager.IssuesManager.instance(), false);
                 issueCounter.title = issueEnumeration;
             },
-            displayMode: "ShowAlways" /* ShowAlways */,
+            displayMode: "ShowAlways" /* IssueCounter.IssueCounter.DisplayMode.ShowAlways */,
             issuesManager: IssuesManager.IssuesManager.IssuesManager.instance(),
         };
         issueCounter.id = 'console-issues-counter';

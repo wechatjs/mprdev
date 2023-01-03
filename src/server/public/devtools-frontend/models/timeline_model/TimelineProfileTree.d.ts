@@ -1,6 +1,7 @@
+import type * as Platform from '../../core/platform/platform.js';
 import type * as SDK from '../../core/sdk/sdk.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { TimelineModelFilter } from './TimelineModelFilter.js';
+import { type TimelineModelFilter } from './TimelineModelFilter.js';
 export declare class Node {
     totalTime: number;
     selfTime: number;
@@ -79,7 +80,7 @@ export declare class BottomUpNode extends Node {
     children(): ChildrenCache;
     searchTree(matchFunction: (arg0: SDK.TracingModel.Event) => boolean, results?: Node[]): Node[];
 }
-export declare function eventURL(event: SDK.TracingModel.Event): string | null;
+export declare function eventURL(event: SDK.TracingModel.Event): Platform.DevToolsPath.UrlString | null;
 export declare function eventStackFrame(event: SDK.TracingModel.Event): Protocol.Runtime.CallFrame | null;
 export declare function _eventId(event: SDK.TracingModel.Event): string;
 export declare type ChildrenCache = Map<string | symbol, Node>;

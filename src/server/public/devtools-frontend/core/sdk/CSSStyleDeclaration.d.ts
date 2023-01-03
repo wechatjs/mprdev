@@ -1,9 +1,9 @@
 import * as TextUtils from '../../models/text_utils/text_utils.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { CSSModel, Edit } from './CSSModel.js';
+import { type CSSModel, type Edit } from './CSSModel.js';
 import { CSSProperty } from './CSSProperty.js';
-import type { CSSRule } from './CSSRule.js';
-import type { Target } from './Target.js';
+import { type CSSRule } from './CSSRule.js';
+import { type Target } from './Target.js';
 export declare class CSSStyleDeclaration {
     #private;
     parentRule: CSSRule | null;
@@ -24,7 +24,6 @@ export declare class CSSStyleDeclaration {
     hasActiveProperty(name: string): boolean;
     getPropertyValue(name: string): string;
     isPropertyImplicit(name: string): boolean;
-    longhandProperties(name: string): CSSProperty[];
     propertyAt(index: number): CSSProperty | null;
     pastLastSourcePropertyIndex(): number;
     private insertionRange;

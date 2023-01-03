@@ -124,9 +124,12 @@
   --color-button-primary-background-hovering: rgb(77 134 225 / 100%);
   --color-button-primary-background-pressed: rgb(88 132 205);
   --color-button-primary-text: rgb(255 255 255);
+  --color-button-primary-text-hover: rgb(218 220 224);
   --color-button-secondary-background-hovering: rgb(26 115 232 / 10%);
   --color-button-secondary-background-pressed: rgb(26 92 178 / 25%);
   --color-button-secondary-border: rgb(218 220 224);
+  --color-iconbutton-hover: rgb(0 0 0 / 10%);
+  --color-iconbutton-pressed: rgb(0 0 0 / 15%);
 
   /* Colors for file icons */
   --color-ic-file-document: rgb(39 116 240);
@@ -228,7 +231,7 @@
   --color-syntax-3: rgb(242 151 102);
   --color-syntax-4: rgb(155 187 220);
   --color-syntax-5: rgb(132 240 255);
-  --color-syntax-6: rgb(137 137 137);
+  --color-syntax-6: rgb(171 171 171);
   --color-syntax-7: rgb(207 208 208);
   --color-syntax-8: rgb(93 176 215);
   --drop-shadow:
@@ -267,12 +270,15 @@
   --color-input-text-disabled: rgba(128 134 139 / 70%);
   /* Colors for styling buttons */
   --color-button-outline-focus: rgb(138 180 248 / 75%);
-  --color-button-primary-background-hovering: rgb(128 167 229 / 100%);
+  --color-button-primary-background-hovering: rgb(174 203 250 / 100%);
   --color-button-primary-background-pressed: rgb(210 227 252 / 100%);
   --color-button-primary-text: rgb(0 0 0);
+  --color-button-primary-text-hover: rgb(60 61 65);
   --color-button-secondary-background-hovering: rgb(138 180 248 / 15%);
   --color-button-secondary-background-pressed: rgb(138 180 248 / 23%);
   --color-button-secondary-border: rgb(60 61 65);
+  --color-iconbutton-hover: rgb(255 255 255 / 12%);
+  --color-iconbutton-pressed: rgb(255 255 255 / 20%);
 
   /* Colors for file icons */
   --color-ic-file-document: rgb(39 116 240);
@@ -295,7 +301,7 @@
   --color-token-string-special: var(--color-token-string);
   --color-token-atom: rgb(161 247 181);
   --color-token-number: var(--color-token-atom);
-  --color-token-comment: rgb(137 137 137);
+  --color-token-comment: var(--color-syntax-6);
   --color-token-tag: rgb(93 176 215);
   --color-token-attribute: rgb(155 187 220);
   --color-token-attribute-value: rgb(242 151 102);

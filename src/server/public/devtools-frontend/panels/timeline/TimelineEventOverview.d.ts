@@ -1,5 +1,5 @@
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
-import type { PerformanceModel } from './PerformanceModel.js';
+import { type PerformanceModel } from './PerformanceModel.js';
 export declare class TimelineEventOverview extends PerfUI.TimelineOverviewPane.TimelineOverviewBase {
     protected model: PerformanceModel | null;
     constructor(id: string, title: string | null);
@@ -38,10 +38,6 @@ export declare class TimelineFilmStripOverview extends TimelineEventOverview {
     overviewInfoPromise(x: number): Promise<Element | null>;
     reset(): void;
     static readonly Padding = 2;
-}
-export declare class TimelineEventOverviewFrames extends TimelineEventOverview {
-    constructor();
-    update(): void;
 }
 export declare class TimelineEventOverviewMemory extends TimelineEventOverview {
     private heapSizeLabel;

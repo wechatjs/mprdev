@@ -1,8 +1,9 @@
 import * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as TimelineModel from '../../models/timeline_model/timeline_model.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { Client } from './TimelineController.js';
+import { type Client } from './TimelineController.js';
 export declare class TimelinePanel extends UI.Panel.Panel implements Client, TimelineModeViewDelegate {
     private readonly dropTarget;
     private readonly recordingOptionUIControls;
@@ -32,6 +33,7 @@ export declare class TimelinePanel extends UI.Panel.Panel implements Client, Tim
     private showSettingsPaneSetting;
     private settingsPane;
     private controller;
+    private cpuProfilers;
     private clearButton;
     private loadButton;
     private saveButton;
@@ -49,6 +51,7 @@ export declare class TimelinePanel extends UI.Panel.Panel implements Client, Tim
     constructor();
     static instance(opts?: {
         forceNew: boolean | null;
+        isNode: boolean;
     } | undefined): TimelinePanel;
     searchableView(): UI.SearchableView.SearchableView | null;
     wasShown(): void;
@@ -71,7 +74,7 @@ export declare class TimelinePanel extends UI.Panel.Panel implements Client, Tim
     navigateHistory(direction: number): boolean;
     selectFileToLoad(): void;
     private loadFromFile;
-    loadFromURL(url: string): void;
+    loadFromURL(url: Platform.DevToolsPath.UrlString): void;
     private updateOverviewControls;
     private onModeChanged;
     private onWebVitalsChanged;

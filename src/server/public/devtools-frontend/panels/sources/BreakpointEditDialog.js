@@ -61,7 +61,6 @@ export class BreakpointEditDialog extends UI.Widget.Widget {
             TextEditor.Config.autocompletion,
             CodeMirror.EditorView.lineWrapping,
             TextEditor.Config.showCompletionHint,
-            TextEditor.JavaScript.completion(),
             TextEditor.JavaScript.argumentHints(),
         ];
         this.onFinish = onFinish;

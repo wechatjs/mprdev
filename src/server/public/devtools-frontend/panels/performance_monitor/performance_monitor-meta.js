@@ -43,11 +43,11 @@ async function loadPerformanceMonitorModule() {
     return loadedPerformanceMonitorModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'performance.monitor',
     title: i18nLazyString(UIStrings.performanceMonitor),
     commandPrompt: i18nLazyString(UIStrings.showPerformanceMonitor),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 100,
     async loadView() {
         const PerformanceMonitor = await loadPerformanceMonitorModule();

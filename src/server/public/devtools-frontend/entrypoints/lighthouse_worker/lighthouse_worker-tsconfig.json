@@ -26,7 +26,7 @@
     "useUnknownInCatchVariables": false
   },
   "files": [
-    "../../../../../../front_end/entrypoints/lighthouse_worker/LighthouseService.ts",
+    "../../../../../../front_end/entrypoints/lighthouse_worker/LighthouseWorkerService.ts",
     "../../../../../../front_end/legacy/legacy-defs.d.ts",
     "../../../../../../front_end/global_typings/global_defs.d.ts",
     "../../../../../../front_end/global_typings/request_idle_callback.d.ts",

@@ -45,10 +45,10 @@ export class SoftDropDown {
         this.element.appendChild(dropdownArrowIcon);
         ARIAUtils.setExpanded(this.element, false);
         this.glassPane = new GlassPane();
-        this.glassPane.setMarginBehavior("NoMargin" /* NoMargin */);
-        this.glassPane.setAnchorBehavior("PreferBottom" /* PreferBottom */);
+        this.glassPane.setMarginBehavior("NoMargin" /* MarginBehavior.NoMargin */);
+        this.glassPane.setAnchorBehavior("PreferBottom" /* AnchorBehavior.PreferBottom */);
         this.glassPane.setOutsideClickCallback(this.hide.bind(this));
-        this.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* BlockedByGlassPane */);
+        this.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* PointerEventsBehavior.BlockedByGlassPane */);
         this.list = new ListControl(model, this, ListMode.EqualHeightItems);
         this.list.element.classList.add('item-list');
         this.rowHeight = 36;

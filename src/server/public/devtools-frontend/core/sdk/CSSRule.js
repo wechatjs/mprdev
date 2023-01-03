@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as TextUtils from '../../models/text_utils/text_utils.js';
+import * as Platform from '../platform/platform.js';
 import { CSSContainerQuery } from './CSSContainerQuery.js';
+import { CSSLayer } from './CSSLayer.js';
 import { CSSMedia } from './CSSMedia.js';
+import { CSSScope } from './CSSScope.js';
 import { CSSSupports } from './CSSSupports.js';
 import { CSSStyleDeclaration, Type } from './CSSStyleDeclaration.js';
 export class CSSRule {
@@ -30,22 +33,22 @@ export class CSSRule {
     }
     resourceURL() {
         if (!this.styleSheetId) {
-            return '';
+            return Platform.DevToolsPath.EmptyUrlString;
         }
         const styleSheetHeader = this.getStyleSheetHeader(this.styleSheetId);
         return styleSheetHeader.resourceURL();
     }
     isUserAgent() {
-        return this.origin === "user-agent" /* UserAgent */;
+        return this.origin === "user-agent" /* Protocol.CSS.StyleSheetOrigin.UserAgent */;
     }
     isInjected() {
-        return this.origin === "injected" /* Injected */;
+        return this.origin === "injected" /* Protocol.CSS.StyleSheetOrigin.Injected */;
     }
     isViaInspector() {
-        return this.origin === "inspector" /* Inspector */;
+        return this.origin === "inspector" /* Protocol.CSS.StyleSheetOrigin.Inspector */;
     }
     isRegular() {
-        return this.origin === "regular" /* Regular */;
+        return this.origin === "regular" /* Protocol.CSS.StyleSheetOrigin.Regular */;
     }
     cssModel() {
         return this.cssModelInternal;
@@ -77,6 +80,8 @@ export class CSSStyleRule extends CSSRule {
     media;
     containerQueries;
     supports;
+    scopes;
+    layers;
     wasUsed;
     constructor(cssModel, payload, wasUsed) {
         // TODO(crbug.com/1011811): Replace with spread operator or better types once Closure is gone.
@@ -86,7 +91,9 @@ export class CSSStyleRule extends CSSRule {
         this.containerQueries = payload.containerQueries ?
             CSSContainerQuery.parseContainerQueriesPayload(cssModel, payload.containerQueries) :
             [];
+        this.scopes = payload.scopes ? CSSScope.parseScopesPayload(cssModel, payload.scopes) : [];
         this.supports = payload.supports ? CSSSupports.parseSupportsPayload(cssModel, payload.supports) : [];
+        this.layers = payload.layers ? CSSLayer.parseLayerPayload(cssModel, payload.layers) : [];
         this.wasUsed = wasUsed || false;
     }
     static createDummyRule(cssModel, selectorText) {
@@ -101,7 +108,7 @@ export class CSSStyleRule extends CSSRule {
                 shorthandEntries: [],
                 cssProperties: [],
             },
-            origin: "inspector" /* Inspector */,
+            origin: "inspector" /* Protocol.CSS.StyleSheetOrigin.Inspector */,
         };
         return new CSSStyleRule(cssModel, dummyPayload);
     }
@@ -164,6 +171,7 @@ export class CSSStyleRule extends CSSRule {
         }
         this.media.forEach(media => media.rebase(edit));
         this.containerQueries.forEach(cq => cq.rebase(edit));
+        this.scopes.forEach(scope => scope.rebase(edit));
         this.supports.forEach(supports => supports.rebase(edit));
         super.rebase(edit);
     }

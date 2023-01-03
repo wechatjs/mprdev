@@ -10,28 +10,38 @@ const UIStrings = {
     */
     sourceMapUrl: 'Source map URL: ',
     /**
+    *@description Text in Add Debug Info URL Dialog of the Sources panel
+    */
+    debugInfoUrl: 'DWARF symbols URL: ',
+    /**
     *@description Text to add something
     */
     add: 'Add',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/sources/AddSourceMapURLDialog.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
-export class AddSourceMapURLDialog extends UI.Widget.HBox {
+export class AddDebugInfoURLDialog extends UI.Widget.HBox {
     input;
     dialog;
     callback;
-    constructor(callback) {
+    constructor(label, callback) {
         super(/* isWebComponent */ true);
-        this.contentElement.createChild('label').textContent = i18nString(UIStrings.sourceMapUrl);
+        this.contentElement.createChild('label').textContent = label;
         this.input = UI.UIUtils.createInput('add-source-map', 'text');
         this.input.addEventListener('keydown', this.onKeyDown.bind(this), false);
         this.contentElement.appendChild(this.input);
         const addButton = UI.UIUtils.createTextButton(i18nString(UIStrings.add), this.apply.bind(this));
         this.contentElement.appendChild(addButton);
         this.dialog = new UI.Dialog.Dialog();
-        this.dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        this.dialog.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
         this.dialog.setDefaultFocusedElement(this.input);
         this.callback = callback;
+    }
+    static createAddSourceMapURLDialog(callback) {
+        return new AddDebugInfoURLDialog(i18nString(UIStrings.sourceMapUrl), callback);
+    }
+    static createAddDWARFSymbolsURLDialog(callback) {
+        return new AddDebugInfoURLDialog(i18nString(UIStrings.debugInfoUrl), callback);
     }
     show() {
         super.show(this.dialog.contentElement);

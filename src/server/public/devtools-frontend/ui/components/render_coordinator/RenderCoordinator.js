@@ -63,18 +63,18 @@ export class RenderCoordinator extends EventTarget {
             if (!callback) {
                 throw new Error('Read called with label but no callback');
             }
-            return this.#enqueueHandler(callback, "read" /* READ */, labelOrCallback);
+            return this.#enqueueHandler(callback, "read" /* ACTION.READ */, labelOrCallback);
         }
-        return this.#enqueueHandler(labelOrCallback, "read" /* READ */, UNNAMED_READ);
+        return this.#enqueueHandler(labelOrCallback, "read" /* ACTION.READ */, UNNAMED_READ);
     }
     async write(labelOrCallback, callback) {
         if (typeof labelOrCallback === 'string') {
             if (!callback) {
                 throw new Error('Write called with label but no callback');
             }
-            return this.#enqueueHandler(callback, "write" /* WRITE */, labelOrCallback);
+            return this.#enqueueHandler(callback, "write" /* ACTION.WRITE */, labelOrCallback);
         }
-        return this.#enqueueHandler(labelOrCallback, "write" /* WRITE */, UNNAMED_WRITE);
+        return this.#enqueueHandler(labelOrCallback, "write" /* ACTION.WRITE */, UNNAMED_WRITE);
     }
     takeRecords() {
         const logs = [...this.#logInternal];
@@ -86,12 +86,12 @@ export class RenderCoordinator extends EventTarget {
             if (!callback) {
                 throw new Error('Scroll called with label but no callback');
             }
-            return this.#enqueueHandler(callback, "read" /* READ */, labelOrCallback);
+            return this.#enqueueHandler(callback, "read" /* ACTION.READ */, labelOrCallback);
         }
-        return this.#enqueueHandler(labelOrCallback, "read" /* READ */, UNNAMED_SCROLL);
+        return this.#enqueueHandler(labelOrCallback, "read" /* ACTION.READ */, UNNAMED_SCROLL);
     }
     #enqueueHandler(callback, action, label = '') {
-        this.#labels.set(callback, `${action === "read" /* READ */ ? '[Read]' : '[Write]'}: ${label}`);
+        this.#labels.set(callback, `${action === "read" /* ACTION.READ */ ? '[Read]' : '[Write]'}: ${label}`);
         if (this.#pendingWorkFrames.length === 0) {
             this.#pendingWorkFrames.push({
                 readers: [],
@@ -103,10 +103,10 @@ export class RenderCoordinator extends EventTarget {
             throw new Error('No frame available');
         }
         switch (action) {
-            case "read" /* READ */:
+            case "read" /* ACTION.READ */:
                 frame.readers.push(callback);
                 break;
-            case "write" /* WRITE */:
+            case "write" /* ACTION.WRITE */:
                 frame.writers.push(callback);
                 break;
             default:
@@ -120,14 +120,14 @@ export class RenderCoordinator extends EventTarget {
         return resolverPromise;
     }
     async #handleWork(handler) {
-        const data = await handler.call(undefined);
         const resolver = this.#resolvers.get(handler);
+        this.#resolvers.delete(handler);
+        this.#rejectors.delete(handler);
+        const data = await handler.call(undefined);
         if (!resolver) {
             throw new Error('Unable to locate resolver');
         }
         resolver.call(undefined, data);
-        this.#resolvers.delete(handler);
-        this.#rejectors.delete(handler);
     }
     #scheduleWork() {
         const hasScheduledWork = this.#scheduledWorkId !== 0;
@@ -202,7 +202,6 @@ export class RenderCoordinator extends EventTarget {
         for (const handler of handlers) {
             const rejector = this.#rejectors.get(handler);
             if (!rejector) {
-                console.warn('Unable to locate rejector');
                 continue;
             }
             rejector.call(undefined, error);

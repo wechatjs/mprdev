@@ -1,5 +1,5 @@
 import * as HeapSnapshotModel from '../../models/heap_snapshot_model/heap_snapshot_model.js';
-import type { HeapSnapshotWorkerDispatcher } from './HeapSnapshotWorkerDispatcher.js';
+import { type HeapSnapshotWorkerDispatcher } from './HeapSnapshotWorkerDispatcher.js';
 export interface HeapSnapshotItem {
     itemIndex(): number;
     serialize(): Object;

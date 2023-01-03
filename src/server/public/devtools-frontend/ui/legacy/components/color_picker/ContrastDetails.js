@@ -139,7 +139,7 @@ export class ContrastDetails extends Common.ObjectWrapper.ObjectWrapper {
         pickerToolbar.appendToolbarItem(this.bgColorPickerButton);
         this.bgColorPickedBound = this.bgColorPicked.bind(this);
         this.bgColorSwatch = new Swatch(bgColorContainer);
-        this.contrastInfo.addEventListener("ContrastInfoUpdated" /* ContrastInfoUpdated */, this.update.bind(this));
+        this.contrastInfo.addEventListener("ContrastInfoUpdated" /* ContrastInfoEvents.ContrastInfoUpdated */, this.update.bind(this));
     }
     showNoContrastInfoAvailableMessage() {
         this.noContrastInfoAvailable.classList.remove('hidden');
@@ -367,7 +367,7 @@ export class ContrastDetails extends Common.ObjectWrapper.ObjectWrapper {
         }
         this.bgColorPickerButton.setToggled(enabled);
         if (shouldTriggerEvent) {
-            this.dispatchEventToListeners("BackgroundColorPickerWillBeToggled" /* BackgroundColorPickerWillBeToggled */, enabled);
+            this.dispatchEventToListeners("BackgroundColorPickerWillBeToggled" /* Events.BackgroundColorPickerWillBeToggled */, enabled);
         }
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.setEyeDropperActive(enabled);
         if (enabled) {

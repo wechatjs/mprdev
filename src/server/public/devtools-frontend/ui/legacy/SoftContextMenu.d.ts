@@ -8,12 +8,13 @@ export declare class SoftContextMenu {
     private glassPane?;
     private contextMenuElement?;
     private focusRestorer?;
-    private hideOnUserGesture?;
+    private hideOnUserMouseDownUnlessInMenu?;
     private activeSubMenuElement?;
     private subMenu?;
     private onMenuClosed?;
     constructor(items: SoftContextMenuDescriptor[], itemSelectedCallback: (arg0: number) => void, parentMenu?: SoftContextMenu, onMenuClosed?: () => void);
     show(document: Document, anchorBox: AnchorBox): void;
+    setContextMenuElementLabel(label: string): void;
     discard(): void;
     private createMenuItem;
     private createSubMenu;
@@ -29,6 +30,7 @@ export declare class SoftContextMenu {
     private highlightPrevious;
     private highlightNext;
     private menuKeyDown;
+    markAsMenuItemCheckBox(): void;
 }
 export interface SoftContextMenuDescriptor {
     type: string;

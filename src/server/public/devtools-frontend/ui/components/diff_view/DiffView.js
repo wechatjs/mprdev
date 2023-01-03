@@ -45,7 +45,7 @@ export function buildDiffRows(diff) {
                 break;
             case Diff.Diff.Operation.Insert:
                 for (const line of token[1]) {
-                    rows.push(createRow(line, "addition" /* Addition */));
+                    rows.push(createRow(line, "addition" /* RowType.Addition */));
                 }
                 currentLines.push(...token[1]);
                 break;
@@ -58,7 +58,7 @@ export function buildDiffRows(diff) {
                 }
                 else {
                     for (const line of token[1]) {
-                        rows.push(createRow(line, "deletion" /* Deletion */));
+                        rows.push(createRow(line, "deletion" /* RowType.Deletion */));
                     }
                 }
                 break;
@@ -69,10 +69,10 @@ export function buildDiffRows(diff) {
         const equalRows = [];
         if (!atStart) {
             for (let i = 0; i < paddingLines && i < lines.length; i++) {
-                equalRows.push(createRow(lines[i], "equal" /* Equal */));
+                equalRows.push(createRow(lines[i], "equal" /* RowType.Equal */));
             }
             if (lines.length > paddingLines * 2 + 1 && !atEnd) {
-                equalRows.push(createRow(i18nString(UIStrings.SkippingDMatchingLines, { PH1: (lines.length - paddingLines * 2) }), "spacer" /* Spacer */));
+                equalRows.push(createRow(i18nString(UIStrings.SkippingDMatchingLines, { PH1: (lines.length - paddingLines * 2) }), "spacer" /* RowType.Spacer */));
             }
         }
         if (!atEnd) {
@@ -86,15 +86,15 @@ export function buildDiffRows(diff) {
                 currentLineNumber += skip;
             }
             for (let i = start; i < lines.length; i++) {
-                equalRows.push(createRow(lines[i], "equal" /* Equal */));
+                equalRows.push(createRow(lines[i], "equal" /* RowType.Equal */));
             }
         }
         return equalRows;
     }
     function createModifyRows(before, after) {
         const internalDiff = Diff.Diff.DiffWrapper.charDiff(before, after, true /* cleanup diff */);
-        const deletionRows = [createRow('', "deletion" /* Deletion */)];
-        const insertionRows = [createRow('', "addition" /* Addition */)];
+        const deletionRows = [createRow('', "deletion" /* RowType.Deletion */)];
+        const insertionRows = [createRow('', "addition" /* RowType.Addition */)];
         for (const token of internalDiff) {
             const text = token[1];
             const type = token[0];
@@ -102,10 +102,10 @@ export function buildDiffRows(diff) {
             const lines = text.split('\n');
             for (let i = 0; i < lines.length; i++) {
                 if (i > 0 && type !== Diff.Diff.Operation.Insert) {
-                    deletionRows.push(createRow('', "deletion" /* Deletion */));
+                    deletionRows.push(createRow('', "deletion" /* RowType.Deletion */));
                 }
                 if (i > 0 && type !== Diff.Diff.Operation.Delete) {
-                    insertionRows.push(createRow('', "addition" /* Addition */));
+                    insertionRows.push(createRow('', "addition" /* RowType.Addition */));
                 }
                 if (!lines[i]) {
                     continue;
@@ -121,13 +121,13 @@ export function buildDiffRows(diff) {
         return deletionRows.concat(insertionRows);
     }
     function createRow(text, type) {
-        if (type === "addition" /* Addition */) {
+        if (type === "addition" /* RowType.Addition */) {
             currentLineNumber++;
         }
-        if (type === "deletion" /* Deletion */) {
+        if (type === "deletion" /* RowType.Deletion */) {
             originalLineNumber++;
         }
-        if (type === "equal" /* Equal */) {
+        if (type === "equal" /* RowType.Equal */) {
             originalLineNumber++;
             currentLineNumber++;
         }
@@ -160,15 +160,15 @@ class DiffRenderer {
       </div>`;
     }
     #renderRow(row) {
-        const baseNumber = row.type === "equal" /* Equal */ || row.type === "deletion" /* Deletion */ ? String(row.originalLineNumber) : '';
-        const curNumber = row.type === "equal" /* Equal */ || row.type === "addition" /* Addition */ ? String(row.currentLineNumber) : '';
+        const baseNumber = row.type === "equal" /* RowType.Equal */ || row.type === "deletion" /* RowType.Deletion */ ? String(row.originalLineNumber) : '';
+        const curNumber = row.type === "equal" /* RowType.Equal */ || row.type === "addition" /* RowType.Addition */ ? String(row.currentLineNumber) : '';
         let marker = '', markerClass = 'diff-line-marker', screenReaderText = null;
-        if (row.type === "addition" /* Addition */) {
+        if (row.type === "addition" /* RowType.Addition */) {
             marker = '+';
             markerClass += ' diff-line-addition';
             screenReaderText = LitHtml.html `<span class="diff-hidden-text">${i18nString(UIStrings.additions)}</span>`;
         }
-        else if (row.type === "deletion" /* Deletion */) {
+        else if (row.type === "deletion" /* RowType.Deletion */) {
             marker = '-';
             markerClass += ' diff-line-deletion';
             screenReaderText = LitHtml.html `<span class="diff-hidden-text">${i18nString(UIStrings.deletions)}</span>`;
@@ -180,10 +180,10 @@ class DiffRenderer {
       <div class="diff-line-content diff-line-${row.type}" data-line-number=${curNumber}>${screenReaderText}${this.#renderRowContent(row)}</div>`;
     }
     #renderRowContent(row) {
-        if (row.type === "spacer" /* Spacer */) {
+        if (row.type === "spacer" /* RowType.Spacer */) {
             return row.tokens.map(tok => LitHtml.html `${tok.text}`);
         }
-        const [doc, startPos] = row.type === "deletion" /* Deletion */ ?
+        const [doc, startPos] = row.type === "deletion" /* RowType.Deletion */ ?
             [this.originalHighlighter, this.originalMap.get(row.originalLineNumber)] :
             [this.currentHighlighter, this.currentMap.get(row.currentLineNumber)];
         const content = [];

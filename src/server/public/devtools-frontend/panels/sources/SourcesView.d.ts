@@ -2,8 +2,7 @@ import * as Common from '../../core/common/common.js';
 import * as Platform from '../../core/platform/platform.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { TabbedEditorContainerDelegate } from './TabbedEditorContainer.js';
-import { TabbedEditorContainer } from './TabbedEditorContainer.js';
+import { TabbedEditorContainer, type TabbedEditorContainerDelegate } from './TabbedEditorContainer.js';
 import { UISourceCodeFrame } from './UISourceCodeFrame.js';
 declare const SourcesView_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
@@ -14,6 +13,7 @@ declare const SourcesView_base: (new (...args: any[]) => {
     dispatchEventToListeners<T_3 extends keyof EventTypes>(eventType: Platform.TypeScriptUtilities.NoUnion<T_3>, ...eventData: Common.EventTarget.EventPayloadToRestParameters<EventTypes, T_3>): void;
 }) & typeof UI.Widget.VBox;
 export declare class SourcesView extends SourcesView_base implements TabbedEditorContainerDelegate, UI.SearchableView.Searchable, UI.SearchableView.Replaceable {
+    #private;
     private placeholderOptionArray;
     private selectedIndex;
     private readonly searchableViewInternal;
@@ -58,6 +58,7 @@ export declare class SourcesView extends SourcesView_base implements TabbedEdito
         columnNumber?: number;
     } | number, omitFocus?: boolean, omitHighlight?: boolean): void;
     private createSourceView;
+    getSourceView(uiSourceCode: Workspace.UISourceCode.UISourceCode): UI.Widget.Widget | undefined;
     private getOrCreateSourceView;
     recycleUISourceCodeFrame(sourceFrame: UISourceCodeFrame, uiSourceCode: Workspace.UISourceCode.UISourceCode): void;
     viewForFile(uiSourceCode: Workspace.UISourceCode.UISourceCode): UI.Widget.Widget;
@@ -78,7 +79,7 @@ export declare class SourcesView extends SourcesView_base implements TabbedEdito
     showGoToLineQuickOpen(): void;
     save(): void;
     saveAll(): void;
-    private saveSourceFrame;
+    private saveSourceView;
     toggleBreakpointsActiveState(active: boolean): void;
 }
 export declare enum Events {

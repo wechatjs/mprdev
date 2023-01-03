@@ -39,9 +39,9 @@ export class InspectElementModeController {
     showDetailedInspectTooltipSetting;
     constructor() {
         this.toggleSearchAction = UI.ActionRegistry.ActionRegistry.instance().action('elements.toggle-element-search');
-        this.mode = "none" /* None */;
+        this.mode = "none" /* Protocol.Overlay.InspectMode.None */;
         SDK.TargetManager.TargetManager.instance().addEventListener(SDK.TargetManager.Events.SuspendStateChanged, this.suspendStateChanged, this);
-        SDK.TargetManager.TargetManager.instance().addModelListener(SDK.OverlayModel.OverlayModel, SDK.OverlayModel.Events.ExitedInspectMode, () => this.setMode("none" /* None */));
+        SDK.TargetManager.TargetManager.instance().addModelListener(SDK.OverlayModel.OverlayModel, SDK.OverlayModel.Events.ExitedInspectMode, () => this.setMode("none" /* Protocol.Overlay.InspectMode.None */));
         SDK.OverlayModel.OverlayModel.setInspectNodeHandler(this.inspectNode.bind(this));
         SDK.TargetManager.TargetManager.instance().observeModels(SDK.OverlayModel.OverlayModel, this);
         this.showDetailedInspectTooltipSetting =
@@ -54,7 +54,7 @@ export class InspectElementModeController {
             if (!this.isInInspectElementMode()) {
                 return;
             }
-            this.setMode("none" /* None */);
+            this.setMode("none" /* Protocol.Overlay.InspectMode.None */);
             event.consume(true);
         }, true);
     }
@@ -67,7 +67,7 @@ export class InspectElementModeController {
     modelAdded(overlayModel) {
         // When DevTools are opening in the inspect element mode, the first target comes in
         // much later than the InspectorFrontendAPI.enterInspectElementMode event.
-        if (this.mode === "none" /* None */) {
+        if (this.mode === "none" /* Protocol.Overlay.InspectMode.None */) {
             return;
         }
         void overlayModel.setInspectMode(this.mode, this.showDetailedInspectTooltipSetting.get());
@@ -75,22 +75,22 @@ export class InspectElementModeController {
     modelRemoved(_overlayModel) {
     }
     isInInspectElementMode() {
-        return this.mode !== "none" /* None */;
+        return this.mode !== "none" /* Protocol.Overlay.InspectMode.None */;
     }
     toggleInspectMode() {
         let mode;
         if (this.isInInspectElementMode()) {
-            mode = "none" /* None */;
+            mode = "none" /* Protocol.Overlay.InspectMode.None */;
         }
         else {
             mode = Common.Settings.Settings.instance().moduleSetting('showUAShadowDOM').get() ?
-                "searchForUAShadowDOM" /* SearchForUAShadowDOM */ :
-                "searchForNode" /* SearchForNode */;
+                "searchForUAShadowDOM" /* Protocol.Overlay.InspectMode.SearchForUAShadowDOM */ :
+                "searchForNode" /* Protocol.Overlay.InspectMode.SearchForNode */;
         }
         this.setMode(mode);
     }
     captureScreenshotMode() {
-        this.setMode("captureAreaScreenshot" /* CaptureAreaScreenshot */);
+        this.setMode("captureAreaScreenshot" /* Protocol.Overlay.InspectMode.CaptureAreaScreenshot */);
     }
     setMode(mode) {
         if (SDK.TargetManager.TargetManager.instance().allTargetsSuspended()) {
@@ -108,7 +108,7 @@ export class InspectElementModeController {
         if (!SDK.TargetManager.TargetManager.instance().allTargetsSuspended()) {
             return;
         }
-        this.mode = "none" /* None */;
+        this.mode = "none" /* Protocol.Overlay.InspectMode.None */;
         if (this.toggleSearchAction) {
             this.toggleSearchAction.setToggled(false);
         }

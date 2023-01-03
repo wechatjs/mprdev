@@ -1,7 +1,7 @@
 import * as UI from '../../ui/legacy/legacy.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { MainView, TriggerDispatcher } from './MainView.js';
-import type { PlayerEvent } from './MediaModel.js';
+import { type MainView, type TriggerDispatcher } from './MainView.js';
+import { type PlayerEvent } from './MediaModel.js';
 export interface PlayerStatus {
     playerTitle: string;
     playerID: string;

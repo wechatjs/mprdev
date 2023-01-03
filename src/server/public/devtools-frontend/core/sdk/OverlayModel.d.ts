@@ -1,9 +1,8 @@
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
-import type { DOMNode } from './DOMModel.js';
-import { DeferredDOMNode, DOMModel } from './DOMModel.js';
-import type { RemoteObject } from './RemoteObject.js';
-import type { Target } from './Target.js';
+import { DeferredDOMNode, DOMModel, type DOMNode } from './DOMModel.js';
+import { type RemoteObject } from './RemoteObject.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export interface HighlightColor {
     r: number;

@@ -101,9 +101,6 @@ export declare const NotRestoredReasonDescription: {
     BackForwardCacheDisabledForDelegate: {
         name: () => import("../../../core/platform/UIString.js").LocalizedString;
     };
-    OptInUnloadHeaderNotPresent: {
-        name: () => import("../../../core/platform/UIString.js").LocalizedString;
-    };
     UnloadHandlerExistsInMainFrame: {
         name: () => import("../../../core/platform/UIString.js").LocalizedString;
     };
@@ -372,6 +369,12 @@ export declare const NotRestoredReasonDescription: {
         name: () => import("../../../core/platform/UIString.js").LocalizedString;
     };
     EmbedderExtensionSentMessageToCachedFrame: {
+        name: () => import("../../../core/platform/UIString.js").LocalizedString;
+    };
+    ErrorDocument: {
+        name: () => import("../../../core/platform/UIString.js").LocalizedString;
+    };
+    FencedFramesEmbedder: {
         name: () => import("../../../core/platform/UIString.js").LocalizedString;
     };
 };

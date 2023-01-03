@@ -33,7 +33,7 @@ import * as Common from '../common/common.js';
 import * as i18n from '../i18n/i18n.js';
 import * as Platform from '../platform/platform.js';
 import * as Root from '../root/root.js';
-import { EventDescriptors, Events } from './InspectorFrontendHostAPI.js';
+import { EventDescriptors, Events, } from './InspectorFrontendHostAPI.js';
 import { streamWrite as resourceLoaderStreamWrite } from './ResourceLoader.js';
 const UIStrings = {
     /**
@@ -45,9 +45,11 @@ const UIStrings = {
 const str_ = i18n.i18n.registerUIStrings('core/host/InspectorFrontendHost.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 const MAX_RECORDED_HISTOGRAMS_SIZE = 100;
+const OVERRIDES_FILE_SYSTEM_PATH = '/overrides';
 export class InspectorFrontendHostStub {
     #urlsBeingSaved;
     events;
+    #fileSystem = null;
     recordedEnumeratedHistograms = [];
     recordedPerformanceHistograms = [];
     constructor() {
@@ -170,11 +172,37 @@ export class InspectorFrontendHostStub {
         this.events.dispatchEventToListeners(Events.FileSystemsLoaded, []);
     }
     addFileSystem(type) {
+        const onFileSystem = (fs) => {
+            this.#fileSystem = fs;
+            const fileSystem = {
+                fileSystemName: 'sandboxedRequestedFileSystem',
+                fileSystemPath: OVERRIDES_FILE_SYSTEM_PATH,
+                rootURL: 'filesystem:devtools://devtools/isolated/',
+                type: 'overrides',
+            };
+            this.events.dispatchEventToListeners(Events.FileSystemAdded, { fileSystem });
+        };
+        window.webkitRequestFileSystem(window.TEMPORARY, 1024 * 1024, onFileSystem);
     }
     removeFileSystem(fileSystemPath) {
+        const removalCallback = (entries) => {
+            entries.forEach(entry => {
+                if (entry.isDirectory) {
+                    entry.removeRecursively(() => { });
+                }
+                else if (entry.isFile) {
+                    entry.remove(() => { });
+                }
+            });
+        };
+        if (this.#fileSystem) {
+            this.#fileSystem.root.createReader().readEntries(removalCallback);
+        }
+        this.#fileSystem = null;
+        this.events.dispatchEventToListeners(Events.FileSystemRemoved, OVERRIDES_FILE_SYSTEM_PATH);
     }
     isolatedFileSystem(fileSystemId, registeredName) {
-        return null;
+        return this.#fileSystem;
     }
     loadNetworkResource(url, headers, streamId, callback) {
         fetch(url)

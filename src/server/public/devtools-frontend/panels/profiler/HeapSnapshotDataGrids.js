@@ -33,7 +33,7 @@ import * as HeapSnapshotModel from '../../models/heap_snapshot_model/heap_snapsh
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { AllocationGridNode, HeapSnapshotConstructorNode, HeapSnapshotGenericObjectNode, HeapSnapshotRetainingObjectNode, HeapSnapshotObjectNode, HeapSnapshotDiffNode } from './HeapSnapshotGridNodes.js';
+import { AllocationGridNode, HeapSnapshotConstructorNode, HeapSnapshotGenericObjectNode, HeapSnapshotRetainingObjectNode, HeapSnapshotObjectNode, HeapSnapshotDiffNode, } from './HeapSnapshotGridNodes.js';
 const UIStrings = {
     /**
     *@description Text in Heap Snapshot Data Grids of a profiler tool

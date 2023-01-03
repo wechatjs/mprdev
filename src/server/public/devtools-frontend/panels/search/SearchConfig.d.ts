@@ -1,4 +1,5 @@
 import type * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import type * as Workspace from '../../models/workspace/workspace.js';
 export declare class SearchConfig implements Workspace.Workspace.ProjectSearchConfig {
     private readonly queryInternal;
@@ -22,7 +23,7 @@ export declare class SearchConfig implements Workspace.Workspace.ProjectSearchCo
         isRegex: boolean;
     };
     private parse;
-    filePathMatchesFileQuery(filePath: string): boolean;
+    filePathMatchesFileQuery(filePath: Platform.DevToolsPath.RawPathString | Platform.DevToolsPath.EncodedPathString | Platform.DevToolsPath.UrlString): boolean;
     queries(): string[];
     private parseUnquotedQuery;
     private parseQuotedQuery;

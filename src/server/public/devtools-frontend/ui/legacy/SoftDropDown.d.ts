@@ -1,6 +1,6 @@
 import type * as Common from '../../core/common/common.js';
-import type { ListDelegate } from './ListControl.js';
-import type { ListModel } from './ListModel.js';
+import { type ListDelegate } from './ListControl.js';
+import { type ListModel } from './ListModel.js';
 export declare class SoftDropDown<T> implements ListDelegate<T> {
     private delegate;
     private selectedItem;

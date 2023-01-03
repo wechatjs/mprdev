@@ -64,6 +64,11 @@ styles.replaceSync(
   border-radius: 2px;
 }
 
+.close:hover,
+.close:focus {
+  background-color: var(--color-background-elevation-2);
+}
+
 .close::before {
   transform: rotate(45deg);
 }

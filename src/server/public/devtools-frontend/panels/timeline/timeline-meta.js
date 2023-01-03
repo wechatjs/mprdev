@@ -106,7 +106,7 @@ function maybeRetrieveContextTypes(getClassCallBack) {
     return getClassCallBack(loadedTimelineModule);
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'timeline',
     title: i18nLazyString(UIStrings.performance),
     commandPrompt: i18nLazyString(UIStrings.showPerformance),
@@ -117,11 +117,11 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'js_profiler',
     title: i18nLazyString(UIStrings.javascriptProfiler),
     commandPrompt: i18nLazyString(UIStrings.showJavascriptProfiler),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 65,
     async loadView() {
         const Profiler = await loadProfilerModule();
@@ -131,9 +131,9 @@ UI.ViewManager.registerViewExtension({
 UI.ActionRegistration.registerActionExtension({
     actionId: 'timeline.toggle-recording',
     category: UI.ActionRegistration.ActionCategory.PERFORMANCE,
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     contextTypes() {
         return maybeRetrieveContextTypes(Timeline => [Timeline.TimelinePanel.TimelinePanel]);
@@ -154,18 +154,18 @@ UI.ActionRegistration.registerActionExtension({
     ],
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+E',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+E',
         },
     ],
 });
 UI.ActionRegistration.registerActionExtension({
     actionId: 'timeline.record-reload',
-    iconClass: "largeicon-refresh" /* LARGEICON_REFRESH */,
+    iconClass: "largeicon-refresh" /* UI.ActionRegistration.IconClass.LARGEICON_REFRESH */,
     contextTypes() {
         return maybeRetrieveContextTypes(Timeline => [Timeline.TimelinePanel.TimelinePanel]);
     },
@@ -177,11 +177,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+E',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+E',
         },
     ],
@@ -199,11 +199,11 @@ UI.ActionRegistration.registerActionExtension({
     title: i18nLazyString(UIStrings.saveProfile),
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+S',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+S',
         },
     ],
@@ -221,11 +221,11 @@ UI.ActionRegistration.registerActionExtension({
     title: i18nLazyString(UIStrings.loadProfile),
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+O',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+O',
         },
     ],
@@ -277,11 +277,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+H',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Y',
         },
     ],
@@ -299,11 +299,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Alt+Left',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Left',
         },
     ],
@@ -321,11 +321,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Alt+Right',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Right',
         },
     ],
@@ -334,9 +334,9 @@ UI.ActionRegistration.registerActionExtension({
     actionId: 'profiler.js-toggle-recording',
     category: UI.ActionRegistration.ActionCategory.JAVASCRIPT_PROFILER,
     title: i18nLazyString(UIStrings.startStopRecording),
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     contextTypes() {
         return maybeRetrieveProfilerContextTypes(Profiler => [Profiler.ProfilesPanel.JSProfilerPanel]);
@@ -347,11 +347,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+E',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+E',
         },
     ],

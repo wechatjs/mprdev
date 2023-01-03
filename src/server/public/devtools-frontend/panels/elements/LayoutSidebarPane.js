@@ -57,7 +57,6 @@ const gridNodesToElements = (nodes) => {
         };
     });
 };
-let layoutSidebarPaneInstance;
 const flexContainerNodesToElements = (nodes) => {
     return nodes.map(node => {
         const layoutElement = nodeToLayoutElement(node);
@@ -81,6 +80,7 @@ const flexContainerNodesToElements = (nodes) => {
         };
     });
 };
+let layoutSidebarPaneInstance;
 export class LayoutSidebarPane extends UI.ThrottledWidget.ThrottledWidget {
     layoutPane;
     settings;

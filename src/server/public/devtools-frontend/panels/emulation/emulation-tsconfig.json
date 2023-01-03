@@ -84,6 +84,9 @@
       "path": "../../ui/legacy/components/utils/bundle-tsconfig.json"
     },
     {
+      "path": "../../ui/legacy/theme_support/bundle-tsconfig.json"
+    },
+    {
       "path": "components/bundle-tsconfig.json"
     }
   ]

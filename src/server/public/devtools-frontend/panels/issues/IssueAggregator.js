@@ -17,6 +17,7 @@ export class AggregatedIssue extends IssuesManager.Issue.Issue {
     #blockedByResponseDetails = new Map();
     #corsIssues = new Set();
     #cspIssues = new Set();
+    #deprecationIssues = new Set();
     #issueKind = IssuesManager.Issue.IssueKind.Improvement;
     #lowContrastIssues = new Set();
     #mixedContentIssues = new Set();
@@ -67,6 +68,9 @@ export class AggregatedIssue extends IssuesManager.Issue.Issue {
     }
     getCspIssues() {
         return this.#cspIssues;
+    }
+    getDeprecationIssues() {
+        return this.#deprecationIssues;
     }
     getLowContrastIssues() {
         return this.#lowContrastIssues;
@@ -155,6 +159,9 @@ export class AggregatedIssue extends IssuesManager.Issue.Issue {
         if (issue instanceof IssuesManager.ContentSecurityPolicyIssue.ContentSecurityPolicyIssue) {
             this.#cspIssues.add(issue);
         }
+        if (issue instanceof IssuesManager.DeprecationIssue.DeprecationIssue) {
+            this.#deprecationIssues.add(issue);
+        }
         if (issue instanceof IssuesManager.SharedArrayBufferIssue.SharedArrayBufferIssue) {
             this.#sharedArrayBufferIssues.add(issue);
         }
@@ -191,8 +198,8 @@ export class IssueAggregator extends Common.ObjectWrapper.ObjectWrapper {
     constructor(issuesManager) {
         super();
         this.issuesManager = issuesManager;
-        this.issuesManager.addEventListener("IssueAdded" /* IssueAdded */, this.#onIssueAdded, this);
-        this.issuesManager.addEventListener("FullUpdateRequired" /* FullUpdateRequired */, this.#onFullUpdateRequired, this);
+        this.issuesManager.addEventListener("IssueAdded" /* IssuesManager.IssuesManager.Events.IssueAdded */, this.#onIssueAdded, this);
+        this.issuesManager.addEventListener("FullUpdateRequired" /* IssuesManager.IssuesManager.Events.FullUpdateRequired */, this.#onFullUpdateRequired, this);
         for (const issue of this.issuesManager.issues()) {
             this.#aggregateIssue(issue);
         }
@@ -206,12 +213,12 @@ export class IssueAggregator extends Common.ObjectWrapper.ObjectWrapper {
         for (const issue of this.issuesManager.issues()) {
             this.#aggregateIssue(issue);
         }
-        this.dispatchEventToListeners("FullUpdateRequired" /* FullUpdateRequired */);
+        this.dispatchEventToListeners("FullUpdateRequired" /* Events.FullUpdateRequired */);
     }
     #aggregateIssue(issue) {
         const map = issue.isHidden() ? this.#hiddenAggregatedIssuesByKey : this.#aggregatedIssuesByKey;
         const aggregatedIssue = this.#aggregateIssueByStatus(map, issue);
-        this.dispatchEventToListeners("AggregatedIssueUpdated" /* AggregatedIssueUpdated */, aggregatedIssue);
+        this.dispatchEventToListeners("AggregatedIssueUpdated" /* Events.AggregatedIssueUpdated */, aggregatedIssue);
         return aggregatedIssue;
     }
     #aggregateIssueByStatus(aggregatedIssuesMap, issue) {

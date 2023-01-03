@@ -1,10 +1,10 @@
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import type * as Protocol from '../../generated/protocol.js';
+import type * as Platform from '../platform/platform.js';
 import { DebuggerModel } from './DebuggerModel.js';
 import { HeapProfilerModel } from './HeapProfilerModel.js';
-import type { ScopeRef } from './RemoteObject.js';
-import { RemoteObject, RemoteObjectProperty } from './RemoteObject.js';
-import type { Target } from './Target.js';
+import { RemoteObject, RemoteObjectProperty, type ScopeRef } from './RemoteObject.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class RuntimeModel extends SDKModel<EventTypes> {
     #private;
@@ -100,12 +100,12 @@ export declare class ExecutionContext {
     id: Protocol.Runtime.ExecutionContextId;
     uniqueId: string;
     name: string;
-    origin: string;
+    origin: Platform.DevToolsPath.UrlString;
     isDefault: boolean;
     runtimeModel: RuntimeModel;
     debuggerModel: DebuggerModel;
     frameId: Protocol.Page.FrameId | undefined;
-    constructor(runtimeModel: RuntimeModel, id: Protocol.Runtime.ExecutionContextId, uniqueId: string, name: string, origin: string, isDefault: boolean, frameId?: Protocol.Page.FrameId);
+    constructor(runtimeModel: RuntimeModel, id: Protocol.Runtime.ExecutionContextId, uniqueId: string, name: string, origin: Platform.DevToolsPath.UrlString, isDefault: boolean, frameId?: Protocol.Page.FrameId);
     target(): Target;
     static comparator(a: ExecutionContext, b: ExecutionContext): number;
     evaluate(options: EvaluationOptions, userGesture: boolean, awaitPromise: boolean): Promise<EvaluationResult>;

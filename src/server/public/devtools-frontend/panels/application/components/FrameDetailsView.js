@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import { StackTrace } from './StackTrace.js';
-import { PermissionsPolicySection, renderIconLink } from './PermissionsPolicySection.js';
+import { PermissionsPolicySection, renderIconLink, } from './PermissionsPolicySection.js';
 import * as Bindings from '../../../models/bindings/bindings.js';
 import * as Common from '../../../core/common/common.js';
 import * as i18n from '../../../core/i18n/i18n.js';
 import * as NetworkForward from '../../../panels/network/forward/forward.js';
+import * as Platform from '../../../core/platform/platform.js';
 import * as Root from '../../../core/root/root.js';
 import * as SDK from '../../../core/sdk/sdk.js';
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
@@ -20,6 +21,7 @@ import * as Components from '../../../ui/legacy/components/utils/utils.js';
 import { OriginTrialTreeView } from './OriginTrialTreeView.js';
 import * as Coordinator from '../../../ui/components/render_coordinator/render_coordinator.js';
 import frameDetailsReportViewStyles from './frameDetailsReportView.css.js';
+import { Prerender2ReasonDescription } from './Prerender2.js';
 const UIStrings = {
     /**
     *@description Section header in the Frame Details view
@@ -224,6 +226,18 @@ const UIStrings = {
     *@description Label for a button which when clicked causes some information to be refreshed/updated.
     */
     refresh: 'Refresh',
+    /**
+    *@description Label for section of frame details view
+    */
+    prerendering: 'Prerendering',
+    /**
+    *@description Label for subtitle of frame details view
+    */
+    prerenderingStatus: 'Prerendering Status',
+    /**
+    *@description Label for a link to an ad script, which created the current iframe.
+    */
+    creatorAdScript: 'Creator Ad Script',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/application/components/FrameDetailsView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -236,9 +250,13 @@ export class FrameDetailsView extends UI.ThrottledWidget.ThrottledWidget {
         this.contentElement.classList.add('overflow-auto');
         this.contentElement.appendChild(this.#reportView);
         this.update();
+        frame.resourceTreeModel().addEventListener(SDK.ResourceTreeModel.Events.PrerenderingStatusUpdated, this.update, this);
     }
     async doUpdate() {
-        this.#reportView.data = { frame: this.#frame };
+        const debuggerId = this.#frame?.getDebuggerId();
+        const debuggerModel = debuggerId ? await SDK.DebuggerModel.DebuggerModel.modelForDebuggerId(debuggerId) : null;
+        const target = debuggerModel?.target();
+        this.#reportView.data = { frame: this.#frame, target };
     }
 }
 const coordinator = Coordinator.RenderCoordinator.RenderCoordinator.instance();
@@ -246,16 +264,19 @@ export class FrameDetailsReportView extends HTMLElement {
     static litTagName = LitHtml.literal `devtools-resources-frame-details-view`;
     #shadow = this.attachShadow({ mode: 'open' });
     #frame;
+    #target;
     #protocolMonitorExperimentEnabled = false;
     #permissionsPolicies = null;
     #permissionsPolicySectionData = { policies: [], showDetails: false };
     #originTrialTreeView = new OriginTrialTreeView();
+    #linkifier = new Components.Linkifier.Linkifier();
     connectedCallback() {
         this.#protocolMonitorExperimentEnabled = Root.Runtime.experiments.isEnabled('protocolMonitor');
         this.#shadow.adoptedStyleSheets = [frameDetailsReportViewStyles];
     }
     set data(data) {
         this.#frame = data.frame;
+        this.#target = data.target;
         if (!this.#permissionsPolicies && this.#frame) {
             this.#permissionsPolicies = this.#frame.getPermissionsPolicyState();
         }
@@ -283,6 +304,7 @@ export class FrameDetailsReportView extends HTMLElement {
               </${PermissionsPolicySection.litTagName}>
             `;
             }), LitHtml.nothing)}
+          ${this.#renderPrerenderingSection()}
           ${this.#protocolMonitorExperimentEnabled ? this.#renderAdditionalInfoSection() : LitHtml.nothing}
         </${ReportView.ReportView.Report.litTagName}>
       `, this.#shadow, { host: this });
@@ -469,19 +491,19 @@ export class FrameDetailsReportView extends HTMLElement {
     }
     #getAdFrameTypeStrings(type) {
         switch (type) {
-            case "child" /* Child */:
+            case "child" /* Protocol.Page.AdFrameType.Child */:
                 return { value: i18nString(UIStrings.child), description: i18nString(UIStrings.childDescription) };
-            case "root" /* Root */:
+            case "root" /* Protocol.Page.AdFrameType.Root */:
                 return { value: i18nString(UIStrings.root), description: i18nString(UIStrings.rootDescription) };
         }
     }
     #getAdFrameExplanationString(explanation) {
         switch (explanation) {
-            case "CreatedByAdScript" /* CreatedByAdScript */:
+            case "CreatedByAdScript" /* Protocol.Page.AdFrameExplanation.CreatedByAdScript */:
                 return i18nString(UIStrings.createdByAdScriptExplanation);
-            case "MatchedBlockingRule" /* MatchedBlockingRule */:
+            case "MatchedBlockingRule" /* Protocol.Page.AdFrameExplanation.MatchedBlockingRule */:
                 return i18nString(UIStrings.matchedBlockingRuleExplanation);
-            case "ParentIsAd" /* ParentIsAd */:
+            case "ParentIsAd" /* Protocol.Page.AdFrameExplanation.ParentIsAd */:
                 return i18nString(UIStrings.parentIsAdExplanation);
         }
     }
@@ -490,7 +512,7 @@ export class FrameDetailsReportView extends HTMLElement {
             return LitHtml.nothing;
         }
         const adFrameType = this.#frame.adFrameType();
-        if (adFrameType === "none" /* None */) {
+        if (adFrameType === "none" /* Protocol.Page.AdFrameType.None */) {
             return LitHtml.nothing;
         }
         const typeStrings = this.#getAdFrameTypeStrings(adFrameType);
@@ -498,11 +520,21 @@ export class FrameDetailsReportView extends HTMLElement {
         for (const explanation of this.#frame.adFrameStatus()?.explanations || []) {
             rows.push(LitHtml.html `<div>${this.#getAdFrameExplanationString(explanation)}</div>`);
         }
+        const adScriptLinkElement = this.#target ?
+            this.#linkifier.linkifyScriptLocation(this.#target, this.#frame.getAdScriptId(), Platform.DevToolsPath.EmptyUrlString, undefined, undefined) :
+            null;
+        // Disabled until https://crbug.com/1079231 is fixed.
+        // clang-format off
         return LitHtml.html `
       <${ReportView.ReportView.ReportKey.litTagName}>${i18nString(UIStrings.adStatus)}</${ReportView.ReportView.ReportKey.litTagName}>
       <${ReportView.ReportView.ReportValue.litTagName}>
-         <${ExpandableList.ExpandableList.ExpandableList.litTagName} .data=${{ rows }}></${ExpandableList.ExpandableList.ExpandableList.litTagName}></${ReportView.ReportView.ReportValue.litTagName}>
-      `;
+        <${ExpandableList.ExpandableList.ExpandableList.litTagName} .data=${{ rows }}></${ExpandableList.ExpandableList.ExpandableList.litTagName}></${ReportView.ReportView.ReportValue.litTagName}>
+      ${this.#target ? LitHtml.html `
+        <${ReportView.ReportView.ReportKey.litTagName}>${i18nString(UIStrings.creatorAdScript)}</${ReportView.ReportView.ReportKey.litTagName}>
+        <${ReportView.ReportView.ReportValue.litTagName} class="ad-script-link">${adScriptLinkElement}</${ReportView.ReportView.ReportValue.litTagName}>
+      ` : LitHtml.nothing}
+    `;
+        // clang-format on
     }
     #renderIsolationSection() {
         if (!this.#frame) {
@@ -531,13 +563,13 @@ export class FrameDetailsReportView extends HTMLElement {
     }
     #getSecureContextExplanation() {
         switch (this.#frame?.getSecureContextType()) {
-            case "Secure" /* Secure */:
+            case "Secure" /* Protocol.Page.SecureContextType.Secure */:
                 return null;
-            case "SecureLocalhost" /* SecureLocalhost */:
+            case "SecureLocalhost" /* Protocol.Page.SecureContextType.SecureLocalhost */:
                 return i18nString(UIStrings.localhostIsAlwaysASecureContext);
-            case "InsecureAncestor" /* InsecureAncestor */:
+            case "InsecureAncestor" /* Protocol.Page.SecureContextType.InsecureAncestor */:
                 return i18nString(UIStrings.aFrameAncestorIsAnInsecure);
-            case "InsecureScheme" /* InsecureScheme */:
+            case "InsecureScheme" /* Protocol.Page.SecureContextType.InsecureScheme */:
                 return i18nString(UIStrings.theFramesSchemeIsInsecure);
         }
         return null;
@@ -548,8 +580,8 @@ export class FrameDetailsReportView extends HTMLElement {
             const info = model && await model.getSecurityIsolationStatus(this.#frame.id);
             if (info) {
                 return LitHtml.html `
-          ${this.#maybeRenderCrossOriginStatus(info.coep, i18n.i18n.lockedString('Cross-Origin Embedder Policy (COEP)'), "None" /* None */)}
-          ${this.#maybeRenderCrossOriginStatus(info.coop, i18n.i18n.lockedString('Cross-Origin Opener Policy (COOP)'), "UnsafeNone" /* UnsafeNone */)}
+          ${this.#maybeRenderCrossOriginStatus(info.coep, i18n.i18n.lockedString('Cross-Origin Embedder Policy (COEP)'), "None" /* Protocol.Network.CrossOriginEmbedderPolicyValue.None */)}
+          ${this.#maybeRenderCrossOriginStatus(info.coop, i18n.i18n.lockedString('Cross-Origin Opener Policy (COOP)'), "UnsafeNone" /* Protocol.Network.CrossOriginOpenerPolicyValue.UnsafeNone */)}
         `;
             }
         }
@@ -591,8 +623,8 @@ export class FrameDetailsReportView extends HTMLElement {
         if (this.#frame) {
             const features = this.#frame.getGatedAPIFeatures();
             if (features) {
-                const sabAvailable = features.includes("SharedArrayBuffers" /* SharedArrayBuffers */);
-                const sabTransferAvailable = sabAvailable && features.includes("SharedArrayBuffersTransferAllowed" /* SharedArrayBuffersTransferAllowed */);
+                const sabAvailable = features.includes("SharedArrayBuffers" /* Protocol.Page.GatedAPIFeatures.SharedArrayBuffers */);
+                const sabTransferAvailable = sabAvailable && features.includes("SharedArrayBuffersTransferAllowed" /* Protocol.Page.GatedAPIFeatures.SharedArrayBuffersTransferAllowed */);
                 const availabilityText = sabTransferAvailable ?
                     i18nString(UIStrings.availableTransferable) :
                     (sabAvailable ? i18nString(UIStrings.availableNotTransferable) : i18nString(UIStrings.unavailable));
@@ -601,14 +633,14 @@ export class FrameDetailsReportView extends HTMLElement {
                     (sabAvailable ? i18nString(UIStrings.sharedarraybufferConstructorIsAvailable) : '');
                 function renderHint(frame) {
                     switch (frame.getCrossOriginIsolatedContextType()) {
-                        case "Isolated" /* Isolated */:
+                        case "Isolated" /* Protocol.Page.CrossOriginIsolatedContextType.Isolated */:
                             return LitHtml.nothing;
-                        case "NotIsolated" /* NotIsolated */:
+                        case "NotIsolated" /* Protocol.Page.CrossOriginIsolatedContextType.NotIsolated */:
                             if (sabAvailable) {
                                 return LitHtml.html `<span class="inline-comment">${i18nString(UIStrings.willRequireCrossoriginIsolated)}</span>`;
                             }
                             return LitHtml.html `<span class="inline-comment">${i18nString(UIStrings.requiresCrossoriginIsolated)}</span>`;
-                        case "NotIsolatedFeatureDisabled" /* NotIsolatedFeatureDisabled */:
+                        case "NotIsolatedFeatureDisabled" /* Protocol.Page.CrossOriginIsolatedContextType.NotIsolatedFeatureDisabled */:
                             if (!sabTransferAvailable) {
                                 return LitHtml.html `<span class="inline-comment">${i18nString(UIStrings
                                     .transferRequiresCrossoriginIsolatedPermission)} <code>cross-origin-isolated</code></span>`;
@@ -642,6 +674,37 @@ export class FrameDetailsReportView extends HTMLElement {
       `;
         }
         return LitHtml.nothing;
+    }
+    #renderPrerenderingSection() {
+        if (!this.#frame || !this.#frame.prerenderFinalStatus) {
+            return LitHtml.nothing;
+        }
+        const finalStatus = Prerender2ReasonDescription[this.#frame.prerenderFinalStatus].name();
+        if (this.#frame.prerenderDisallowedApiMethod) {
+            const detailSection = Prerender2ReasonDescription['DisallowedApiMethod'].name();
+            return LitHtml.html `
+      <${ReportView.ReportView.ReportSectionHeader.litTagName}>
+      ${i18nString(UIStrings.prerendering)}</${ReportView.ReportView.ReportSectionHeader.litTagName}>
+      <${ReportView.ReportView.ReportKey.litTagName}>${i18nString(UIStrings.prerenderingStatus)}</${ReportView.ReportView.ReportKey.litTagName}>
+      <${ReportView.ReportView.ReportValue.litTagName}>
+      <div class="text-ellipsis" title=${finalStatus}>${finalStatus}</div>
+      </${ReportView.ReportView.ReportValue.litTagName}>
+      <${ReportView.ReportView.ReportKey.litTagName}>${detailSection}</${ReportView.ReportView.ReportKey.litTagName}>
+      <${ReportView.ReportView.ReportValue.litTagName}>
+      <div class="text-ellipsis" title=${this.#frame.prerenderDisallowedApiMethod}>
+        ${this.#frame.prerenderDisallowedApiMethod}
+      </div>
+      </${ReportView.ReportView.ReportValue.litTagName}>
+      <${ReportView.ReportView.ReportSectionDivider.litTagName}></${ReportView.ReportView.ReportSectionDivider.litTagName}>`;
+        }
+        return LitHtml.html `
+      <${ReportView.ReportView.ReportSectionHeader.litTagName}>
+      ${i18nString(UIStrings.prerendering)}</${ReportView.ReportView.ReportSectionHeader.litTagName}>
+      <${ReportView.ReportView.ReportKey.litTagName}>${i18nString(UIStrings.prerenderingStatus)}</${ReportView.ReportView.ReportKey.litTagName}>
+      <${ReportView.ReportView.ReportValue.litTagName}>
+      <div class="text-ellipsis" title=${finalStatus}>${finalStatus}</div>
+      </${ReportView.ReportView.ReportValue.litTagName}>
+      <${ReportView.ReportView.ReportSectionDivider.litTagName}></${ReportView.ReportView.ReportSectionDivider.litTagName}>`;
     }
     #renderAdditionalInfoSection() {
         if (!this.#frame) {

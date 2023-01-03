@@ -369,7 +369,7 @@ export class JavaScriptBreakpointsSidebarPane extends UI.ThrottledWidget.Throttl
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
         const removeEntryTitle = breakpoints.length > 1 ? i18nString(UIStrings.removeAllBreakpointsInLine) :
             i18nString(UIStrings.removeBreakpoint);
-        contextMenu.defaultSection().appendItem(removeEntryTitle, () => breakpoints.map(breakpoint => breakpoint.remove(false /* keepInStorage */)));
+        contextMenu.defaultSection().appendItem(removeEntryTitle, () => breakpoints.map(breakpoint => void breakpoint.remove(false /* keepInStorage */)));
         if (event.target instanceof Element) {
             contextMenu.defaultSection().appendItem(i18nString(UIStrings.revealLocation), this.revealLocation.bind(this, event.target));
         }
@@ -415,13 +415,13 @@ export class JavaScriptBreakpointsSidebarPane extends UI.ThrottledWidget.Throttl
     }
     removeAllBreakpoints() {
         for (const breakpointLocation of this.breakpointManager.allBreakpointLocations()) {
-            breakpointLocation.breakpoint.remove(false /* keepInStorage */);
+            void breakpointLocation.breakpoint.remove(false /* keepInStorage */);
         }
     }
     removeOtherBreakpoints(selectedBreakpoints) {
         for (const breakpointLocation of this.breakpointManager.allBreakpointLocations()) {
             if (!selectedBreakpoints.has(breakpointLocation.breakpoint)) {
-                breakpointLocation.breakpoint.remove(false /* keepInStorage */);
+                void breakpointLocation.breakpoint.remove(false /* keepInStorage */);
             }
         }
     }

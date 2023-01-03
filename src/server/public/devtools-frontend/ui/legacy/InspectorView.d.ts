@@ -1,14 +1,14 @@
-import type { ActionDelegate as ActionDelegateInterface } from './ActionRegistration.js';
-import type { Context } from './Context.js';
-import type { ContextMenu } from './ContextMenu.js';
-import type { Icon } from './Icon.js';
-import type { Panel } from './Panel.js';
+import { type ActionDelegate as ActionDelegateInterface } from './ActionRegistration.js';
+import { type Context } from './Context.js';
+import { type ContextMenu } from './ContextMenu.js';
+import { type Icon } from './Icon.js';
+import { type Panel } from './Panel.js';
 import { SplitWidget } from './SplitWidget.js';
-import type { TabbedPane, TabbedPaneTabDelegate } from './TabbedPane.js';
-import type { View, ViewLocation, ViewLocationResolver } from './View.js';
-import type { Widget } from './Widget.js';
-import { VBox } from './Widget.js';
+import { type TabbedPane, type TabbedPaneTabDelegate } from './TabbedPane.js';
+import { type View, type ViewLocation, type ViewLocationResolver } from './View.js';
+import { VBox, type Widget } from './Widget.js';
 export declare class InspectorView extends VBox implements ViewLocationResolver {
+    #private;
     private readonly drawerSplitWidget;
     private readonly tabDelegate;
     private readonly drawerTabbedLocation;
@@ -56,6 +56,7 @@ export declare class InspectorView extends VBox implements ViewLocationResolver 
     minimize(): void;
     restore(): void;
     displayReloadRequiredWarning(message: string): void;
+    displaySelectOverrideFolderInfobar(callback: () => void): void;
     private createInfoBarDiv;
     private attachInfobar;
 }

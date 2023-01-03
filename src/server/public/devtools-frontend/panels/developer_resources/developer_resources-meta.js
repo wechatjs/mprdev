@@ -24,12 +24,12 @@ async function loadDeveloperResourcesModule() {
     return loadedDeveloperResourcesModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'resource-loading-pane',
     title: i18nLazyString(UIStrings.developerResources),
     commandPrompt: i18nLazyString(UIStrings.showDeveloperResources),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     experiment: Root.Runtime.ExperimentName.DEVELOPER_RESOURCES_VIEW,
     async loadView() {
         const DeveloperResources = await loadDeveloperResourcesModule();

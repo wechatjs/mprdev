@@ -10,6 +10,7 @@ export declare class MainImpl {
         [x: string]: string;
     }): void;
     lateInitDonePromiseForTest(): Promise<void> | null;
+    readyForTest(): Promise<void>;
     static instanceForTest: MainImpl | null;
 }
 export declare class ZoomActionDelegate implements UI.ActionRegistration.ActionDelegate {

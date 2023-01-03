@@ -8,4 +8,6 @@ declare const render: {
     _testOnlyClearSanitizerFactoryDoNotCallOrElse: () => void;
 }, svg: (strings: TemplateStringsArray, ...values: unknown[]) => LitHtml.TemplateResult<2>, Directives: typeof LitHtml.Directives, nothing: symbol, noChange: symbol;
 declare const html: typeof Static.html, literal: typeof Static.literal, flattenTemplate: typeof Static.flattenTemplate;
-export { render, Directives, nothing, noChange, svg, html, literal, flattenTemplate, };
+declare type LitTemplate = LitHtml.TemplateResult | typeof nothing;
+export { render, Directives, nothing, noChange, svg, html, literal, flattenTemplate, // Exposed for unit testing.
+type LitTemplate, };

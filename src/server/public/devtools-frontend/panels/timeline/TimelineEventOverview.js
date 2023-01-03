@@ -46,10 +46,6 @@ const UIStrings = {
     /**
     *@description Text in Timeline Event Overview of the Performance panel
     */
-    fps: 'FPS',
-    /**
-    *@description Text in Timeline Event Overview of the Performance panel
-    */
     heap: 'HEAP',
     /**
     *@description Heap size label text content in Timeline Event Overview of the Performance panel
@@ -151,9 +147,9 @@ export class TimelineEventOverviewNetwork extends TimelineEventOverview {
         const highPath = new Path2D();
         const lowPath = new Path2D();
         const highPrioritySet = new Set([
-            "VeryHigh" /* VeryHigh */,
-            "High" /* High */,
-            "Medium" /* Medium */,
+            "VeryHigh" /* Protocol.Network.ResourcePriority.VeryHigh */,
+            "High" /* Protocol.Network.ResourcePriority.High */,
+            "Medium" /* Protocol.Network.ResourcePriority.Medium */,
         ]);
         for (const request of timelineModel.networkRequests()) {
             const path = highPrioritySet.has(request.priority) ? highPath : lowPath;
@@ -439,59 +435,6 @@ export class TimelineFilmStripOverview extends TimelineEventOverview {
     // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration
     // eslint-disable-next-line @typescript-eslint/naming-convention
     static Padding = 2;
-}
-export class TimelineEventOverviewFrames extends TimelineEventOverview {
-    constructor() {
-        super('framerate', i18nString(UIStrings.fps));
-    }
-    update() {
-        super.update();
-        if (!this.model) {
-            return;
-        }
-        const frames = this.model.frames();
-        if (!frames.length) {
-            return;
-        }
-        const height = this.height();
-        const padding = Number(window.devicePixelRatio);
-        const baseFrameDurationMs = 1e3 / 60;
-        const visualHeight = height - 2 * padding;
-        const timeOffset = this.model.timelineModel().minimumRecordTime();
-        const timeSpan = this.model.timelineModel().maximumRecordTime() - timeOffset;
-        const scale = this.width() / timeSpan;
-        const baseY = height - padding;
-        const ctx = this.context();
-        const bottomY = baseY + 10 * window.devicePixelRatio;
-        let x = 0;
-        let y = bottomY;
-        const lineWidth = window.devicePixelRatio;
-        const offset = lineWidth & 1 ? 0.5 : 0;
-        const tickDepth = 1.5 * window.devicePixelRatio;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        for (let i = 0; i < frames.length; ++i) {
-            const frame = frames[i];
-            x = Math.round((frame.startTime - timeOffset) * scale) + offset;
-            ctx.lineTo(x, y);
-            ctx.lineTo(x, y + tickDepth);
-            y = frame.idle ? bottomY :
-                Math.round(baseY - visualHeight * Math.min(baseFrameDurationMs / frame.duration, 1)) - offset;
-            ctx.lineTo(x, y + tickDepth);
-            ctx.lineTo(x, y);
-        }
-        const lastFrame = frames[frames.length - 1];
-        if (lastFrame) {
-            x = Math.round((lastFrame.startTime + lastFrame.duration - timeOffset) * scale) + offset;
-        }
-        ctx.lineTo(x, y);
-        ctx.lineTo(x, bottomY);
-        ctx.fillStyle = 'hsl(110, 50%, 88%)';
-        ctx.strokeStyle = 'hsl(110, 50%, 60%)';
-        ctx.lineWidth = lineWidth;
-        ctx.fill();
-        ctx.stroke();
-    }
 }
 export class TimelineEventOverviewMemory extends TimelineEventOverview {
     heapSizeLabel;

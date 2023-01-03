@@ -1,5 +1,5 @@
 import * as UI from '../../legacy/legacy.js';
-import type { Column, Row, SortState } from './DataGridUtils.js';
+import { type Column, type Row, type SortState } from './DataGridUtils.js';
 export interface DataGridContextMenusConfiguration {
     headerRow?: (menu: UI.ContextMenu.ContextMenu, columns: readonly Column[]) => void;
     bodyRow?: (menu: UI.ContextMenu.ContextMenu, columns: readonly Column[], row: Readonly<Row>) => void;
@@ -9,6 +9,8 @@ export interface DataGridData {
     rows: Row[];
     activeSort: SortState | null;
     contextMenus?: DataGridContextMenusConfiguration;
+    label?: string;
+    paddingRowsCount?: number;
 }
 export declare class DataGrid extends HTMLElement {
     #private;

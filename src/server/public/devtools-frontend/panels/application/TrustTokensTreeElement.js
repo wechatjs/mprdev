@@ -6,6 +6,7 @@ import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import { ApplicationPanelTreeElement } from './ApplicationPanelTreeElement.js';
 import * as ApplicationComponents from './components/components.js';
+import * as Host from '../../core/host/host.js';
 const UIStrings = {
     /**
     *@description Hover text for an info icon in the Trust Token panel
@@ -32,6 +33,7 @@ export class TrustTokensTreeElement extends ApplicationPanelTreeElement {
             this.view = new TrustTokensViewWidgetWrapper();
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.trust_tokens]);
         return false;
     }
 }

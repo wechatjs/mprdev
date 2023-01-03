@@ -4,6 +4,7 @@
 import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as IssuesManager from '../../models/issues_manager/issues_manager.js';
 import * as ElementsComponents from '../elements/components/components.js';
@@ -84,7 +85,7 @@ export class AffectedDirectivesView extends AffectedResourcesView {
             const onElementRevealIconClick = () => {
                 const target = model.getTargetIfNotDisposed();
                 if (target) {
-                    Host.userMetrics.issuesPanelResourceOpened(this.issue.getCategory(), "Element" /* Element */);
+                    Host.userMetrics.issuesPanelResourceOpened(this.issue.getCategory(), "Element" /* AffectedItem.Element */);
                     const deferredDOMNode = new SDK.DOMModel.DeferredDOMNode(target, violatingNodeId);
                     void Common.Revealer.reveal(deferredDOMNode);
                 }
@@ -163,7 +164,8 @@ export class AffectedDirectivesView extends AffectedResourcesView {
             this.#appendStatus(element, cspIssueDetails.isReportOnly);
         }
         else if (this.issue.code() === IssuesManager.ContentSecurityPolicyIssue.urlViolationCode) {
-            const url = cspIssueDetails.blockedURL ? cspIssueDetails.blockedURL : '';
+            const url = cspIssueDetails.blockedURL ? cspIssueDetails.blockedURL :
+                Platform.DevToolsPath.EmptyUrlString;
             this.#appendBlockedURL(element, url);
             this.#appendStatus(element, cspIssueDetails.isReportOnly);
             this.#appendViolatedDirective(element, cspIssueDetails.violatedDirective);

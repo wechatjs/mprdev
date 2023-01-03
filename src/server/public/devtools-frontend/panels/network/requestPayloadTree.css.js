@@ -43,7 +43,6 @@ styles.replaceSync(
 }
 
 .tree-outline li {
-  display: block;
   padding-left: 5px;
   line-height: 20px;
 }

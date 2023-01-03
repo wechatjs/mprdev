@@ -173,7 +173,7 @@ be fixed to the right so it never goes out of the viewport even if other items
 push it. And the main menu button next to it that needs to make some space for
 it. */
 .toolbar-button.close-devtools {
-  position: fixed;
+  position: absolute;
   right: 0;
 }
 
@@ -186,7 +186,7 @@ it. */
 .toolbar-button.copied-to-clipboard::after {
   content: attr(data-content);
   position: fixed;
-  top: var(--toolbar-height);
+  margin-top: calc(2 * var(--toolbar-height));
   padding: 3px 5px;
   color: var(--color-text-secondary);
   background: var(--color-background-elevation-1);
@@ -212,6 +212,22 @@ it. */
 
 .toolbar-button.toolbar-state-on .toolbar-icon {
   --icon-color: var(--color-primary);
+}
+
+.toolbar-state-on.toolbar-toggle-with-dot .toolbar-icon::after,
+.toolbar-state-on.toolbar-toggle-with-dot .toolbar-text::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  background-color: var(--color-primary);
+  width: 4.5px;
+  height: 4.5px;
+  border: 2px solid var(--override-toolbar-background-color, --color-background);
+  border-radius: 50%;
+}
+
+.toolbar-state-on.toolbar-toggle-with-dot .toolbar-text::after {
+  right: 0;
 }
 
 .toolbar-button.toolbar-state-on.toolbar-toggle-with-red-color .toolbar-glyph,
@@ -449,8 +465,12 @@ input[is="history-input"]:not(:placeholder-shown) {
   z-index: -1;
 }
 
-.toolbar-item.highlight {
+.toolbar-item.highlight > .title {
   color: var(--color-button-primary-text);
+}
+
+.toolbar-item.highlight:hover:not(:active) > .title {
+  color: var(--color-button-primary-text-hover);
 }
 
 .toolbar-item.highlight:focus-visible {

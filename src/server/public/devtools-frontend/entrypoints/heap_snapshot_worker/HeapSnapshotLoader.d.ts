@@ -1,5 +1,5 @@
 import { JSHeapSnapshot } from './HeapSnapshot.js';
-import type { HeapSnapshotWorkerDispatcher } from './HeapSnapshotWorkerDispatcher.js';
+import { type HeapSnapshotWorkerDispatcher } from './HeapSnapshotWorkerDispatcher.js';
 export declare class HeapSnapshotLoader {
     #private;
     constructor(dispatcher: HeapSnapshotWorkerDispatcher);

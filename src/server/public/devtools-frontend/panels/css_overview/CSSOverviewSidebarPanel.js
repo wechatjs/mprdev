@@ -40,7 +40,7 @@ export class CSSOverviewSidebarPanel extends Common.ObjectWrapper.eventMixin(UI.
         item.dataset.id = id;
     }
     #reset() {
-        this.dispatchEventToListeners("Reset" /* Reset */);
+        this.dispatchEventToListeners("Reset" /* SidebarEvents.Reset */);
     }
     #deselectAllItems() {
         const items = this.contentElement.querySelectorAll(`.${CSSOverviewSidebarPanel.ITEM_CLASS_NAME}`);
@@ -58,7 +58,7 @@ export class CSSOverviewSidebarPanel extends Common.ObjectWrapper.eventMixin(UI.
             return;
         }
         this.select(id);
-        this.dispatchEventToListeners("ItemSelected" /* ItemSelected */, id);
+        this.dispatchEventToListeners("ItemSelected" /* SidebarEvents.ItemSelected */, id);
     }
     select(id) {
         const target = this.contentElement.querySelector(`[data-id=${CSS.escape(id)}]`);

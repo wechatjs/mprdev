@@ -390,6 +390,7 @@ export class TreeElement {
     expanded;
     selected;
     expandable;
+    #expandRecursively = true;
     collapsible;
     toggleOnClick;
     button;
@@ -740,6 +741,12 @@ export class TreeElement {
             ARIAUtils.setExpanded(this.listItemNode, false);
         }
     }
+    isExpandRecursively() {
+        return this.#expandRecursively;
+    }
+    setExpandRecursively(expandRecursively) {
+        this.#expandRecursively = expandRecursively;
+    }
     isCollapsible() {
         return this.collapsible;
     }
@@ -910,14 +917,16 @@ export class TreeElement {
         if (maxDepth === undefined || isNaN(maxDepth)) {
             maxDepth = 3;
         }
-        while (item) {
-            await item.populateIfNeeded();
-            if (depth < maxDepth) {
-                item.expand();
+        do {
+            if (item.isExpandRecursively()) {
+                await item.populateIfNeeded();
+                if (depth < maxDepth) {
+                    item.expand();
+                }
             }
-            item = item.traverseNextTreeElement(false, this, (depth >= maxDepth), info);
+            item = item.traverseNextTreeElement(!item.isExpandRecursively(), this, true, info);
             depth += info.depthChange;
-        }
+        } while (item !== null);
     }
     collapseOrAscend(altKey) {
         if (this.expanded && this.collapsible) {

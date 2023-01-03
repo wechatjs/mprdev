@@ -7,10 +7,10 @@ export declare type LocalizedMessages = Record<string, {
  * Encapsulates the global state of the i18n runtime.
  */
 export declare class I18n {
-    readonly defaultLocale: string;
     readonly supportedLocales: ReadonlySet<Intl.UnicodeBCP47LocaleIdentifier>;
     private localeData;
-    constructor(supportedLocales?: ReadonlyArray<Intl.UnicodeBCP47LocaleIdentifier>, defaultLocale?: string);
+    readonly defaultLocale: string;
+    constructor(supportedLocales?: readonly Intl.UnicodeBCP47LocaleIdentifier[], defaultLocale?: string);
     registerLocaleData(locale: Intl.UnicodeBCP47LocaleIdentifier, messages: LocalizedMessages): void;
     registerFileStrings(filename: string, stringStructure: UIStrings): RegisteredFileStrings;
     /**

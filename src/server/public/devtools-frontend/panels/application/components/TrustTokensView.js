@@ -127,7 +127,7 @@ export class TrustTokensView extends HTMLElement {
             rows: this.#buildRowsFromTokens(),
             initialSort: {
                 columnId: 'issuer',
-                direction: "ASC" /* ASC */,
+                direction: "ASC" /* DataGrid.DataGridUtils.SortDirection.ASC */,
             },
         };
         return LitHtml.html `

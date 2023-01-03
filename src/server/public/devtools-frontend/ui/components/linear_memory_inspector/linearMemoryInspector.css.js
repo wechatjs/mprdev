@@ -26,6 +26,10 @@ styles.replaceSync(
   padding: 9px 12px 9px 7px;
 }
 
+devtools-linear-memory-inspector-viewer {
+  justify-content: center;
+}
+
 devtools-linear-memory-inspector-navigator + devtools-linear-memory-inspector-viewer {
   margin-top: 12px;
 }

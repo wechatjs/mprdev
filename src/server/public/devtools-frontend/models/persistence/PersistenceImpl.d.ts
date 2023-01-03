@@ -1,7 +1,9 @@
 import * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as Bindings from '../bindings/bindings.js';
 import * as Workspace from '../workspace/workspace.js';
 export declare class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
+    #private;
     private readonly workspace;
     private readonly breakpointManager;
     private readonly filePathPrefixesToBindingCount;
@@ -37,7 +39,7 @@ export declare class PersistenceImpl extends Common.ObjectWrapper.ObjectWrapper<
     private notifyBindingEvent;
     fileSystem(uiSourceCode: Workspace.UISourceCode.UISourceCode): Workspace.UISourceCode.UISourceCode | null;
     network(uiSourceCode: Workspace.UISourceCode.UISourceCode): Workspace.UISourceCode.UISourceCode | null;
-    filePathHasBindings(filePath: string): boolean;
+    filePathHasBindings(filePath: Platform.DevToolsPath.UrlString): boolean;
 }
 export declare const NodePrefix = "(function (exports, require, module, __filename, __dirname) { ";
 export declare const NodeSuffix = "\n});";

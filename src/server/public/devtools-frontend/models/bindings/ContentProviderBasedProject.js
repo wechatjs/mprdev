@@ -51,8 +51,14 @@ export class ContentProviderBasedProject extends Workspace.Workspace.ProjectStor
     async requestFileContent(uiSourceCode) {
         const contentProvider = this.#contentProviders.get(uiSourceCode.url());
         try {
-            const [content, isEncoded] = await Promise.all([contentProvider.requestContent(), contentProvider.contentEncoded()]);
-            return { content: content.content, isEncoded, error: 'error' in content && content.error || '' };
+            const content = await contentProvider.requestContent();
+            const wasmDisassemblyInfo = 'wasmDisassemblyInfo' in content ? content.wasmDisassemblyInfo : undefined;
+            return {
+                content: content.content,
+                wasmDisassemblyInfo,
+                isEncoded: content.isEncoded,
+                error: 'error' in content && content.error || '',
+            };
         }
         catch (err) {
             // TODO(rob.paveza): CRBug 1013683 - Consider propagating exceptions full-stack
@@ -129,10 +135,10 @@ export class ContentProviderBasedProject extends Workspace.Workspace.ProjectStor
         const contentProvider = this.#contentProviders.get(uiSourceCode.url());
         return contentProvider.searchInContent(query, caseSensitive, isRegex);
     }
-    async findFilesMatchingSearchRequest(searchConfig, filesMathingFileQuery, progress) {
+    async findFilesMatchingSearchRequest(searchConfig, filesMatchingFileQuery, progress) {
         const result = [];
-        progress.setTotalWork(filesMathingFileQuery.length);
-        await Promise.all(filesMathingFileQuery.map(searchInContent.bind(this)));
+        progress.setTotalWork(filesMatchingFileQuery.length);
+        await Promise.all(filesMatchingFileQuery.map(searchInContent.bind(this)));
         progress.done();
         return result;
         async function searchInContent(path) {

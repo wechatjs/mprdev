@@ -1,5 +1,5 @@
 import * as LighthouseReport from '../../third_party/lighthouse/report/report.js';
-import type { RunnerResultArtifacts } from './LighthouseReporterTypes.js';
+import { type RunnerResultArtifacts } from './LighthouseReporterTypes.js';
 export declare class LighthouseReportRenderer extends LighthouseReport.ReportRenderer {
     constructor(dom: LighthouseReport.DOM);
     static addViewTraceButton(el: Element, reportUIFeatures: LighthouseReport.ReportUIFeatures, artifacts?: RunnerResultArtifacts): void;

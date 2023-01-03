@@ -326,7 +326,8 @@ export class NetworkLogViewColumns {
         if (!this.waterfallColumn.isShowing()) {
             return;
         }
-        this.waterfallScrollerContent.style.height = this.dataGridScroller.scrollHeight + 'px';
+        this.waterfallScrollerContent.style.height =
+            this.dataGridScroller.scrollHeight - this.dataGridInternal.headerHeight() + 'px';
         this.updateScrollerWidthIfNeeded();
         this.dataGridScroller.scrollTop = this.waterfallScroller.scrollTop;
     }
@@ -588,7 +589,7 @@ export class NetworkLogViewColumns {
         const manageCustomHeaders = new NetworkManageCustomHeadersView(customHeaders, headerTitle => Boolean(this.addCustomHeader(headerTitle)), this.changeCustomHeader.bind(this), this.removeCustomHeader.bind(this));
         const dialog = new UI.Dialog.Dialog();
         manageCustomHeaders.show(dialog.contentElement);
-        dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        dialog.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
         // @ts-ignore
         // TypeScript somehow tries to appy the `WidgetElement` class to the
         // `Document` type of the (Document|Element) union. WidgetElement inherits
@@ -672,7 +673,7 @@ export class NetworkLogViewColumns {
             box: anchor.boxInWindow(),
             show: async (popover) => {
                 this.popupLinkifier.setLiveLocationUpdateCallback(() => {
-                    popover.setSizeBehavior("MeasureContent" /* MeasureContent */);
+                    popover.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
                 });
                 const content = RequestInitiatorView.createStackTracePreview(request, this.popupLinkifier, false);
                 if (!content) {

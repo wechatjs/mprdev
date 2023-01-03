@@ -312,6 +312,10 @@ const UIStrings = {
     * emulates that the webpage is in auto dark mode.
     */
     emulateAutoDarkMode: 'Emulate auto dark mode',
+    /**
+     * @description Label of a checkbox in the DevTools settings UI.
+     */
+    enableRemoteFileLoading: 'Allow `DevTools` to load resources, such as source maps, from remote file paths. Disabled by default for security reasons.',
 };
 const str_ = i18n.i18n.registerUIStrings('core/sdk/sdk-meta.ts', UIStrings);
 const i18nLazyString = i18n.i18n.getLazilyComputedLocalizedString.bind(undefined, str_);
@@ -326,6 +330,18 @@ Common.Settings.registerSettingExtension({
     settingName: 'skipContentScripts',
     settingType: Common.Settings.SettingType.BOOLEAN,
     defaultValue: false,
+});
+Common.Settings.registerSettingExtension({
+    storageType: Common.Settings.SettingStorageType.Synced,
+    settingName: 'automaticallyIgnoreListKnownThirdPartyScripts',
+    settingType: Common.Settings.SettingType.BOOLEAN,
+    defaultValue: true,
+});
+Common.Settings.registerSettingExtension({
+    storageType: Common.Settings.SettingStorageType.Synced,
+    settingName: 'enableIgnoreListing',
+    settingType: Common.Settings.SettingType.BOOLEAN,
+    defaultValue: true,
 });
 Common.Settings.registerSettingExtension({
     category: Common.Settings.SettingCategory.CONSOLE,
@@ -992,6 +1008,14 @@ Common.Settings.registerSettingExtension({
     settingName: 'emulateAutoDarkMode',
     settingType: Common.Settings.SettingType.BOOLEAN,
     storageType: Common.Settings.SettingStorageType.Session,
+    defaultValue: false,
+});
+Common.Settings.registerSettingExtension({
+    category: Common.Settings.SettingCategory.SOURCES,
+    storageType: Common.Settings.SettingStorageType.Synced,
+    title: i18nLazyString(UIStrings.enableRemoteFileLoading),
+    settingName: 'network.enable-remote-file-loading',
+    settingType: Common.Settings.SettingType.BOOLEAN,
     defaultValue: false,
 });
 //# sourceMappingURL=sdk-meta.js.map

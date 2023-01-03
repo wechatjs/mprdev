@@ -1,7 +1,7 @@
 import type * as ProtocolClient from '../protocol_client/protocol_client.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class ChildTargetManager extends SDKModel<EventTypes> implements ProtocolProxyApi.TargetDispatcher {
     #private;

@@ -82,14 +82,18 @@ styles.replaceSync(
   margin: auto;
 }
 
+.authenticator-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
 .authenticator-section-title {
   line-height: 24px;
-  width: 260px;
   display: inline-block;
 }
 
 .authenticator-section-title .authenticator-name-field {
-  width: 220px;
   display: inline-block;
   font-weight: bold;
   border: none;
@@ -172,6 +176,7 @@ td .text-button {
   align-items: center;
   height: 100%;
   text-align: center;
+  overflow: hidden;
 }
 
 .webauthn-pane.enabled .learn-more {

@@ -8,7 +8,7 @@ import * as LitHtml from '../lit-html/lit-html.js';
 import * as ARIAUtils from './ARIAUtils.js';
 import { html } from './Fragment.js';
 import { Tooltip } from './Tooltip.js';
-import { addReferrerToURLIfNecessary, copyLinkAddressLabel, MaxLengthForDisplayedURLs, openLinkExternallyLabel } from './UIUtils.js';
+import { addReferrerToURLIfNecessary, copyLinkAddressLabel, MaxLengthForDisplayedURLs, openLinkExternallyLabel, } from './UIUtils.js';
 import { XElement } from './XElement.js';
 export class XLink extends XElement {
     hrefInternal;
@@ -39,13 +39,17 @@ export class XLink extends XElement {
         this.clickable = true;
         this.onClick = (event) => {
             event.consume(true);
-            Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(this.hrefInternal);
+            if (this.hrefInternal) {
+                Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(this.hrefInternal);
+            }
             this.dispatchEvent(new Event('x-link-invoke'));
         };
         this.onKeyDown = (event) => {
             if (isEnterOrSpaceKey(event)) {
                 event.consume(true);
-                Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(this.hrefInternal);
+                if (this.hrefInternal) {
+                    Host.InspectorFrontendHost.InspectorFrontendHostInstance.openInNewTab(this.hrefInternal);
+                }
             }
             this.dispatchEvent(new Event('x-link-invoke'));
         };

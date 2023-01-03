@@ -153,7 +153,7 @@ class DragHandler {
         this.glassPaneInUse = true;
         if (!DragHandler.glassPaneUsageCount++) {
             DragHandler.glassPane = new GlassPane();
-            DragHandler.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* BlockedByGlassPane */);
+            DragHandler.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* PointerEventsBehavior.BlockedByGlassPane */);
             if (DragHandler.documentForMouseOut) {
                 DragHandler.glassPane.show(DragHandler.documentForMouseOut);
             }
@@ -299,7 +299,7 @@ export function isEditing() {
     if (elementsBeingEdited.size) {
         return true;
     }
-    const focused = document.deepActiveElement();
+    const focused = Platform.DOMUtilities.deepActiveElement(document);
     if (!focused) {
         return false;
     }
@@ -556,7 +556,7 @@ export class ElementFocusRestorer {
     previous;
     constructor(element) {
         this.element = element;
-        this.previous = element.ownerDocument.deepActiveElement();
+        this.previous = Platform.DOMUtilities.deepActiveElement(element.ownerDocument);
         element.focus();
     }
     restore() {
@@ -1325,7 +1325,7 @@ export const MaxLengthForDisplayedURLs = 150;
 export class MessageDialog {
     static async show(message, where) {
         const dialog = new Dialog();
-        dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        dialog.setSizeBehavior("MeasureContent" /* SizeBehavior.MeasureContent */);
         dialog.setDimmed(true);
         const shadowRoot = Utils.createShadowRootWithCoreStyles(dialog.contentElement, { cssFile: confirmDialogStyles, delegatesFocus: undefined });
         const content = shadowRoot.createChild('div', 'widget');
@@ -1346,7 +1346,7 @@ export class MessageDialog {
 export class ConfirmDialog {
     static async show(message, where) {
         const dialog = new Dialog();
-        dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        dialog.setSizeBehavior("MeasureContent" /* SizeBehavior.MeasureContent */);
         dialog.setDimmed(true);
         ARIAUtils.setAccessibleName(dialog.contentElement, message);
         const shadowRoot = Utils.createShadowRootWithCoreStyles(dialog.contentElement, { cssFile: confirmDialogStyles, delegatesFocus: undefined });

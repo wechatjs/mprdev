@@ -103,6 +103,9 @@
       "path": "../search/bundle-tsconfig.json"
     },
     {
+      "path": "../sources/bundle-tsconfig.json"
+    },
+    {
       "path": "../utils/bundle-tsconfig.json"
     },
     {

@@ -58,6 +58,10 @@ button.view-trace {
   flex: 1 1 auto;
 }
 
+.lh-devtools .lh-element-screenshot__overlay {
+  position: absolute;
+}
+
 /*# sourceURL=lighthousePanel.css */
 `);
 export default styles;

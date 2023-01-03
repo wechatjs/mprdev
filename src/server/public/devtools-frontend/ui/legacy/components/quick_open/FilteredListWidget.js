@@ -137,13 +137,13 @@ export class FilteredListWidget extends Common.ObjectWrapper.eventMixin(UI.Widge
         this.dialog = new UI.Dialog.Dialog();
         UI.ARIAUtils.setAccessibleName(this.dialog.contentElement, dialogTitle);
         this.dialog.setMaxContentSize(new UI.Geometry.Size(504, 340));
-        this.dialog.setSizeBehavior("SetExactWidthMaxHeight" /* SetExactWidthMaxHeight */);
+        this.dialog.setSizeBehavior("SetExactWidthMaxHeight" /* UI.GlassPane.SizeBehavior.SetExactWidthMaxHeight */);
         this.dialog.setContentPosition(null, 22);
         this.dialog.contentElement.style.setProperty('border-radius', '4px');
         this.show(this.dialog.contentElement);
         UI.ARIAUtils.setExpanded(this.contentElement, true);
-        void this.dialog.once("hidden" /* Hidden */).then(() => {
-            this.dispatchEventToListeners("hidden" /* Hidden */);
+        void this.dialog.once("hidden" /* UI.Dialog.Events.Hidden */).then(() => {
+            this.dispatchEventToListeners("hidden" /* Events.Hidden */);
         });
         // @ts-ignore
         this.dialog.show();
@@ -177,7 +177,7 @@ export class FilteredListWidget extends Common.ObjectWrapper.eventMixin(UI.Widge
         this.itemsLoaded(this.provider);
     }
     cleanValue() {
-        return this.query.substring(this.prefix.length);
+        return this.query.substring(this.prefix.length).trim();
     }
     wasShown() {
         this.registerCSSFiles([filteredListWidgetStyles]);
@@ -444,16 +444,16 @@ export class FilteredListWidget extends Common.ObjectWrapper.eventMixin(UI.Widge
                 }
                 handled = this.tabKeyPressed();
                 break;
-            case "ArrowUp" /* UP */:
+            case "ArrowUp" /* Platform.KeyboardUtilities.ArrowKey.UP */:
                 handled = this.list.selectPreviousItem(true, false);
                 break;
-            case "ArrowDown" /* DOWN */:
+            case "ArrowDown" /* Platform.KeyboardUtilities.ArrowKey.DOWN */:
                 handled = this.list.selectNextItem(true, false);
                 break;
-            case "PageUp" /* UP */:
+            case "PageUp" /* Platform.KeyboardUtilities.PageKey.UP */:
                 handled = this.list.selectItemPreviousPage(false);
                 break;
-            case "PageDown" /* DOWN */:
+            case "PageDown" /* Platform.KeyboardUtilities.PageKey.DOWN */:
                 handled = this.list.selectItemNextPage(false);
                 break;
         }

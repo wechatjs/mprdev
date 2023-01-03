@@ -1,4 +1,5 @@
 import * as FormatterActions from '../../entrypoints/formatter_worker/FormatterActions.js';
+export { DefinitionKind, type ScopeTreeNode } from '../../entrypoints/formatter_worker/FormatterActions.js';
 export declare class FormatterWorkerPool {
     private taskQueue;
     private workerTasks;
@@ -15,6 +16,8 @@ export declare class FormatterWorkerPool {
         name: string;
         offset: number;
     }[]>;
+    javaScriptSubstitute(expression: string, mapping: Map<string, string>): Promise<string>;
+    javaScriptScopeTree(expression: string): Promise<FormatterActions.ScopeTreeNode | null>;
     evaluatableJavaScriptSubstring(content: string): Promise<string>;
     parseCSS(content: string, callback: (arg0: boolean, arg1: Array<CSSRule>) => void): void;
     outlineForMimetype(content: string, mimeType: string, callback: (arg0: boolean, arg1: Array<OutlineItem>) => void): boolean;
@@ -54,4 +57,3 @@ export interface TextRange {
     endLine: number;
     endColumn: number;
 }
-export {};

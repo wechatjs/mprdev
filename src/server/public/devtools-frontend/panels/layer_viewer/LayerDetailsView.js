@@ -33,7 +33,7 @@ import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import layerDetailsViewStyles from './layerDetailsView.css.js';
-import { ScrollRectSelection } from './LayerViewHost.js';
+import { ScrollRectSelection, } from './LayerViewHost.js';
 const UIStrings = {
     /**
     *@description Text in Layer Details View of the Layers panel
@@ -200,7 +200,7 @@ export class LayerDetailsView extends Common.ObjectWrapper.eventMixin(UI.Widget.
         if (!this.selection) {
             return;
         }
-        const snapshotSelection = this.selection.type() === "Snapshot" /* Snapshot */ ? this.selection : this.layerSnapshotMap.get(this.selection.layer());
+        const snapshotSelection = this.selection.type() === "Snapshot" /* Type.Snapshot */ ? this.selection : this.layerSnapshotMap.get(this.selection.layer());
         if (snapshotSelection) {
             this.dispatchEventToListeners(Events.PaintProfilerRequested, snapshotSelection);
         }
@@ -279,7 +279,7 @@ export class LayerDetailsView extends Common.ObjectWrapper.eventMixin(UI.Widget.
         this.scrollRectsCell.removeChildren();
         layer.scrollRects().forEach(this.createScrollRectElement.bind(this));
         this.populateStickyPositionConstraintCell(layer.stickyPositionConstraint());
-        const snapshot = this.selection && this.selection.type() === "Snapshot" /* Snapshot */ ?
+        const snapshot = this.selection && this.selection.type() === "Snapshot" /* Type.Snapshot */ ?
             this.selection.snapshot() :
             null;
         this.paintProfilerLink.classList.toggle('hidden', !(this.layerSnapshotMap.has(layer) || snapshot));

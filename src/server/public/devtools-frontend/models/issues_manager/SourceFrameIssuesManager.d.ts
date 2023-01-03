@@ -1,8 +1,8 @@
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as Workspace from '../../models/workspace/workspace.js';
-import type { IssueKind } from './Issue.js';
-import type { IssuesManager } from './IssuesManager.js';
+import { type IssueKind } from './Issue.js';
+import { type IssuesManager } from './IssuesManager.js';
 export declare class SourceFrameIssuesManager {
     #private;
     private readonly issuesManager;

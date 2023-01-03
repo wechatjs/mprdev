@@ -97,7 +97,7 @@ export class WebVitalsTimeline extends HTMLElement {
         this.#context = context;
         this.#fcpLane = new WebVitalsEventLane(this, i18nString(UIStrings.fcp), e => this.#getMarkerTypeForFCPEvent(e), this.#getFCPMarkerOverlay);
         this.#lcpLane = new WebVitalsEventLane(this, i18nString(UIStrings.lcp), e => this.#getMarkerTypeForLCPEvent(e), this.#getLCPMarkerOverlay);
-        this.#layoutShiftsLane = new WebVitalsEventLane(this, i18nString(UIStrings.ls), _ => "Bad" /* Bad */);
+        this.#layoutShiftsLane = new WebVitalsEventLane(this, i18nString(UIStrings.ls), _ => "Bad" /* MarkerType.Bad */);
         this.#longTasksLane = new WebVitalsTimeboxLane(this, i18nString(UIStrings.longTasks), this.#getLongTaskOverlay);
         this.#overlay = document.createElement('devtools-timeline-webvitals-tooltip');
         this.#overlay.style.position = 'absolute';
@@ -214,22 +214,22 @@ export class WebVitalsTimeline extends HTMLElement {
     #getMarkerTypeForFCPEvent(event) {
         const t = this.getTimeSinceLastMainFrameNavigation(event.timestamp);
         if (t <= FCP_GOOD_TIMING) {
-            return "Good" /* Good */;
+            return "Good" /* MarkerType.Good */;
         }
         if (t <= FCP_MEDIUM_TIMING) {
-            return "Medium" /* Medium */;
+            return "Medium" /* MarkerType.Medium */;
         }
-        return "Bad" /* Bad */;
+        return "Bad" /* MarkerType.Bad */;
     }
     #getMarkerTypeForLCPEvent(event) {
         const t = this.getTimeSinceLastMainFrameNavigation(event.timestamp);
         if (t <= LCP_GOOD_TIMING) {
-            return "Good" /* Good */;
+            return "Good" /* MarkerType.Good */;
         }
         if (t <= LCP_MEDIUM_TIMING) {
-            return "Medium" /* Medium */;
+            return "Medium" /* MarkerType.Medium */;
         }
-        return "Bad" /* Bad */;
+        return "Bad" /* MarkerType.Bad */;
     }
     #getFCPMarkerOverlay() {
         return LitHtml.html `

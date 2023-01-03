@@ -1,12 +1,13 @@
 import * as Common from '../../core/common/common.js';
+import type * as Platform from '../../core/platform/platform.js';
 import type * as SDK from '../../core/sdk/sdk.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { MarkdownIssueDescription } from './MarkdownIssueDescription.js';
+import { type MarkdownIssueDescription } from './MarkdownIssueDescription.js';
 export declare enum IssueCategory {
     CrossOriginEmbedderPolicy = "CrossOriginEmbedderPolicy",
     Generic = "Generic",
     MixedContent = "MixedContent",
-    SameSiteCookie = "SameSiteCookie",
+    Cookie = "Cookie",
     HeavyAd = "HeavyAd",
     ContentSecurityPolicy = "ContentSecurityPolicy",
     TrustedWebActivity = "TrustedWebActivity",
@@ -77,7 +78,7 @@ export declare abstract class Issue<IssueCode extends string = string> {
     setHidden(hidden: boolean): void;
 }
 export declare function toZeroBasedLocation(location: Protocol.Audits.SourceCodeLocation | undefined): {
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     scriptId: Protocol.Runtime.ScriptId | undefined;
     lineNumber: number;
     columnNumber: number | undefined;

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { Events as ProfileHeaderEvents } from './ProfileHeader.js';
+import { Events as ProfileHeaderEvents, } from './ProfileHeader.js';
 const UIStrings = {
     /**
     *@description Text to save something

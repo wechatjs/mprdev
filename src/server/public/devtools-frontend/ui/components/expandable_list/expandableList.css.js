@@ -11,6 +11,10 @@ styles.replaceSync(
  * found in the LICENSE file.
  */
 
+:host {
+  overflow: hidden;
+}
+
 div {
   line-height: 1.7em;
 }
@@ -24,7 +28,7 @@ div {
 
 .arrow-icon {
   display: inline-block;
-  -webkit-mask-image: url("Images/treeoutlineTriangles.svg");
+  -webkit-mask-image: var(--image-file-treeoutlineTriangles);
   -webkit-mask-size: 32px 24px;
   -webkit-mask-position: 0 0;
   background-color: var(--color-text-primary);
@@ -59,6 +63,12 @@ button.link {
   background: none;
   font-family: inherit;
   font-size: inherit;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /*# sourceURL=expandableList.css */

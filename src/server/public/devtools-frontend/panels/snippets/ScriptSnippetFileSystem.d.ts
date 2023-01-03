@@ -8,15 +8,15 @@ export declare class SnippetFileSystem extends Persistence.PlatformFileSystem.Pl
     private readonly snippetsSetting;
     constructor();
     initialFilePaths(): Platform.DevToolsPath.EncodedPathString[];
-    createFile(_path: string, _name: string | null): Promise<string | null>;
-    deleteFile(path: string): Promise<boolean>;
-    requestFileContent(path: string): Promise<TextUtils.ContentProvider.DeferredContent>;
-    setFileContent(path: string, content: string, _isBase64: boolean): Promise<boolean>;
-    renameFile(path: string, newName: string, callback: (arg0: boolean, arg1?: string | undefined) => void): void;
+    createFile(_path: Platform.DevToolsPath.EncodedPathString, _name: Platform.DevToolsPath.RawPathString | null): Promise<Platform.DevToolsPath.EncodedPathString | null>;
+    deleteFile(path: Platform.DevToolsPath.EncodedPathString): Promise<boolean>;
+    requestFileContent(path: Platform.DevToolsPath.EncodedPathString): Promise<TextUtils.ContentProvider.DeferredContent>;
+    setFileContent(path: Platform.DevToolsPath.EncodedPathString, content: string, _isBase64: boolean): Promise<boolean>;
+    renameFile(path: Platform.DevToolsPath.EncodedPathString, newName: Platform.DevToolsPath.RawPathString, callback: (arg0: boolean, arg1?: string | undefined) => void): void;
     searchInPath(query: string, _progress: Common.Progress.Progress): Promise<string[]>;
-    mimeFromPath(_path: string): string;
+    mimeFromPath(_path: Platform.DevToolsPath.UrlString): string;
     contentType(_path: string): Common.ResourceType.ResourceType;
-    tooltipForURL(url: string): string;
+    tooltipForURL(url: Platform.DevToolsPath.UrlString): string;
     supportsAutomapping(): boolean;
 }
 export declare function evaluateScriptSnippet(uiSourceCode: Workspace.UISourceCode.UISourceCode): Promise<void>;
@@ -24,6 +24,6 @@ export declare function isSnippetsUISourceCode(uiSourceCode: Workspace.UISourceC
 export declare function isSnippetsProject(project: Workspace.Workspace.Project): boolean;
 export declare function findSnippetsProject(): Workspace.Workspace.Project;
 export interface Snippet {
-    name: string;
+    name: Platform.DevToolsPath.RawPathString;
     content: string;
 }

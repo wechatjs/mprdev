@@ -23,12 +23,12 @@ async function loadLinearMemoryInspectorModule() {
     return loadedLinearMemoryInspectorModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'linear-memory-inspector',
     title: i18nLazyString(UIStrings.memoryInspector),
     commandPrompt: i18nLazyString(UIStrings.showMemoryInspector),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const LinearMemoryInspector = await loadLinearMemoryInspectorModule();
         return LinearMemoryInspector.LinearMemoryInspectorPane.Wrapper.instance();

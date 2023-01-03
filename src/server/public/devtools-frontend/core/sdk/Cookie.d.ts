@@ -1,3 +1,4 @@
+import type * as Platform from '../platform/platform.js';
 import type * as Protocol from '../../generated/protocol.js';
 export declare class Cookie {
     #private;
@@ -25,7 +26,7 @@ export declare class Cookie {
     /**
      * @deprecated
      */
-    url(): string | null;
+    url(): Platform.DevToolsPath.UrlString | null;
     setSize(size: number): void;
     expiresDate(requestDate: Date): Date | null;
     addAttribute(key: string, value?: string | number | boolean): void;

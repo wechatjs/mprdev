@@ -57,7 +57,7 @@ export class PlatformFontsWidget extends UI.ThrottledWidget.ThrottledWidget {
     constructor(sharedModel) {
         super(true);
         this.sharedModel = sharedModel;
-        this.sharedModel.addEventListener("ComputedStyleChanged" /* ComputedStyleChanged */, this.update, this);
+        this.sharedModel.addEventListener("ComputedStyleChanged" /* Events.ComputedStyleChanged */, this.update, this);
         this.sectionTitle = document.createElement('div');
         this.sectionTitle.classList.add('title');
         this.contentElement.classList.add('platform-fonts');
@@ -73,7 +73,7 @@ export class PlatformFontsWidget extends UI.ThrottledWidget.ThrottledWidget {
         if (!node || !cssModel) {
             return Promise.resolve();
         }
-        return cssModel.platformFontsPromise(node.id).then(this.refreshUI.bind(this, node));
+        return cssModel.getPlatformFonts(node.id).then(this.refreshUI.bind(this, node));
     }
     refreshUI(node, platformFonts) {
         if (this.sharedModel.node() !== node) {

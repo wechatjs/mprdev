@@ -65,7 +65,7 @@ export class CookieModel extends SDKModel {
             expires = Math.floor(Date.parse(`${cookie.expires()}`) / 1000);
         }
         const enabled = Root.Runtime.experiments.isEnabled('experimentalCookieFeatures');
-        const preserveUnset = (scheme) => scheme === "Unset" /* Unset */ ? scheme : undefined;
+        const preserveUnset = (scheme) => scheme === "Unset" /* Protocol.Network.CookieSourceScheme.Unset */ ? scheme : undefined;
         const protocolCookie = {
             name: cookie.name(),
             value: cookie.value(),

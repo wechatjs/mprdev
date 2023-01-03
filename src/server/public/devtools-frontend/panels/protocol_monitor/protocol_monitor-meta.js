@@ -27,12 +27,12 @@ async function loadProtocolMonitorModule() {
     return loadedProtocolMonitorModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'protocol-monitor',
     title: i18nLazyString(UIStrings.protocolMonitor),
     commandPrompt: i18nLazyString(UIStrings.showProtocolMonitor),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const ProtocolMonitor = await loadProtocolMonitorModule();
         return ProtocolMonitor.ProtocolMonitor.ProtocolMonitorImpl.instance();

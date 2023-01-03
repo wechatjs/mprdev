@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConnectionTransport } from '../common/ConnectionTransport.js';
 import NodeWebSocket from 'ws';
+import { ConnectionTransport } from '../common/ConnectionTransport.js';
+/**
+ * @internal
+ */
 export declare class NodeWebSocketTransport implements ConnectionTransport {
+    #private;
     static create(url: string): Promise<NodeWebSocketTransport>;
-    private _ws;
-    onmessage?: (message: string) => void;
+    onmessage?: (message: NodeWebSocket.Data) => void;
     onclose?: () => void;
     constructor(ws: NodeWebSocket);
     send(message: string): void;

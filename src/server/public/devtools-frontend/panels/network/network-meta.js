@@ -121,7 +121,7 @@ function maybeRetrieveContextTypes(getClassCallBack) {
     return getClassCallBack(loadedNetworkModule);
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'network',
     commandPrompt: i18nLazyString(UIStrings.showNetwork),
     title: i18nLazyString(UIStrings.network),
@@ -132,11 +132,11 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'network.blocked-urls',
     commandPrompt: i18nLazyString(UIStrings.showNetworkRequestBlocking),
     title: i18nLazyString(UIStrings.networkRequestBlocking),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 60,
     async loadView() {
         const Network = await loadNetworkModule();
@@ -144,11 +144,11 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'network.config',
     commandPrompt: i18nLazyString(UIStrings.showNetworkConditions),
     title: i18nLazyString(UIStrings.networkConditions),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 40,
     tags: [
         i18nLazyString(UIStrings.diskCache),
@@ -163,11 +163,11 @@ UI.ViewManager.registerViewExtension({
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "network-sidebar" /* NETWORK_SIDEBAR */,
+    location: "network-sidebar" /* UI.ViewManager.ViewLocationValues.NETWORK_SIDEBAR */,
     id: 'network.search-network-tab',
     commandPrompt: i18nLazyString(UIStrings.showSearch),
     title: i18nLazyString(UIStrings.search),
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Network = await loadNetworkModule();
         return Network.NetworkPanel.SearchNetworkView.instance();
@@ -176,9 +176,9 @@ UI.ViewManager.registerViewExtension({
 UI.ActionRegistration.registerActionExtension({
     actionId: 'network.toggle-recording',
     category: UI.ActionRegistration.ActionCategory.NETWORK,
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     contextTypes() {
         return maybeRetrieveContextTypes(Network => [Network.NetworkPanel.NetworkPanel]);
@@ -200,11 +200,11 @@ UI.ActionRegistration.registerActionExtension({
     bindings: [
         {
             shortcut: 'Ctrl+E',
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
         },
         {
             shortcut: 'Meta+E',
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
         },
     ],
 });
@@ -238,19 +238,19 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+F',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+F',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
     ],
@@ -301,7 +301,7 @@ Common.Settings.registerSettingExtension({
     ],
 });
 UI.ViewManager.registerLocationResolver({
-    name: "network-sidebar" /* NETWORK_SIDEBAR */,
+    name: "network-sidebar" /* UI.ViewManager.ViewLocationValues.NETWORK_SIDEBAR */,
     category: UI.ViewManager.ViewLocationCategoryValues.NETWORK,
     async loadResolver() {
         const Network = await loadNetworkModule();

@@ -174,7 +174,7 @@ export default {
       const host = location.host;
       const protocol = securePointed ? secure : location.protocol;
       const wsProtocol = protocol === 'https:' ? 'wss' : 'ws';
-      const devPanelUrl = `${host}/${BASE_URL.replace(/^\//, '')}/front_end/devtools_app.html`;
+      const devPanelUrl = `${host}/${BASE_URL.replace(/^\//, '')}/front_end/inspector.html`;
       const wsConnection = `${host}/devtool/${target}?targetId=${target}`;
 
       const url = `${protocol}//${devPanelUrl}?${wsProtocol}=${wsConnection}`;

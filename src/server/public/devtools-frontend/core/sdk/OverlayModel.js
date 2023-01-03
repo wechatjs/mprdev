@@ -188,7 +188,7 @@ export class OverlayModel extends SDKModel {
     }
     async setInspectMode(mode, showDetailedTooltip = true) {
         await this.#domModel.requestDocument();
-        this.#inspectModeEnabledInternal = mode !== "none" /* None */;
+        this.#inspectModeEnabledInternal = mode !== "none" /* Protocol.Overlay.InspectMode.None */;
         this.dispatchEventToListeners(Events.InspectModeWillBeToggled, this);
         void this.#highlighter.setInspectMode(mode, this.buildHighlightConfig('all', showDetailedTooltip));
     }
@@ -398,8 +398,8 @@ export class OverlayModel extends SDKModel {
             gridHighlightConfig: {},
             flexContainerHighlightConfig: {},
             flexItemHighlightConfig: {},
-            contrastAlgorithm: Root.Runtime.experiments.isEnabled('APCA') ? "apca" /* Apca */ :
-                "aa" /* Aa */,
+            contrastAlgorithm: Root.Runtime.experiments.isEnabled('APCA') ? "apca" /* Protocol.Overlay.ContrastAlgorithm.Apca */ :
+                "aa" /* Protocol.Overlay.ContrastAlgorithm.Aa */,
         };
         if (mode === 'all' || mode === 'content') {
             highlightConfig.contentColor = Common.Color.PageHighlight.Content.toProtocolRGBA();
@@ -430,15 +430,15 @@ export class OverlayModel extends SDKModel {
             highlightConfig.flexContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 itemSeparator: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dotted" /* Dotted */,
+                    pattern: "dotted" /* Protocol.Overlay.LineStylePattern.Dotted */,
                 },
                 lineSeparator: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 mainDistributedSpace: {
                     hatchColor: Common.Color.PageHighlight.GapHatch.toProtocolRGBA(),
@@ -463,7 +463,7 @@ export class OverlayModel extends SDKModel {
                 },
                 baseSizeBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dotted" /* Dotted */,
+                    pattern: "dotted" /* Protocol.Overlay.LineStylePattern.Dotted */,
                 },
                 flexibilityArrow: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
@@ -488,7 +488,7 @@ export class OverlayModel extends SDKModel {
             highlightConfig.flexContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
             };
             if (mode === 'gap' || mode === 'row-gap') {
@@ -532,7 +532,7 @@ export class OverlayModel extends SDKModel {
             highlightConfig.flexContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 mainDistributedSpace: {
                     hatchColor: Common.Color.PageHighlight.GapHatch.toProtocolRGBA(),
@@ -544,7 +544,7 @@ export class OverlayModel extends SDKModel {
             highlightConfig.flexContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 crossDistributedSpace: {
                     hatchColor: Common.Color.PageHighlight.GapHatch.toProtocolRGBA(),
@@ -556,11 +556,11 @@ export class OverlayModel extends SDKModel {
             highlightConfig.flexContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 lineSeparator: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
                 crossAlignment: { color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA() },
             };
@@ -572,7 +572,7 @@ export class OverlayModel extends SDKModel {
                 },
                 baseSizeBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dotted" /* Dotted */,
+                    pattern: "dotted" /* Protocol.Overlay.LineStylePattern.Dotted */,
                 },
                 flexibilityArrow: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
@@ -583,7 +583,7 @@ export class OverlayModel extends SDKModel {
             highlightConfig.containerQueryContainerHighlightConfig = {
                 containerBorder: {
                     color: Common.Color.PageHighlight.LayoutLine.toProtocolRGBA(),
-                    pattern: "dashed" /* Dashed */,
+                    pattern: "dashed" /* Protocol.Overlay.LineStylePattern.Dashed */,
                 },
             };
         }

@@ -23,6 +23,7 @@ styles.replaceSync(
 .status-dialog-line {
   margin: 2px;
   height: 14px;
+  min-height: auto;
   display: flex;
   align-items: baseline;
 }

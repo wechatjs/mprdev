@@ -4,7 +4,7 @@ import * as NetworkForward from '../../panels/network/forward/forward.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { NetworkTimeCalculator } from './NetworkTimeCalculator.js';
+import { type NetworkTimeCalculator } from './NetworkTimeCalculator.js';
 export declare enum Events {
     RequestSelected = "RequestSelected",
     RequestActivated = "RequestActivated"

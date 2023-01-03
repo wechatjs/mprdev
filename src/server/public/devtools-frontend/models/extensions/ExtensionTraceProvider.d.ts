@@ -1,3 +1,4 @@
+import type * as Platform from '../../core/platform/platform.js';
 export declare class ExtensionTraceProvider {
     private readonly extensionOrigin;
     private readonly id;
@@ -11,5 +12,5 @@ export declare class ExtensionTraceProvider {
     persistentIdentifier(): string;
 }
 export interface TracingSession {
-    complete(url: string, timeOffsetMicroseconds: number): void;
+    complete(url: Platform.DevToolsPath.UrlString, timeOffsetMicroseconds: number): void;
 }

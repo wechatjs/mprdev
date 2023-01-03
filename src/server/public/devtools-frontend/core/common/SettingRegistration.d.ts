@@ -1,6 +1,6 @@
 import type * as Platform from '../platform/platform.js';
 import * as Root from '../root/root.js';
-import type { SettingStorageType } from './Settings.js';
+import { type SettingStorageType } from './Settings.js';
 export declare function registerSettingExtension(registration: SettingRegistration): void;
 export declare function getRegisteredSettings(): Array<SettingRegistration>;
 export declare function registerSettingsForTest(settings: Array<SettingRegistration>, forceReset?: boolean): void;

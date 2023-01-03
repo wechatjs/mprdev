@@ -35,8 +35,10 @@ export function normalizePath(path) {
     if (path.indexOf('..') === -1 && path.indexOf('.') === -1) {
         return path;
     }
+    // Remove leading slash (will be added back below) so we
+    // can handle all (including empty) segments consistently.
+    const segments = (path[0] === '/' ? path.substring(1) : path).split('/');
     const normalizedSegments = [];
-    const segments = path.split('/');
     for (const segment of segments) {
         if (segment === '.') {
             continue;
@@ -44,19 +46,17 @@ export function normalizePath(path) {
         else if (segment === '..') {
             normalizedSegments.pop();
         }
-        else if (segment) {
+        else {
             normalizedSegments.push(segment);
         }
     }
     let normalizedPath = normalizedSegments.join('/');
-    if (normalizedPath[normalizedPath.length - 1] === '/') {
-        return normalizedPath;
-    }
     if (path[0] === '/' && normalizedPath) {
         normalizedPath = '/' + normalizedPath;
     }
-    if ((path[path.length - 1] === '/') || (segments[segments.length - 1] === '.') ||
-        (segments[segments.length - 1] === '..')) {
+    if (normalizedPath[normalizedPath.length - 1] !== '/' &&
+        ((path[path.length - 1] === '/') || (segments[segments.length - 1] === '.') ||
+            (segments[segments.length - 1] === '..'))) {
         normalizedPath = normalizedPath + '/';
     }
     return normalizedPath;
@@ -100,12 +100,12 @@ export class ParsedURL {
             else {
                 this.scheme = match[2].toLowerCase();
             }
-            this.user = match[3];
-            this.host = match[4];
-            this.port = match[5];
-            this.path = match[6] || '/';
-            this.queryParams = match[7] || '';
-            this.fragment = match[8];
+            this.user = match[3] ?? '';
+            this.host = match[4] ?? '';
+            this.port = match[5] ?? '';
+            this.path = match[6] ?? '/';
+            this.queryParams = match[7] ?? '';
+            this.fragment = match[8] ?? '';
         }
         else {
             if (this.url.startsWith('data:')) {
@@ -141,7 +141,7 @@ export class ParsedURL {
     static preEncodeSpecialCharactersInPath(path) {
         // Based on net::FilePathToFileURL. Ideally we would handle
         // '\\' as well on non-Windows file systems.
-        for (const specialChar of ['%', ';', '#', '?']) {
+        for (const specialChar of ['%', ';', '#', '?', ' ']) {
             path = path.replaceAll(specialChar, encodeURIComponent(specialChar));
         }
         return path;
@@ -158,13 +158,13 @@ export class ParsedURL {
      * @param name Must not be encoded
      */
     static encodedFromParentPathAndName(parentPath, name) {
-        return parentPath + '/' + encodeURIComponent(name);
+        return ParsedURL.concatenate(parentPath, '/', ParsedURL.preEncodeSpecialCharactersInPath(name));
     }
     /**
      * @param name Must not be encoded
      */
     static urlFromParentUrlAndName(parentUrl, name) {
-        return parentUrl + '/' + encodeURIComponent(name);
+        return ParsedURL.concatenate(parentUrl, '/', ParsedURL.preEncodeSpecialCharactersInPath(name));
     }
     static encodedPathToRawPathString(encPath) {
         return decodeURIComponent(encPath);
@@ -194,8 +194,38 @@ export class ParsedURL {
         }
         return decodedFileURL.substr('file://'.length);
     }
+    static sliceUrlToEncodedPathString(url, start) {
+        return url.substring(start);
+    }
     static substr(devToolsPath, from, length) {
         return devToolsPath.substr(from, length);
+    }
+    static substring(devToolsPath, start, end) {
+        return devToolsPath.substring(start, end);
+    }
+    static prepend(prefix, devToolsPath) {
+        return prefix + devToolsPath;
+    }
+    static concatenate(devToolsPath, ...appendage) {
+        return devToolsPath.concat(...appendage);
+    }
+    static trim(devToolsPath) {
+        return devToolsPath.trim();
+    }
+    static slice(devToolsPath, start, end) {
+        return devToolsPath.slice(start, end);
+    }
+    static join(devToolsPaths, separator) {
+        return devToolsPaths.join(separator);
+    }
+    static split(devToolsPath, separator, limit) {
+        return devToolsPath.split(separator, limit);
+    }
+    static toLowerCase(devToolsPath) {
+        return devToolsPath.toLowerCase();
+    }
+    static isValidUrlString(str) {
+        return new ParsedURL(str).isValid;
     }
     static urlWithoutHash(url) {
         const hashIndex = url.indexOf('#');
@@ -230,11 +260,11 @@ export class ParsedURL {
     }
     static extractPath(url) {
         const parsedURL = this.fromString(url);
-        return parsedURL ? parsedURL.path : '';
+        return (parsedURL ? parsedURL.path : '');
     }
     static extractOrigin(url) {
         const parsedURL = this.fromString(url);
-        return parsedURL ? parsedURL.securityOrigin() : '';
+        return parsedURL ? parsedURL.securityOrigin() : Platform.DevToolsPath.EmptyUrlString;
     }
     static extractExtension(url) {
         url = ParsedURL.urlWithoutHash(url);
@@ -274,9 +304,10 @@ export class ParsedURL {
         const parsedHref = this.fromString(trimmedHref);
         if (parsedHref && parsedHref.scheme) {
             const securityOrigin = parsedHref.securityOrigin();
-            const pathText = parsedHref.path;
-            const hrefSuffix = trimmedHref.substring(securityOrigin.length + pathText.length);
-            return securityOrigin + normalizePath(pathText) + hrefSuffix;
+            const pathText = normalizePath(parsedHref.path);
+            const queryText = parsedHref.queryParams && `?${parsedHref.queryParams}`;
+            const fragmentText = parsedHref.fragment && `#${parsedHref.fragment}`;
+            return securityOrigin + pathText + queryText + fragmentText;
         }
         const parsedURL = this.fromString(baseURL);
         if (!parsedURL) {
@@ -357,10 +388,16 @@ export class ParsedURL {
         if (wasmFunctionIndex === -1) {
             return url;
         }
-        return url.substring(0, wasmFunctionIndex);
+        return ParsedURL.substring(url, 0, wasmFunctionIndex);
+    }
+    static beginsWithWindowsDriveLetter(url) {
+        return /^[A-Za-z]:/.test(url);
+    }
+    static beginsWithScheme(url) {
+        return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(url);
     }
     static isRelativeURL(url) {
-        return !(/^[A-Za-z][A-Za-z0-9+.-]*:/.test(url));
+        return !this.beginsWithScheme(url) || this.beginsWithWindowsDriveLetter(url);
     }
     get displayName() {
         if (this.#displayNameInternal) {

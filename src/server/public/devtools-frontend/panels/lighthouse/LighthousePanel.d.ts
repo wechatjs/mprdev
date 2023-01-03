@@ -5,6 +5,7 @@ export declare class LighthousePanel extends UI.Panel.Panel {
     private readonly controller;
     private readonly startView;
     private readonly statusView;
+    private readonly timespanView;
     private warningText;
     private unauditableExplanation;
     private readonly cachedRenderedReports;
@@ -18,11 +19,16 @@ export declare class LighthousePanel extends UI.Panel.Panel {
     private showSettingsPaneSetting;
     private stateBefore?;
     private isLHAttached?;
+    private currentLighthouseRun?;
     private constructor();
     static instance(opts?: {
         forceNew: null;
     }): LighthousePanel;
     static getEvents(): typeof Events;
+    private onLighthouseTimespanStart;
+    private onLighthouseTimespanEnd;
+    private onLighthouseStart;
+    private onLighthouseCancel;
     private refreshWarningsUI;
     private refreshStartAuditUI;
     private refreshStatusUI;
@@ -41,6 +47,7 @@ export declare class LighthousePanel extends UI.Panel.Panel {
     private handleDrop;
     private loadedFromFile;
     private startLighthouse;
+    private collectLighthouseResults;
     private cancelLighthouse;
     /**
      * We set the device emulation on the DevTools-side for two reasons:
@@ -50,6 +57,6 @@ export declare class LighthousePanel extends UI.Panel.Panel {
      * We also set flags.internalDisableDeviceScreenEmulation = true to let LH only apply UA emulation
      */
     private setupEmulationAndProtocolConnection;
-    private resetEmulationAndProtocolConnection;
+    private restoreEmulationAndProtocolConnection;
     wasShown(): void;
 }

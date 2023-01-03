@@ -115,7 +115,7 @@ export class ProjectStore {
         const oldPath = uiSourceCode.url();
         const newPath = uiSourceCode.parentURL() ?
             Common.ParsedURL.ParsedURL.urlFromParentUrlAndName(uiSourceCode.parentURL(), newName) :
-            encodeURIComponent(newName);
+            Common.ParsedURL.ParsedURL.preEncodeSpecialCharactersInPath(newName);
         const value = this.uiSourceCodesMap.get(oldPath);
         this.uiSourceCodesMap.set(newPath, value);
         this.uiSourceCodesMap.delete(oldPath);
@@ -155,11 +155,35 @@ export class WorkspaceImpl extends Common.ObjectWrapper.ObjectWrapper {
         const project = this.projectsInternal.get(projectId);
         return project ? project.uiSourceCodeForURL(url) : null;
     }
-    uiSourceCodeForURL(url) {
+    // This method explicitly awaits the UISourceCode if not yet
+    // available.
+    uiSourceCodeForURLPromise(url, type) {
+        const uiSourceCode = this.uiSourceCodeForURL(url, type);
+        if (uiSourceCode) {
+            return Promise.resolve(uiSourceCode);
+        }
+        return new Promise(resolve => {
+            const descriptor = this.addEventListener(Events.UISourceCodeAdded, event => {
+                const uiSourceCode = event.data;
+                if (uiSourceCode.url() === url) {
+                    if (!type || type === uiSourceCode.project().type()) {
+                        this.removeEventListener(Events.UISourceCodeAdded, descriptor.listener);
+                        resolve(uiSourceCode);
+                    }
+                }
+            });
+        });
+    }
+    uiSourceCodeForURL(url, type) {
         for (const project of this.projectsInternal.values()) {
-            const uiSourceCode = project.uiSourceCodeForURL(url);
-            if (uiSourceCode) {
-                return uiSourceCode;
+            // For snippets, we may get two different UISourceCodes for the same url (one belonging to
+            // the file system project, one belonging to the network project). Allow selecting the UISourceCode
+            // for a specific project type.
+            if (!type || project.type() === type) {
+                const uiSourceCode = project.uiSourceCodeForURL(url);
+                if (uiSourceCode) {
+                    return uiSourceCode;
+                }
             }
         }
         return null;

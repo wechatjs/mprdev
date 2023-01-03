@@ -1,5 +1,5 @@
 import * as UI from '../../ui/legacy/legacy.js';
-import type { SearchScope } from './SearchConfig.js';
+import { type SearchScope } from './SearchConfig.js';
 export declare class SearchView extends UI.Widget.VBox {
     private focusOnShow;
     private isIndexing;

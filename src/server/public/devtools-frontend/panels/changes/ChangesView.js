@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as Common from '../../core/common/common.js';
+import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as Root from '../../core/root/root.js';
+import { formatCSSChangesFromDiff } from '../../panels/utils/utils.js';
 import * as Diff from '../../third_party/diff/diff.js';
 import * as DiffView from '../../ui/components/diff_view/diff_view.js';
 import * as UI from '../../ui/legacy/legacy.js';
@@ -15,6 +17,10 @@ const UIStrings = {
     *@description Screen reader/tooltip label for a button in the Changes tool that reverts all changes to the currently open file.
     */
     revertAllChangesToCurrentFile: 'Revert all changes to current file',
+    /**
+    *@description Screen reader/tooltip label for a button in the Changes tool that copies all changes from the currently open file.
+    */
+    copyAllChangesFromCurrentFile: 'Copy all changes from current file',
     /**
     *@description Text in Changes View of the Changes tab
     */
@@ -35,6 +41,10 @@ const UIStrings = {
     * lines were removed (not translatable).
     */
     sDeletions: '{n, plural, =1 {# deletion (-)} other {# deletions (-)}}',
+    /**
+    *@description Text for a button in the Changes tool that copies all the changes from the currently open file.
+    */
+    copy: 'Copy',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/changes/ChangesView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -51,10 +61,13 @@ export class ChangesView extends UI.Widget.VBox {
     workspaceDiff;
     changesSidebar;
     selectedUISourceCode;
+    #selectedSourceCodeFormattedMapping;
     diffContainer;
     toolbar;
     diffStats;
     diffView;
+    copyButton;
+    copyButtonSeparator;
     constructor() {
         super(true);
         const splitWidget = new UI.SplitWidget.SplitWidget(true /* vertical */, false /* sidebar on left */);
@@ -65,7 +78,7 @@ export class ChangesView extends UI.Widget.VBox {
         this.emptyWidget.show(mainWidget.element);
         this.workspaceDiff = WorkspaceDiff.WorkspaceDiff.workspaceDiff();
         this.changesSidebar = new ChangesSidebar(this.workspaceDiff);
-        this.changesSidebar.addEventListener("SelectedUISourceCodeChanged" /* SelectedUISourceCodeChanged */, this.selectedUISourceCodeChanged, this);
+        this.changesSidebar.addEventListener("SelectedUISourceCodeChanged" /* Events.SelectedUISourceCodeChanged */, this.selectedUISourceCodeChanged, this);
         splitWidget.setSidebarWidget(this.changesSidebar);
         this.selectedUISourceCode = null;
         this.diffContainer = mainWidget.element.createChild('div', 'diff-container');
@@ -78,6 +91,9 @@ export class ChangesView extends UI.Widget.VBox {
         this.toolbar.appendToolbarItem(revertButton);
         this.diffStats = new UI.Toolbar.ToolbarText('');
         this.toolbar.appendToolbarItem(this.diffStats);
+        this.copyButton = new UI.Toolbar.ToolbarButton(i18nString(UIStrings.copyAllChangesFromCurrentFile), 'largeicon-copy', UIStrings.copy);
+        this.copyButton.addEventListener(UI.Toolbar.ToolbarButton.Events.Click, this.copyChanges.bind(this));
+        this.copyButtonSeparator = new UI.Toolbar.ToolbarSeparator();
         this.toolbar.setEnabled(false);
         this.hideDiff(i18nString(UIStrings.noChanges));
         this.selectedUISourceCodeChanged();
@@ -91,6 +107,14 @@ export class ChangesView extends UI.Widget.VBox {
     }
     selectedUISourceCodeChanged() {
         this.revealUISourceCode(this.changesSidebar.selectedUISourceCode());
+        if (this.selectedUISourceCode?.contentType() === Common.ResourceType.resourceTypes.Stylesheet) {
+            this.toolbar.appendToolbarItem(this.copyButtonSeparator);
+            this.toolbar.appendToolbarItem(this.copyButton);
+        }
+        else {
+            this.toolbar.removeToolbarItem(this.copyButtonSeparator);
+            this.toolbar.removeToolbarItem(this.copyButton);
+        }
     }
     revert() {
         const uiSourceCode = this.selectedUISourceCode;
@@ -99,20 +123,43 @@ export class ChangesView extends UI.Widget.VBox {
         }
         void this.workspaceDiff.revertToOriginal(uiSourceCode);
     }
+    async copyChanges() {
+        const uiSourceCode = this.selectedUISourceCode;
+        if (!uiSourceCode) {
+            return;
+        }
+        const diffResponse = await this.workspaceDiff.requestDiff(uiSourceCode, { shouldFormatDiff: true });
+        // Diff array with real diff will contain at least 2 lines.
+        if (!diffResponse || diffResponse?.diff.length < 2) {
+            return;
+        }
+        const changes = await formatCSSChangesFromDiff(diffResponse.diff);
+        Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(changes);
+    }
     click(event) {
         if (!this.selectedUISourceCode) {
             return;
         }
-        for (let target = event.target; target; target = target.parentElement) {
-            if (target.classList.contains('diff-line-content')) {
-                const number = target.getAttribute('data-line-number');
-                if (number) {
-                    // Unfortunately, caretRangeFromPoint is broken in shadow
-                    // roots, which makes determining the character offset more
-                    // work than justified here.
-                    void Common.Revealer.reveal(this.selectedUISourceCode.uiLocation(Number(number) - 1, 0), false);
-                    event.consume(true);
+        for (const target of event.composedPath()) {
+            if (!(target instanceof HTMLElement)) {
+                continue;
+            }
+            const selection = target.ownerDocument.getSelection();
+            if (selection?.toString()) {
+                // We abort source revelation when user has text selection.
+                break;
+            }
+            if (target.classList.contains('diff-line-content') && target.hasAttribute('data-line-number')) {
+                let lineNumber = Number(target.dataset.lineNumber) - 1;
+                // Unfortunately, caretRangeFromPoint is broken in shadow
+                // roots, which makes determining the character offset more
+                // work than justified here.
+                if (Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.PRECISE_CHANGES) &&
+                    this.#selectedSourceCodeFormattedMapping) {
+                    lineNumber = this.#selectedSourceCodeFormattedMapping.formattedToOriginal(lineNumber, 0)[0];
                 }
+                void Common.Revealer.reveal(this.selectedUISourceCode.uiLocation(lineNumber, 0), false);
+                event.consume(true);
                 break;
             }
             else if (target.classList.contains('diff-listing')) {
@@ -142,7 +189,7 @@ export class ChangesView extends UI.Widget.VBox {
             return;
         }
         if (!this.selectedUISourceCode) {
-            this.renderDiffRows(null);
+            this.renderDiffRows();
             return;
         }
         const uiSourceCode = this.selectedUISourceCode;
@@ -150,11 +197,12 @@ export class ChangesView extends UI.Widget.VBox {
             this.hideDiff(i18nString(UIStrings.binaryData));
             return;
         }
-        const diff = await this.workspaceDiff.requestDiff(uiSourceCode, { shouldFormatDiff: Root.Runtime.experiments.isEnabled('preciseChanges') });
+        const diffResponse = await this.workspaceDiff.requestDiff(uiSourceCode, { shouldFormatDiff: Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.PRECISE_CHANGES) });
         if (this.selectedUISourceCode !== uiSourceCode) {
             return;
         }
-        this.renderDiffRows(diff);
+        this.#selectedSourceCodeFormattedMapping = diffResponse?.formattedCurrentMapping;
+        this.renderDiffRows(diffResponse?.diff);
     }
     hideDiff(message) {
         this.diffStats.setText('');

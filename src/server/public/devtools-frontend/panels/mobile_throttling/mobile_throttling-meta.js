@@ -50,7 +50,7 @@ async function loadMobileThrottlingModule() {
     return loadedMobileThrottlingModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "settings-view" /* SETTINGS_VIEW */,
+    location: "settings-view" /* UI.ViewManager.ViewLocationValues.SETTINGS_VIEW */,
     id: 'throttling-conditions',
     title: i18nLazyString(UIStrings.throttling),
     commandPrompt: i18nLazyString(UIStrings.showThrottling),

@@ -10,6 +10,7 @@ import * as EventTarget from './EventTarget.js';
 import * as JavaScriptMetaData from './JavaScriptMetaData.js';
 import * as Lazy from './Lazy.js';
 import * as Linkifier from './Linkifier.js';
+import * as Mutex from './Mutex.js';
 import * as ObjectWrapper from './Object.js';
 import * as ParsedURL from './ParsedURL.js';
 import * as Progress from './Progress.js';
@@ -32,4 +33,4 @@ export { UIString } from '../platform/platform.js';
  * @type {!Settings.Settings}
  */
 export declare let settings: any;
-export { App, AppProvider, Base64, CharacterIdMap, Color, ColorUtils, Console, Debouncer, EventTarget, JavaScriptMetaData, Lazy, Linkifier, ObjectWrapper, ParsedURL, Progress, QueryParamHandler, ResolverBase, ResourceType, Revealer, Runnable, SegmentedRange, Settings, SimpleHistoryManager, StringOutputStream, TextDictionary, Throttler, Trie, Worker, WasmDisassembly, };
+export { App, AppProvider, Base64, CharacterIdMap, Color, ColorUtils, Console, Debouncer, EventTarget, JavaScriptMetaData, Lazy, Linkifier, Mutex, ObjectWrapper, ParsedURL, Progress, QueryParamHandler, ResolverBase, ResourceType, Revealer, Runnable, SegmentedRange, Settings, SimpleHistoryManager, StringOutputStream, TextDictionary, Throttler, Trie, Worker, WasmDisassembly, };

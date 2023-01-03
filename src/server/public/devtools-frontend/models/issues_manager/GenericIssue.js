@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { resolveLazyDescription } from './MarkdownIssueDescription.js';
+import { resolveLazyDescription, } from './MarkdownIssueDescription.js';
 const UIStrings = {
     /**
     *@description Title for cross-origin portal post message error
@@ -16,7 +16,7 @@ export class GenericIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel, issueId) {
         const issueCode = [
-            "GenericIssue" /* GenericIssue */,
+            "GenericIssue" /* Protocol.Audits.InspectorIssueCode.GenericIssue */,
             issueDetails.errorType,
         ].join('::');
         super(issueCode, issuesModel, issueId);
@@ -58,10 +58,10 @@ export const genericCrossOriginPortalPostMessageError = {
         }],
 };
 export const genericCrossOriginPortalPostMessageCode = [
-    "GenericIssue" /* GenericIssue */,
-    "CrossOriginPortalPostMessageError" /* CrossOriginPortalPostMessageError */,
+    "GenericIssue" /* Protocol.Audits.InspectorIssueCode.GenericIssue */,
+    "CrossOriginPortalPostMessageError" /* Protocol.Audits.GenericIssueErrorType.CrossOriginPortalPostMessageError */,
 ].join('::');
 const issueDescriptions = new Map([
-    ["CrossOriginPortalPostMessageError" /* CrossOriginPortalPostMessageError */, genericCrossOriginPortalPostMessageError],
+    ["CrossOriginPortalPostMessageError" /* Protocol.Audits.GenericIssueErrorType.CrossOriginPortalPostMessageError */, genericCrossOriginPortalPostMessageError],
 ]);
 //# sourceMappingURL=GenericIssue.js.map

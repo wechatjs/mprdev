@@ -53,8 +53,6 @@ export declare class SearchableView extends VBox {
     private jumpToNextSearchResult;
     private onNextButtonSearch;
     private onPrevButtonSearch;
-    private onFindClick;
-    private onPreviousClick;
     private clearSearch;
     private performSearch;
     private currentSearchConfig;

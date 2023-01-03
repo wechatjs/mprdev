@@ -1,8 +1,8 @@
 import * as Common from '../../core/common/common.js';
 import * as Platform from '../../core/platform/platform.js';
-import type { FilesChangedData } from './FileSystemWorkspaceBinding.js';
+import { type FilesChangedData } from './FileSystemWorkspaceBinding.js';
 import { IsolatedFileSystem } from './IsolatedFileSystem.js';
-import type { PlatformFileSystem } from './PlatformFileSystem.js';
+import { type PlatformFileSystem } from './PlatformFileSystem.js';
 export declare class IsolatedFileSystemManager extends Common.ObjectWrapper.ObjectWrapper<EventTypes> {
     private readonly fileSystemsInternal;
     private readonly callbacks;
@@ -19,12 +19,12 @@ export declare class IsolatedFileSystemManager extends Common.ObjectWrapper.Obje
     removeFileSystem(fileSystem: PlatformFileSystem): void;
     waitForFileSystems(): Promise<IsolatedFileSystem[]>;
     private innerAddFileSystem;
-    addPlatformFileSystem(fileSystemURL: string, fileSystem: PlatformFileSystem): void;
+    addPlatformFileSystem(fileSystemURL: Platform.DevToolsPath.UrlString, fileSystem: PlatformFileSystem): void;
     private onFileSystemAdded;
     private onFileSystemRemoved;
     private onFileSystemFilesChanged;
     fileSystems(): PlatformFileSystem[];
-    fileSystem(fileSystemPath: string): PlatformFileSystem | null;
+    fileSystem(fileSystemPath: Platform.DevToolsPath.UrlString): PlatformFileSystem | null;
     workspaceFolderExcludePatternSetting(): Common.Settings.RegExpSetting;
     registerCallback(callback: (arg0: Array<Platform.DevToolsPath.RawPathString>) => void): number;
     registerProgress(progress: Common.Progress.Progress): number;
@@ -44,6 +44,6 @@ export declare type EventTypes = {
     [Events.FileSystemAdded]: PlatformFileSystem;
     [Events.FileSystemRemoved]: PlatformFileSystem;
     [Events.FileSystemFilesChanged]: FilesChangedData;
-    [Events.ExcludedFolderAdded]: string;
-    [Events.ExcludedFolderRemoved]: string;
+    [Events.ExcludedFolderAdded]: Platform.DevToolsPath.EncodedPathString;
+    [Events.ExcludedFolderRemoved]: Platform.DevToolsPath.EncodedPathString;
 };

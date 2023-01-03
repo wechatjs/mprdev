@@ -5,11 +5,17 @@ import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 export declare class DOMStorage extends Common.ObjectWrapper.ObjectWrapper<DOMStorage.EventTypes> {
     private readonly model;
     private readonly securityOriginInternal;
+    private readonly storageKeyInternal;
     private readonly isLocalStorageInternal;
-    constructor(model: DOMStorageModel, securityOrigin: string, isLocalStorage: boolean);
+    constructor(model: DOMStorageModel, securityOrigin: string, storageKey: string, isLocalStorage: boolean);
     static storageId(securityOrigin: string, isLocalStorage: boolean): Protocol.DOMStorage.StorageId;
+    static storageIdWithSecurityOrigin(securityOrigin: string, isLocalStorage: boolean): Protocol.DOMStorage.StorageId;
+    static storageIdWithStorageKey(storageKey: string, isLocalStorage: boolean): Protocol.DOMStorage.StorageId;
+    get idWithSecurityOrigin(): Protocol.DOMStorage.StorageId;
+    get idWithStorageKey(): Protocol.DOMStorage.StorageId;
     get id(): Protocol.DOMStorage.StorageId;
-    get securityOrigin(): string;
+    get securityOrigin(): string | null;
+    get storageKey(): string | null;
     get isLocalStorage(): boolean;
     getItems(): Promise<Protocol.DOMStorage.Item[] | null>;
     setItem(key: string, value: string): void;
@@ -44,17 +50,27 @@ export declare namespace DOMStorage {
 }
 export declare class DOMStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     private readonly securityOriginManager;
+    private readonly storageKeyManagerInternal;
     private storagesInternal;
     readonly agent: ProtocolProxyApi.DOMStorageApi;
     private enabled?;
     constructor(target: SDK.Target.Target);
+    get storageKeyManagerForTest(): SDK.StorageKeyManager.StorageKeyManager | null;
     enable(): void;
     clearForOrigin(origin: string): void;
+    clearForStorageKey(storageKey: string): void;
     private securityOriginAdded;
+    private storageKeyAdded;
     private addOrigin;
+    private addStorageKey;
+    private duplicateExists;
     private securityOriginRemoved;
+    private storageKeyRemoved;
     private removeOrigin;
+    private removeStorageKey;
     private storageKey;
+    private keyForSecurityOrigin;
+    private keyForStorageKey;
     domStorageItemsCleared(storageId: Protocol.DOMStorage.StorageId): void;
     domStorageItemRemoved(storageId: Protocol.DOMStorage.StorageId, key: string): void;
     domStorageItemAdded(storageId: Protocol.DOMStorage.StorageId, key: string, value: string): void;

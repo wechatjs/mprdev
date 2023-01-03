@@ -50,6 +50,11 @@ export class DefaultScriptMapping {
         ];
         this.#uiSourceCodeToScriptsMap = new WeakMap();
     }
+    static createV8ScriptURL(script) {
+        const name = Common.ParsedURL.ParsedURL.extractName(script.sourceURL);
+        const url = 'debugger:///VM' + script.scriptId + (name ? ' ' + name : '');
+        return url;
+    }
     static scriptForUISourceCode(uiSourceCode) {
         const scripts = uiSourceCodeToScriptsMap.get(uiSourceCode);
         return scripts ? scripts.values().next().value : null;
@@ -75,8 +80,7 @@ export class DefaultScriptMapping {
     }
     parsedScriptSource(event) {
         const script = event.data;
-        const name = Common.ParsedURL.ParsedURL.extractName(script.sourceURL);
-        const url = 'debugger:///VM' + script.scriptId + (name ? ' ' + name : '');
+        const url = DefaultScriptMapping.createV8ScriptURL(script);
         const uiSourceCode = this.#project.createUISourceCode(url, Common.ResourceType.resourceTypes.Script);
         this.#uiSourceCodeToScriptsMap.set(uiSourceCode, script);
         const scriptSet = uiSourceCodeToScriptsMap.get(uiSourceCode);

@@ -15,19 +15,37 @@ styles.replaceSync(
   display: block;
 }
 
-.experiment-preview {
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 4px;
+}
+
+.experiment-preview,
+.feedback,
+.learn-more {
   display: flex;
   align-items: center;
 }
 
 .helper {
+  flex-basis: 100%;
   text-align: center;
   font-style: italic;
 }
 
-x-link { /* stylelint-disable-line selector-type-no-unknown */
+.spacer {
+  flex: 1;
+}
+
+.x-link {
   color: var(--color-primary);
   text-decoration-line: underline;
+  margin: 0 4px;
+}
+
+.feedback .x-link {
+  color: var(--color-text-secondary);
 }
 
 /*# sourceURL=previewToggle.css */

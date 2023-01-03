@@ -70,9 +70,6 @@
       "path": "../../panels/coverage/meta-tsconfig.json"
     },
     {
-      "path": "../../panels/input/meta-tsconfig.json"
-    },
-    {
       "path": "../../panels/profiler/meta-tsconfig.json"
     },
     {

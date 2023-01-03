@@ -34,8 +34,11 @@ import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
+import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as IssuesManager from '../../models/issues_manager/issues_manager.js';
+import * as Persistence from '../../models/persistence/persistence.js';
+import * as Workspace from '../../models/workspace/workspace.js';
 import * as NetworkForward from '../../panels/network/forward/forward.js';
 import * as ClientVariations from '../../third_party/chromium/client-variations/client-variations.js';
 // eslint-disable-next-line rulesdir/es_modules_import
@@ -43,6 +46,7 @@ import objectPropertiesSectionStyles from '../../ui/legacy/components/object_ui/
 // eslint-disable-next-line rulesdir/es_modules_import
 import objectValueStyles from '../../ui/legacy/components/object_ui/objectValue.css.js';
 import * as UI from '../../ui/legacy/legacy.js';
+import * as Sources from '../sources/sources.js';
 import requestHeadersTreeStyles from './requestHeadersTree.css.js';
 import requestHeadersViewStyles from './requestHeadersView.css.js';
 const UIStrings = {
@@ -179,12 +183,10 @@ const UIStrings = {
     */
     toUseThisResourceFromADifferentOrigin: 'To use this resource from a different origin, the server may relax the cross-origin resource policy response header:',
     /**
-     * @description Shown in the network panel for network requests that meet special criteria.
-     * 'Attribution' is a term used by the "Attribution Reporting API" and refers to an event, e.g.
-     * buying an item in an online store after an ad was clicked.
-     * @example {foo} PH1
-     */
-    recordedAttribution: 'Recorded attribution with `trigger-data`: {PH1}',
+    *@description Label for a link from the network panel's headers view to the file in which
+    * header overrides are defined in the sources panel.
+    */
+    headerOverrides: 'Header overrides',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/network/RequestHeadersView.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -202,6 +204,7 @@ export class RequestHeadersView extends UI.Widget.VBox {
     referrerPolicyItem;
     responseHeadersCategory;
     requestHeadersCategory;
+    #workspace = Workspace.Workspace.WorkspaceImpl.instance();
     constructor(request) {
         super();
         this.element.classList.add('request-headers-view');
@@ -238,6 +241,8 @@ export class RequestHeadersView extends UI.Widget.VBox {
         this.request.addEventListener(SDK.NetworkRequest.Events.RequestHeadersChanged, this.refreshRequestHeaders, this);
         this.request.addEventListener(SDK.NetworkRequest.Events.ResponseHeadersChanged, this.refreshResponseHeaders, this);
         this.request.addEventListener(SDK.NetworkRequest.Events.FinishedLoading, this.refreshHTTPInformation, this);
+        this.#workspace.addEventListener(Workspace.Workspace.Events.UISourceCodeAdded, this.#uiSourceCodeAddedOrRemoved, this);
+        this.#workspace.addEventListener(Workspace.Workspace.Events.UISourceCodeRemoved, this.#uiSourceCodeAddedOrRemoved, this);
         this.refreshURL();
         this.refreshRequestHeaders();
         this.refreshResponseHeaders();
@@ -251,6 +256,8 @@ export class RequestHeadersView extends UI.Widget.VBox {
         this.request.removeEventListener(SDK.NetworkRequest.Events.RequestHeadersChanged, this.refreshRequestHeaders, this);
         this.request.removeEventListener(SDK.NetworkRequest.Events.ResponseHeadersChanged, this.refreshResponseHeaders, this);
         this.request.removeEventListener(SDK.NetworkRequest.Events.FinishedLoading, this.refreshHTTPInformation, this);
+        this.#workspace.removeEventListener(Workspace.Workspace.Events.UISourceCodeAdded, this.#uiSourceCodeAddedOrRemoved, this);
+        this.#workspace.removeEventListener(Workspace.Workspace.Events.UISourceCodeRemoved, this.#uiSourceCodeAddedOrRemoved, this);
     }
     addEntryContextMenuHandler(treeElement, value) {
         treeElement.listItemElement.addEventListener('contextmenu', event => {
@@ -275,22 +282,7 @@ export class RequestHeadersView extends UI.Widget.VBox {
     formatHeaderObject(header) {
         const fragment = document.createDocumentFragment();
         if (header.headerNotSet) {
-            fragment.createChild('div', 'header-badge header-badge-error header-badge-text').textContent = 'not-set';
-        }
-        // Highlight successful Attribution Reporting API redirects. If the request was
-        // not canceled, then something went wrong.
-        if (header.name.toLowerCase() === 'location' && this.request.canceled) {
-            const url = new URL(header.value?.toString() || '', this.request.parsedURL.securityOrigin());
-            const triggerData = getTriggerDataFromAttributionRedirect(url);
-            if (triggerData) {
-                fragment.createChild('div', 'header-badge header-badge-success header-badge-text').textContent =
-                    'Attribution Reporting API';
-                header.details = {
-                    explanation: () => i18nString(UIStrings.recordedAttribution, { PH1: triggerData }),
-                    examples: [],
-                    link: null,
-                };
-            }
+            fragment.createChild('div', 'header-badge header-badge-text').textContent = 'not-set';
         }
         const colon = header.value ? ': ' : '';
         fragment.createChild('div', 'header-name').textContent = header.name + colon;
@@ -387,12 +379,12 @@ export class RequestHeadersView extends UI.Widget.VBox {
             this.refreshHeadersText(i18nString(UIStrings.requestHeaders), headers.length, headersText, treeElement);
         }
         else {
-            this.refreshHeaders(i18nString(UIStrings.requestHeaders), headers, treeElement, headersText === undefined);
+            this.refreshHeaders(i18nString(UIStrings.requestHeaders), headers, treeElement, /* overrideable */ false, headersText === undefined);
         }
         if (headersText) {
             const toggleButton = this.createHeadersToggleButton(this.showRequestHeadersText);
             toggleButton.addEventListener('click', this.toggleRequestHeadersText.bind(this), false);
-            treeElement.listItemElement.appendChild(toggleButton);
+            treeElement.listItemElement.querySelector('.headers-title-left')?.appendChild(toggleButton);
         }
     }
     refreshResponseHeaders() {
@@ -410,13 +402,14 @@ export class RequestHeadersView extends UI.Widget.VBox {
                     headersWithIssues.push(headerWithIssues);
                 }
             }
-            this.refreshHeaders(i18nString(UIStrings.responseHeaders), mergeHeadersWithIssues(headers, headersWithIssues), treeElement, 
+            const overrideable = Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.HEADER_OVERRIDES);
+            this.refreshHeaders(i18nString(UIStrings.responseHeaders), mergeHeadersWithIssues(headers, headersWithIssues), treeElement, overrideable, 
             /* provisional */ false, this.request.blockedResponseCookies());
         }
         if (headersText) {
             const toggleButton = this.createHeadersToggleButton(this.showResponseHeadersText);
             toggleButton.addEventListener('click', this.toggleResponseHeadersText.bind(this), false);
-            treeElement.listItemElement.appendChild(toggleButton);
+            treeElement.listItemElement.querySelector('.headers-title-left')?.appendChild(toggleButton);
         }
         // TODO(crbug.com/1172300) Ignored during the jsdoc to ts migration)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -488,17 +481,48 @@ export class RequestHeadersView extends UI.Widget.VBox {
             statusCodeElement.title = statusCodeFragment;
         }
     }
-    refreshHeadersTitle(title, headersTreeElement, headersLength) {
+    refreshHeadersTitle(title, headersTreeElement, headersLength, overrideable) {
         headersTreeElement.listItemElement.removeChildren();
         headersTreeElement.listItemElement.createChild('div', 'selection fill');
-        UI.UIUtils.createTextChild(headersTreeElement.listItemElement, title);
+        const container = headersTreeElement.listItemElement.createChild('div', 'headers-title');
+        const leftElement = container.createChild('div', 'headers-title-left');
+        UI.UIUtils.createTextChild(leftElement, title);
         const headerCount = `\xA0(${headersLength})`;
-        headersTreeElement.listItemElement.createChild('span', 'header-count').textContent = headerCount;
+        leftElement.createChild('span', 'header-count').textContent = headerCount;
+        if (overrideable && this.#workspace.uiSourceCodeForURL(this.#getHeaderOverridesFileUrl())) {
+            const overridesSetting = Common.Settings.Settings.instance().moduleSetting('persistenceNetworkOverridesEnabled');
+            const icon = overridesSetting.get() ? UI.Icon.Icon.create('mediumicon-file-sync', 'purple-dot') :
+                UI.Icon.Icon.create('mediumicon-file');
+            const button = container.createChild('button', 'link devtools-link headers-link');
+            button.appendChild(icon);
+            button.addEventListener('click', this.#revealHeadersFile.bind(this));
+            const span = document.createElement('span');
+            span.textContent = i18nString(UIStrings.headerOverrides);
+            button.appendChild(span);
+        }
     }
-    refreshHeaders(title, headers, headersTreeElement, provisionalHeaders, blockedResponseCookies) {
+    #getHeaderOverridesFileUrl() {
+        const fileUrl = Persistence.NetworkPersistenceManager.NetworkPersistenceManager.instance().fileUrlFromNetworkUrl(this.request.url(), /* ignoreInactive */ true);
+        return fileUrl.substring(0, fileUrl.lastIndexOf('/')) + '/' +
+            Persistence.NetworkPersistenceManager.HEADERS_FILENAME;
+    }
+    #revealHeadersFile(event) {
+        event.stopPropagation();
+        const uiSourceCode = this.#workspace.uiSourceCodeForURL(this.#getHeaderOverridesFileUrl());
+        if (!uiSourceCode) {
+            return;
+        }
+        Sources.SourcesPanel.SourcesPanel.instance().showUISourceCode(uiSourceCode);
+    }
+    #uiSourceCodeAddedOrRemoved(event) {
+        if (this.#getHeaderOverridesFileUrl() === event.data.url()) {
+            this.refreshResponseHeaders();
+        }
+    }
+    refreshHeaders(title, headers, headersTreeElement, overrideable, provisionalHeaders, blockedResponseCookies) {
         headersTreeElement.removeChildren();
         const length = headers.length;
-        this.refreshHeadersTitle(title, headersTreeElement, length);
+        this.refreshHeadersTitle(title, headersTreeElement, length, overrideable);
         if (provisionalHeaders) {
             let cautionText;
             let cautionTitle = '';
@@ -565,7 +589,7 @@ export class RequestHeadersView extends UI.Widget.VBox {
     }
     refreshHeadersText(title, count, headersText, headersTreeElement) {
         this.populateTreeElementWithSourceText(headersTreeElement, headersText);
-        this.refreshHeadersTitle(title, headersTreeElement, count);
+        this.refreshHeadersTitle(title, headersTreeElement, count, /* overrideable */ false);
     }
     refreshRemoteAddress() {
         const remoteAddress = this.request.remoteAddress();
@@ -671,21 +695,9 @@ export class Category extends UI.TreeOutline.TreeElement {
         this.expandedSetting.set(false);
     }
 }
-/**
- * Returns the value for the `trigger-data` search parameter iff the provided
- * url is a valid attribution redirect as specified by the Attribution
- * Reporting API.
- */
-function getTriggerDataFromAttributionRedirect(url) {
-    if (url.pathname === '/.well-known/attribution-reporting/trigger-attribution' &&
-        url.searchParams.has('trigger-data')) {
-        return url.searchParams.get('trigger-data');
-    }
-    return null;
-}
 const BlockedReasonDetails = new Map([
     [
-        "coep-frame-resource-needs-coep-header" /* CoepFrameResourceNeedsCoepHeader */,
+        "coep-frame-resource-needs-coep-header" /* Protocol.Network.BlockedReason.CoepFrameResourceNeedsCoepHeader */,
         {
             name: 'cross-origin-embedder-policy',
             value: null,
@@ -699,7 +711,7 @@ const BlockedReasonDetails = new Map([
         },
     ],
     [
-        "corp-not-same-origin-after-defaulted-to-same-origin-by-coep" /* CorpNotSameOriginAfterDefaultedToSameOriginByCoep */,
+        "corp-not-same-origin-after-defaulted-to-same-origin-by-coep" /* Protocol.Network.BlockedReason.CorpNotSameOriginAfterDefaultedToSameOriginByCoep */,
         {
             name: 'cross-origin-resource-policy',
             value: null,
@@ -722,7 +734,7 @@ const BlockedReasonDetails = new Map([
         },
     ],
     [
-        "coop-sandboxed-iframe-cannot-navigate-to-coop-page" /* CoopSandboxedIframeCannotNavigateToCoopPage */,
+        "coop-sandboxed-iframe-cannot-navigate-to-coop-page" /* Protocol.Network.BlockedReason.CoopSandboxedIframeCannotNavigateToCoopPage */,
         {
             name: 'cross-origin-opener-policy',
             value: null,
@@ -736,7 +748,7 @@ const BlockedReasonDetails = new Map([
         },
     ],
     [
-        "corp-not-same-site" /* CorpNotSameSite */,
+        "corp-not-same-site" /* Protocol.Network.BlockedReason.CorpNotSameSite */,
         {
             name: 'cross-origin-resource-policy',
             value: null,
@@ -755,7 +767,7 @@ const BlockedReasonDetails = new Map([
         },
     ],
     [
-        "corp-not-same-origin" /* CorpNotSameOrigin */,
+        "corp-not-same-origin" /* Protocol.Network.BlockedReason.CorpNotSameOrigin */,
         {
             name: 'cross-origin-resource-policy',
             value: null,

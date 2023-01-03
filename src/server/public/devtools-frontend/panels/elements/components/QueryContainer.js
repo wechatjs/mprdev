@@ -4,8 +4,8 @@
 import * as SDK from '../../../core/sdk/sdk.js';
 import * as ComponentHelpers from '../../../ui/components/helpers/helpers.js';
 import * as IconButton from '../../../ui/components/icon_button/icon_button.js';
+import * as NodeText from '../../../ui/components/node_text/node_text.js';
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
-import { NodeText } from './NodeText.js';
 import queryContainerStyles from './queryContainer.css.js';
 const { render, html } = LitHtml;
 const { PhysicalAxis, QueryAxis } = SDK.CSSContainerQuery;
@@ -67,13 +67,13 @@ export class QueryContainer extends HTMLElement {
         @click=${this.#onContainerLinkClick}
         @mouseenter=${this.#onContainerLinkMouseEnter}
         @mouseleave=${this.#onContainerLinkMouseLeave}
-      ><${NodeText.litTagName}
+      ><${NodeText.NodeText.NodeText.litTagName}
           data-node-title=${nodeTitle}
           .data=${{
             nodeTitle,
             nodeId: idToDisplay,
             nodeClasses: classesToDisplay,
-        }}></${NodeText.litTagName}></a>
+        }}></${NodeText.NodeText.NodeText.litTagName}></a>
       ${this.#isContainerLinkHovered ? this.#renderQueriedSizeDetails() : LitHtml.nothing}
     `, this.#shadow, {
             host: this,
@@ -81,14 +81,14 @@ export class QueryContainer extends HTMLElement {
         // clang-format on
     }
     #renderQueriedSizeDetails() {
-        if (!this.#queriedSizeDetails || this.#queriedSizeDetails.queryAxis === "" /* None */) {
+        if (!this.#queriedSizeDetails || this.#queriedSizeDetails.queryAxis === "" /* QueryAxis.None */) {
             return LitHtml.nothing;
         }
-        const areBothAxesQueried = this.#queriedSizeDetails.queryAxis === "size" /* Both */;
+        const areBothAxesQueried = this.#queriedSizeDetails.queryAxis === "size" /* QueryAxis.Both */;
         const axisIconClasses = LitHtml.Directives.classMap({
             'axis-icon': true,
             'hidden': areBothAxesQueried,
-            'vertical': this.#queriedSizeDetails.physicalAxis === "Vertical" /* Vertical */,
+            'vertical': this.#queriedSizeDetails.physicalAxis === "Vertical" /* PhysicalAxis.Vertical */,
         });
         // Disabled until https://crbug.com/1079231 is fixed.
         // clang-format off

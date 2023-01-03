@@ -1,6 +1,7 @@
 import * as UI from '../../ui/legacy/legacy.js';
 import type * as ElementsComponents from './components/components.js';
-import type { StylePropertiesSection, StylesSidebarPane } from './StylesSidebarPane.js';
+import { type StylePropertiesSection } from './StylePropertiesSection.js';
+import { type StylesSidebarPane } from './StylesSidebarPane.js';
 declare type PropertySelectedEvent = ElementsComponents.StylePropertyEditor.PropertySelectedEvent;
 declare type PropertyDeselectedEvent = ElementsComponents.StylePropertyEditor.PropertyDeselectedEvent;
 interface Editor extends HTMLElement {

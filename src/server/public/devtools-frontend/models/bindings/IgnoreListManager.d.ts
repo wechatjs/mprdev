@@ -1,6 +1,7 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Workspace from '../workspace/workspace.js';
-import type { DebuggerWorkspaceBinding } from './DebuggerWorkspaceBinding.js';
+import { type DebuggerWorkspaceBinding } from './DebuggerWorkspaceBinding.js';
 export declare class IgnoreListManager implements SDK.TargetManager.SDKModelObserver<SDK.DebuggerModel.DebuggerModel> {
     #private;
     private constructor();
@@ -15,8 +16,9 @@ export declare class IgnoreListManager implements SDK.TargetManager.SDKModelObse
     private clearCacheIfNeeded;
     private getSkipStackFramesPatternSetting;
     private setIgnoreListPatterns;
-    isIgnoreListedUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): boolean;
-    isIgnoreListedURL(url: string, isContentScript?: boolean): boolean;
+    isUserOrSourceMapIgnoreListedUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): boolean;
+    isUserOrSourceMapIgnoreListedURL(url: Platform.DevToolsPath.UrlString, isKnownThirdParty: boolean): boolean;
+    isUserIgnoreListedURL(url: Platform.DevToolsPath.UrlString, isContentScript?: boolean): boolean;
     private sourceMapAttached;
     private sourceMapDetached;
     private updateScriptRanges;
@@ -24,6 +26,9 @@ export declare class IgnoreListManager implements SDK.TargetManager.SDKModelObse
     canIgnoreListUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): boolean;
     ignoreListUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): void;
     unIgnoreListUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode): void;
+    get enableIgnoreListing(): boolean;
+    get skipContentScripts(): boolean;
+    get automaticallyIgnoreListKnownThirdPartyScripts(): boolean;
     ignoreListContentScripts(): void;
     unIgnoreListContentScripts(): void;
     private ignoreListURL;

@@ -6,7 +6,7 @@ import * as Formatter from '../../../models/formatter/formatter.js';
 import * as JavaScriptMetaData from '../../../models/javascript_metadata/javascript_metadata.js';
 import * as CodeMirror from '../../../third_party/codemirror.next/codemirror.next.js';
 import * as UI from '../../legacy/legacy.js';
-import { cursorTooltip } from './cursor_tooltip.js';
+import { closeTooltip, cursorTooltip } from './cursor_tooltip.js';
 export function completion() {
     return CodeMirror.javascript.javascriptLanguage.data.of({
         autocomplete: javascriptCompletionSource,
@@ -98,17 +98,17 @@ export function getQueryType(tree, pos, doc) {
     }
     if (node.name === 'PropertyName' || node.name === 'PrivatePropertyName') {
         return parent?.name !== 'MemberExpression' ? null :
-            { type: 1 /* PropertyName */, from: node.from, relatedNode: parent };
+            { type: 1 /* QueryType.PropertyName */, from: node.from, relatedNode: parent };
     }
     if (node.name === 'VariableName' ||
         // Treat alphabetic keywords as variables
         !node.firstChild && node.to - node.from < 20 && !/[^a-z]/.test(doc.sliceString(node.from, node.to))) {
-        return { type: 0 /* Expression */, from: node.from };
+        return { type: 0 /* QueryType.Expression */, from: node.from };
     }
     if (node.name === 'String') {
         const parent = node.parent;
         return parent?.name === 'MemberExpression' && parent.childBefore(node.from)?.name === '[' ?
-            { type: 2 /* PropertyExpression */, from: node.from, relatedNode: parent } :
+            { type: 2 /* QueryType.PropertyExpression */, from: node.from, relatedNode: parent } :
             null;
     }
     // Enter unfinished nodes before the position.
@@ -120,22 +120,38 @@ export function getQueryType(tree, pos, doc) {
     if (node.name === 'MemberExpression') {
         const before = node.childBefore(Math.min(pos, node.to));
         if (before?.name === '[') {
-            return { type: 2 /* PropertyExpression */, relatedNode: node };
+            return { type: 2 /* QueryType.PropertyExpression */, relatedNode: node };
         }
         if (before?.name === '.' || before?.name === '?.') {
-            return { type: 1 /* PropertyName */, relatedNode: node };
+            return { type: 1 /* QueryType.PropertyName */, relatedNode: node };
         }
     }
-    return { type: 0 /* Expression */ };
+    if (node.name === '(') {
+        // map.get(<auto-complete>
+        if (parent?.name === 'ArgList' && parent?.parent?.name === 'CallExpression') {
+            // map.get
+            const callReceiver = parent?.parent?.firstChild;
+            if (callReceiver?.name === 'MemberExpression') {
+                // get
+                const propertyExpression = callReceiver?.lastChild;
+                if (propertyExpression && doc.sliceString(propertyExpression.from, propertyExpression.to) === 'get') {
+                    // map
+                    const potentiallyMapObject = callReceiver?.firstChild;
+                    return { type: 3 /* QueryType.PotentiallyRetrievingFromMap */, relatedNode: potentiallyMapObject || undefined };
+                }
+            }
+        }
+    }
+    return { type: 0 /* QueryType.Expression */ };
 }
 export async function javascriptCompletionSource(cx) {
     const query = getQueryType(CodeMirror.syntaxTree(cx.state), cx.pos, cx.state.doc);
-    if (!query || query.from === undefined && !cx.explicit && query.type === 0 /* Expression */) {
+    if (!query || query.from === undefined && !cx.explicit && query.type === 0 /* QueryType.Expression */) {
         return null;
     }
     let result;
     let quote = undefined;
-    if (query.type === 0 /* Expression */) {
+    if (query.type === 0 /* QueryType.Expression */) {
         const [scope, global] = await Promise.all([
             completeExpressionInScope(),
             completeExpressionGlobal(),
@@ -150,9 +166,9 @@ export async function javascriptCompletionSource(cx) {
             result = global;
         }
     }
-    else if (query.type === 1 /* PropertyName */ || query.type === 2 /* PropertyExpression */) {
+    else if (query.type === 1 /* QueryType.PropertyName */ || query.type === 2 /* QueryType.PropertyExpression */) {
         const objectExpr = query.relatedNode.getChild('Expression');
-        if (query.type === 2 /* PropertyExpression */) {
+        if (query.type === 2 /* QueryType.PropertyExpression */) {
             quote = query.from === undefined ? '\'' : cx.state.sliceDoc(query.from, query.from + 1);
         }
         if (!objectExpr) {
@@ -160,16 +176,23 @@ export async function javascriptCompletionSource(cx) {
         }
         result = await completeProperties(cx.state.sliceDoc(objectExpr.from, objectExpr.to), quote, cx.state.sliceDoc(cx.pos, cx.pos + 1) === ']');
     }
+    else if (query.type === 3 /* QueryType.PotentiallyRetrievingFromMap */) {
+        const potentialMapObject = query.relatedNode;
+        if (!potentialMapObject) {
+            return null;
+        }
+        result = await maybeCompleteKeysFromMap(cx.state.sliceDoc(potentialMapObject.from, potentialMapObject.to));
+    }
     else {
         return null;
     }
     return {
         from: query.from ?? cx.pos,
         options: result.completions,
-        span: !quote ? SPAN_IDENT : quote === '\'' ? SPAN_SINGLE_QUOTE : SPAN_DOUBLE_QUOTE,
+        validFor: !quote ? SPAN_IDENT : quote === '\'' ? SPAN_SINGLE_QUOTE : SPAN_DOUBLE_QUOTE,
     };
 }
-const SPAN_IDENT = /^#?[\w\P{ASCII}]*$/u, SPAN_SINGLE_QUOTE = /^\'(\\.|[^\\'\n])*'?$/, SPAN_DOUBLE_QUOTE = /^"(\\.|[^\\"\n])*"?$/;
+const SPAN_IDENT = /^#?(?:[$_\p{ID_Start}])(?:[$_\u200C\u200D\p{ID_Continue}])*$/u, SPAN_SINGLE_QUOTE = /^\'(\\.|[^\\'\n])*'?$/, SPAN_DOUBLE_QUOTE = /^"(\\.|[^\\"\n])*"?$/;
 function getExecutionContext() {
     return UI.Context.Context.instance().flavor(SDK.RuntimeModel.ExecutionContext);
 }
@@ -191,6 +214,7 @@ async function evaluateExpression(context, expression, group) {
 }
 const primitivePrototypes = new Map([
     ['string', 'String'],
+    ['symbol', 'Symbol'],
     ['number', 'Number'],
     ['boolean', 'Boolean'],
     ['bigint', 'BigInt'],
@@ -226,6 +250,27 @@ class PropertyCache {
         return cacheInstance;
     }
 }
+async function maybeCompleteKeysFromMap(objectVariable) {
+    const result = new CompletionSet();
+    const context = getExecutionContext();
+    if (!context) {
+        return result;
+    }
+    const maybeRetrieveKeys = await evaluateExpression(context, `[...Map.prototype.keys.call(${objectVariable})]`, 'completion');
+    if (!maybeRetrieveKeys) {
+        return result;
+    }
+    const properties = SDK.RemoteObject.RemoteArray.objectAsArray(maybeRetrieveKeys);
+    const numProperties = properties.length();
+    for (let i = 0; i < numProperties; i++) {
+        result.add({
+            label: `"${(await properties.at(i)).value}")`,
+            type: 'constant',
+            boost: i * -1,
+        });
+    }
+    return result;
+}
 async function completeProperties(expression, quoted, hasBracket = false) {
     const cache = PropertyCache.instance();
     if (!quoted) {
@@ -244,7 +289,6 @@ async function completeProperties(expression, quoted, hasBracket = false) {
     }
     return result;
 }
-const prototypePropertyPenalty = -80;
 async function completePropertiesInner(expression, context, quoted, hasBracket = false) {
     const result = new CompletionSet();
     if (!context) {
@@ -262,32 +306,24 @@ async function completePropertiesInner(expression, context, quoted, hasBracket =
         }
         object = innerObject;
     }
-    const toPrototype = object.subtype === 'array' ?
-        'Array' :
-        object.subtype === 'typedarray' ? 'Uint8Array' : primitivePrototypes.get(object.type);
+    const toPrototype = primitivePrototypes.get(object.type);
     if (toPrototype) {
         object = await evaluateExpression(context, toPrototype + '.prototype', 'completion');
     }
     const functionType = expression === 'globalThis' ? 'function' : 'method';
     const otherType = expression === 'globalThis' ? 'variable' : 'property';
     if (object && (object.type === 'object' || object.type === 'function')) {
-        const properties = await object.getAllProperties(false, false);
+        const properties = await object.getAllProperties(
+        /* accessorPropertiesOnly */ false, /* generatePreview */ false, /* nonIndexedPropertiesOnly */ true);
         const isFunction = object.type === 'function';
         for (const prop of properties.properties || []) {
             if (!prop.symbol && !(isFunction && (prop.name === 'arguments' || prop.name === 'caller')) &&
                 (!prop.private || expression === 'this') && (quoted || SPAN_IDENT.test(prop.name))) {
                 const label = quoted ? quoted + prop.name.replaceAll('\\', '\\\\').replaceAll(quoted, '\\' + quoted) + quoted : prop.name;
-                const completion = {
-                    label,
-                    type: prop.value?.type === 'function' ? functionType : otherType,
-                };
-                if (quoted && !hasBracket) {
-                    completion.apply = label + ']';
-                }
-                if (!prop.isOwn) {
-                    completion.boost = prototypePropertyPenalty;
-                }
-                result.add(completion);
+                const apply = (quoted && !hasBracket) ? `${label}]` : undefined;
+                const boost = 2 * Number(prop.isOwn) + 1 * Number(prop.enumerable);
+                const type = prop.value?.type === 'function' ? functionType : otherType;
+                result.add({ apply, label, type, boost });
             }
         }
     }
@@ -355,6 +391,15 @@ export async function isExpressionComplete(expression) {
 export function argumentHints() {
     return cursorTooltip(getArgumentHints);
 }
+export function closeArgumentsHintsTooltip(view, tooltip) {
+    // If the tooltip is currently showing, the state will reflect its properties.
+    // If it isn't showing, the state is explicitly set to `null`.
+    if (view.state.field(tooltip) === null) {
+        return false;
+    }
+    view.dispatch({ effects: closeTooltip.of(null) });
+    return true;
+}
 async function getArgumentHints(state, pos) {
     const node = CodeMirror.syntaxTree(state).resolveInner(pos).enterUnfinishedNodesBefore(pos);
     if (node.name !== 'ArgList') {
@@ -386,23 +431,20 @@ async function getArgumentsForExpression(callee, doc) {
     if (!context) {
         return null;
     }
-    try {
-        const expression = doc.sliceString(callee.from, callee.to);
-        const result = await evaluateExpression(context, expression, 'argumentsHint');
-        if (!result || result.type !== 'function') {
+    const expression = doc.sliceString(callee.from, callee.to);
+    const result = await evaluateExpression(context, expression, 'argumentsHint');
+    if (!result || result.type !== 'function') {
+        return null;
+    }
+    const objGetter = async () => {
+        const first = callee.firstChild;
+        if (!first || callee.name !== 'MemberExpression') {
             return null;
         }
-        return getArgumentsForFunctionValue(result, async () => {
-            const first = callee.firstChild;
-            if (!first || callee.name !== 'MemberExpression') {
-                return null;
-            }
-            return evaluateExpression(context, doc.sliceString(first.from, first.to), 'argumentsHint');
-        }, expression);
-    }
-    finally {
-        context.runtimeModel.releaseObjectGroup('argumentsHint');
-    }
+        return evaluateExpression(context, doc.sliceString(first.from, first.to), 'argumentsHint');
+    };
+    return getArgumentsForFunctionValue(result, objGetter, expression)
+        .finally(() => context.runtimeModel.releaseObjectGroup('argumentsHint'));
 }
 async function getArgumentsForFunctionValue(object, receiverObjGetter, functionName) {
     const description = object.description;

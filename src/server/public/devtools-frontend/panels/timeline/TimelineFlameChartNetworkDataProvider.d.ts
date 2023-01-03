@@ -1,5 +1,5 @@
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
-import type { PerformanceModel } from './PerformanceModel.js';
+import { type PerformanceModel } from './PerformanceModel.js';
 import { TimelineSelection } from './TimelinePanel.js';
 export declare class TimelineFlameChartNetworkDataProvider implements PerfUI.FlameChart.FlameChartDataProvider {
     private readonly font;

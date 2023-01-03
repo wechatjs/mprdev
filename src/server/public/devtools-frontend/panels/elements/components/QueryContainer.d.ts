@@ -1,5 +1,5 @@
 import * as SDK from '../../../core/sdk/sdk.js';
-import type { DOMNode } from './Helper.js';
+import { type DOMNode } from './Helper.js';
 export declare class QueriedSizeRequestedEvent extends Event {
     static readonly eventName = "queriedsizerequested";
     constructor();

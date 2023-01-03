@@ -49,7 +49,7 @@ import { DatabaseModel, Events as DatabaseModelEvents } from './DatabaseModel.js
 import { DatabaseQueryView, Events as DatabaseQueryViewEvents } from './DatabaseQueryView.js';
 import { DatabaseTableView } from './DatabaseTableView.js';
 import { DOMStorageModel, Events as DOMStorageModelEvents } from './DOMStorageModel.js';
-import { Events as IndexedDBModelEvents, IndexedDBModel } from './IndexedDBModel.js';
+import { Events as IndexedDBModelEvents, IndexedDBModel, } from './IndexedDBModel.js';
 import { IDBDatabaseView, IDBDataView } from './IndexedDBViews.js';
 import { InterestGroupStorageModel } from './InterestGroupStorageModel.js';
 import { InterestGroupTreeElement } from './InterestGroupTreeElement.js';
@@ -159,6 +159,24 @@ const UIStrings = {
     *@description Default name for worker
     */
     worker: 'worker',
+    /**
+     * @description Aria text for screen reader to announce they can scroll to top of manifest if invoked
+     */
+    onInvokeManifestAlert: 'Manifest: Invoke to scroll to the top of manifest',
+    /**
+     * @description Aria text for screen reader to announce they can scroll to a section if invoked
+     * @example {"Identity"} PH1
+     */
+    beforeInvokeAlert: '{PH1}: Invoke to scroll to this section in manifest',
+    /**
+     * @description Alert message for screen reader to announce which subsection is being scrolled to
+     * @example {"Identity"} PH1
+     */
+    onInvokeAlert: 'Scrolled to {PH1}',
+    /**
+     * @description Application sidebar panel
+     */
+    applicationSidebarPanel: 'Application panel sidebar',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/application/ApplicationPanelSidebar.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -208,8 +226,13 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
         this.contentElement.appendChild(this.sidebarTree.element);
         const applicationSectionTitle = i18nString(UIStrings.application);
         this.applicationTreeElement = this.addSidebarSection(applicationSectionTitle);
+        const applicationPanelSidebar = this.applicationTreeElement.treeOutline?.contentElement;
+        if (applicationPanelSidebar) {
+            applicationPanelSidebar.ariaLabel = i18nString(UIStrings.applicationSidebarPanel);
+        }
         const manifestTreeElement = new AppManifestTreeElement(panel);
         this.applicationTreeElement.appendChild(manifestTreeElement);
+        manifestTreeElement.generateChildren();
         this.serviceWorkersTreeElement = new ServiceWorkersTreeElement(panel);
         this.applicationTreeElement.appendChild(this.serviceWorkersTreeElement);
         const clearStorageTreeElement = new ClearStorageTreeElement(panel);
@@ -257,33 +280,31 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
             const backgroundServiceSectionTitle = i18nString(UIStrings.backgroundServices);
             const backgroundServiceTreeElement = this.addSidebarSection(backgroundServiceSectionTitle);
             this.backgroundFetchTreeElement =
-                new BackgroundServiceTreeElement(panel, "backgroundFetch" /* BackgroundFetch */);
+                new BackgroundServiceTreeElement(panel, "backgroundFetch" /* Protocol.BackgroundService.ServiceName.BackgroundFetch */);
             backgroundServiceTreeElement.appendChild(this.backgroundFetchTreeElement);
             this.backgroundSyncTreeElement =
-                new BackgroundServiceTreeElement(panel, "backgroundSync" /* BackgroundSync */);
+                new BackgroundServiceTreeElement(panel, "backgroundSync" /* Protocol.BackgroundService.ServiceName.BackgroundSync */);
             backgroundServiceTreeElement.appendChild(this.backgroundSyncTreeElement);
             if (Root.Runtime.experiments.isEnabled('backgroundServicesNotifications')) {
                 this.notificationsTreeElement =
-                    new BackgroundServiceTreeElement(panel, "notifications" /* Notifications */);
+                    new BackgroundServiceTreeElement(panel, "notifications" /* Protocol.BackgroundService.ServiceName.Notifications */);
                 backgroundServiceTreeElement.appendChild(this.notificationsTreeElement);
             }
             if (Root.Runtime.experiments.isEnabled('backgroundServicesPaymentHandler')) {
                 this.paymentHandlerTreeElement =
-                    new BackgroundServiceTreeElement(panel, "paymentHandler" /* PaymentHandler */);
+                    new BackgroundServiceTreeElement(panel, "paymentHandler" /* Protocol.BackgroundService.ServiceName.PaymentHandler */);
                 backgroundServiceTreeElement.appendChild(this.paymentHandlerTreeElement);
             }
             this.periodicBackgroundSyncTreeElement =
-                new BackgroundServiceTreeElement(panel, "periodicBackgroundSync" /* PeriodicBackgroundSync */);
+                new BackgroundServiceTreeElement(panel, "periodicBackgroundSync" /* Protocol.BackgroundService.ServiceName.PeriodicBackgroundSync */);
             backgroundServiceTreeElement.appendChild(this.periodicBackgroundSyncTreeElement);
             if (Root.Runtime.experiments.isEnabled('backgroundServicesPushMessaging')) {
                 this.pushMessagingTreeElement =
-                    new BackgroundServiceTreeElement(panel, "pushMessaging" /* PushMessaging */);
+                    new BackgroundServiceTreeElement(panel, "pushMessaging" /* Protocol.BackgroundService.ServiceName.PushMessaging */);
                 backgroundServiceTreeElement.appendChild(this.pushMessagingTreeElement);
             }
-            if (Root.Runtime.experiments.isEnabled('reportingApiDebugging')) {
-                this.reportingApiTreeElement = new ReportingApiTreeElement(panel);
-                backgroundServiceTreeElement.appendChild(this.reportingApiTreeElement);
-            }
+            this.reportingApiTreeElement = new ReportingApiTreeElement(panel);
+            backgroundServiceTreeElement.appendChild(this.reportingApiTreeElement);
         }
         const resourcesSectionTitle = i18nString(UIStrings.frames);
         const resourcesTreeElement = this.addSidebarSection(resourcesSectionTitle);
@@ -323,6 +344,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
         treeElement.setCollapsible(false);
         treeElement.selectable = false;
         this.sidebarTree.appendChild(treeElement);
+        UI.ARIAUtils.markAsHeading(treeElement.listItemElement, 3);
         UI.ARIAUtils.setAccessibleName(treeElement.childrenListElement, title);
         return treeElement;
     }
@@ -338,7 +360,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
         }
         const interestGroupModel = target.model(InterestGroupStorageModel);
         if (interestGroupModel) {
-            interestGroupModel.addEventListener("InterestGroupAccess" /* InterestGroupAccess */, this.interestGroupAccess, this);
+            interestGroupModel.addEventListener("InterestGroupAccess" /* InterestGroupModelEvents.InterestGroupAccess */, this.interestGroupAccess, this);
         }
         const resourceTreeModel = target.model(SDK.ResourceTreeModel.ResourceTreeModel);
         if (!resourceTreeModel) {
@@ -367,7 +389,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
         }
         const interestGroupModel = target.model(InterestGroupStorageModel);
         if (interestGroupModel) {
-            interestGroupModel.removeEventListener("InterestGroupAccess" /* InterestGroupAccess */, this.interestGroupAccess, this);
+            interestGroupModel.removeEventListener("InterestGroupAccess" /* InterestGroupModelEvents.InterestGroupAccess */, this.interestGroupAccess, this);
         }
         this.resetWithFrames();
     }
@@ -421,11 +443,11 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
     }
     interestGroupModelAdded(model) {
         model.enable();
-        model.addEventListener("InterestGroupAccess" /* InterestGroupAccess */, this.interestGroupAccess, this);
+        model.addEventListener("InterestGroupAccess" /* InterestGroupModelEvents.InterestGroupAccess */, this.interestGroupAccess, this);
     }
     interestGroupModelRemoved(model) {
         model.disable();
-        model.removeEventListener("InterestGroupAccess" /* InterestGroupAccess */, this.interestGroupAccess, this);
+        model.removeEventListener("InterestGroupAccess" /* InterestGroupModelEvents.InterestGroupAccess */, this.interestGroupAccess, this);
     }
     resetWithFrames() {
         this.resourcesSection.reset();
@@ -516,6 +538,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox {
     }
     addDOMStorage(domStorage) {
         console.assert(!this.domStorageTreeElements.get(domStorage));
+        console.assert(Boolean(domStorage.storageKey) || Boolean(domStorage.securityOrigin));
         const domStorageTreeElement = new DOMStorageTreeElement(this.panel, domStorage);
         this.domStorageTreeElements.set(domStorage, domStorageTreeElement);
         if (domStorage.isLocalStorage) {
@@ -672,17 +695,17 @@ export class BackgroundServiceTreeElement extends ApplicationPanelTreeElement {
     }
     getIconType() {
         switch (this.serviceName) {
-            case "backgroundFetch" /* BackgroundFetch */:
+            case "backgroundFetch" /* Protocol.BackgroundService.ServiceName.BackgroundFetch */:
                 return 'mediumicon-fetch';
-            case "backgroundSync" /* BackgroundSync */:
+            case "backgroundSync" /* Protocol.BackgroundService.ServiceName.BackgroundSync */:
                 return 'mediumicon-sync';
-            case "pushMessaging" /* PushMessaging */:
+            case "pushMessaging" /* Protocol.BackgroundService.ServiceName.PushMessaging */:
                 return 'mediumicon-cloud';
-            case "notifications" /* Notifications */:
+            case "notifications" /* Protocol.BackgroundService.ServiceName.Notifications */:
                 return 'mediumicon-bell';
-            case "paymentHandler" /* PaymentHandler */:
+            case "paymentHandler" /* Protocol.BackgroundService.ServiceName.PaymentHandler */:
                 return 'mediumicon-payment';
-            case "periodicBackgroundSync" /* PeriodicBackgroundSync */:
+            case "periodicBackgroundSync" /* Protocol.BackgroundService.ServiceName.PeriodicBackgroundSync */:
                 return 'mediumicon-schedule';
             default:
                 console.error(`Service ${this.serviceName} does not have a dedicated icon`);
@@ -710,6 +733,7 @@ export class BackgroundServiceTreeElement extends ApplicationPanelTreeElement {
         }
         this.showView(this.view);
         UI.Context.Context.instance().setFlavor(BackgroundServiceView, this.view);
+        Host.userMetrics.panelShown('background_service_' + this.serviceName);
         return false;
     }
 }
@@ -729,6 +753,7 @@ export class DatabaseTreeElement extends ApplicationPanelTreeElement {
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
         this.sidebar.showDatabase(this.database);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.web_sql]);
         return false;
     }
     onexpand() {
@@ -760,6 +785,7 @@ export class DatabaseTableTreeElement extends ApplicationPanelTreeElement {
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
         this.sidebar.showDatabase(this.database, this.tableName);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.web_sql]);
         return false;
     }
 }
@@ -779,26 +805,93 @@ export class ServiceWorkersTreeElement extends ApplicationPanelTreeElement {
             this.view = new ServiceWorkersView();
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.service_workers]);
         return false;
     }
 }
 export class AppManifestTreeElement extends ApplicationPanelTreeElement {
     view;
     constructor(storagePanel) {
-        super(storagePanel, i18nString(UIStrings.manifest), false);
+        super(storagePanel, i18nString(UIStrings.manifest), true);
         const icon = UI.Icon.Icon.create('mediumicon-manifest', 'resource-tree-item');
         this.setLeadingIcons([icon]);
+        self.onInvokeElement(this.listItemElement, this.onInvoke.bind(this));
+        this.view = new AppManifestView();
+        UI.ARIAUtils.setAccessibleName(this.listItemElement, i18nString(UIStrings.onInvokeManifestAlert));
+        const handleExpansion = (evt) => {
+            this.setExpandable(evt.detail);
+        };
+        this.view.contentElement.addEventListener('manifestDetection', handleExpansion);
     }
     get itemURL() {
         return 'manifest://';
     }
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
-        if (!this.view) {
-            this.view = new AppManifestView();
-        }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.app_manifest]);
         return false;
+    }
+    generateChildren() {
+        const staticSections = this.view.getStaticSections();
+        for (const section of staticSections) {
+            const sectionElement = section.getTitleElement();
+            const childTitle = section.title();
+            const sectionFieldElement = section.getFieldElement();
+            const child = new ManifestChildTreeElement(this.resourcesPanel, sectionElement, childTitle, sectionFieldElement);
+            this.appendChild(child);
+        }
+    }
+    onInvoke() {
+        this.view.getManifestElement().scrollIntoView();
+        UI.ARIAUtils.alert(i18nString(UIStrings.onInvokeAlert, { PH1: this.listItemElement.title }));
+    }
+    showManifestView() {
+        this.showView(this.view);
+    }
+}
+export class ManifestChildTreeElement extends ApplicationPanelTreeElement {
+    #sectionElement;
+    #sectionFieldElement;
+    constructor(storagePanel, element, childTitle, fieldElement) {
+        super(storagePanel, childTitle, false);
+        const icon = UI.Icon.Icon.create('mediumicon-manifest', 'resource-tree-item');
+        this.setLeadingIcons([icon]);
+        this.#sectionElement = element;
+        this.#sectionFieldElement = fieldElement;
+        self.onInvokeElement(this.listItemElement, this.onInvoke.bind(this));
+        this.listItemElement.addEventListener('keydown', this.onInvokeElementKeydown.bind(this));
+        UI.ARIAUtils.setAccessibleName(this.listItemElement, i18nString(UIStrings.beforeInvokeAlert, { PH1: this.listItemElement.title }));
+    }
+    get itemURL() {
+        return 'manifest://' + this.title;
+    }
+    onInvoke() {
+        this.parent?.showManifestView();
+        this.#sectionElement.scrollIntoView();
+        UI.ARIAUtils.alert(i18nString(UIStrings.onInvokeAlert, { PH1: this.listItemElement.title }));
+        Host.userMetrics.manifestSectionSelected(this.listItemElement.title);
+    }
+    // direct focus to the corresponding element
+    onInvokeElementKeydown(event) {
+        if (event.key !== 'Tab' || event.shiftKey) {
+            return;
+        }
+        const checkBoxElement = this.#sectionFieldElement.querySelector('.mask-checkbox');
+        let focusableElement = this.#sectionFieldElement.querySelector('[tabindex="0"]');
+        if (checkBoxElement && checkBoxElement.shadowRoot) {
+            focusableElement = checkBoxElement.shadowRoot.querySelector('input') || null;
+        }
+        else if (!focusableElement) {
+            // special case for protocol handler section since it is a custom Element and has different structure than the others
+            focusableElement = this.#sectionFieldElement.querySelector('devtools-protocol-handlers-view')
+                ?.shadowRoot?.querySelector('[tabindex="0"]') ||
+                null;
+        }
+        if (focusableElement) {
+            focusableElement?.focus();
+            event.consume(true);
+        }
     }
 }
 export class ClearStorageTreeElement extends ApplicationPanelTreeElement {
@@ -817,6 +910,7 @@ export class ClearStorageTreeElement extends ApplicationPanelTreeElement {
             this.view = new StorageView();
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.storage]);
         return false;
     }
 }
@@ -915,7 +1009,7 @@ export class IDBDatabaseTreeElement extends ApplicationPanelTreeElement {
     database;
     view;
     constructor(storagePanel, model, databaseId) {
-        super(storagePanel, databaseId.name + ' - ' + databaseId.securityOrigin, false);
+        super(storagePanel, databaseId.name + ' - ' + databaseId.getOriginOrStorageKey(), false);
         this.model = model;
         this.databaseId = databaseId;
         this.idbObjectStoreTreeElements = new Map();
@@ -924,7 +1018,7 @@ export class IDBDatabaseTreeElement extends ApplicationPanelTreeElement {
         this.model.addEventListener(IndexedDBModelEvents.DatabaseNamesRefreshed, this.refreshIndexedDB, this);
     }
     get itemURL() {
-        return 'indexedDB://' + this.databaseId.securityOrigin + '/' + this.databaseId.name;
+        return 'indexedDB://' + this.databaseId.getOriginOrStorageKey() + '/' + this.databaseId.name;
     }
     onattach() {
         super.onattach();
@@ -989,6 +1083,7 @@ export class IDBDatabaseTreeElement extends ApplicationPanelTreeElement {
             this.view = new IDBDatabaseView(this.model, this.database);
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.indexed_db]);
         return false;
     }
     objectStoreRemoved(objectStoreName) {
@@ -1023,7 +1118,8 @@ export class IDBObjectStoreTreeElement extends ApplicationPanelTreeElement {
         this.setLeadingIcons([icon]);
     }
     get itemURL() {
-        return 'indexedDB://' + this.databaseId.securityOrigin + '/' + this.databaseId.name + '/' + this.objectStore.name;
+        return 'indexedDB://' + this.databaseId.getOriginOrStorageKey() + '/' + this.databaseId.name + '/' +
+            this.objectStore.name;
     }
     onattach() {
         super.onattach();
@@ -1101,6 +1197,7 @@ export class IDBObjectStoreTreeElement extends ApplicationPanelTreeElement {
                 new IDBDataView(this.model, this.databaseId, this.objectStore, null, this.refreshObjectStore.bind(this));
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.indexed_db]);
         return false;
     }
     indexRemoved(indexName) {
@@ -1136,8 +1233,8 @@ export class IDBIndexTreeElement extends ApplicationPanelTreeElement {
         this.refreshObjectStore = refreshObjectStore;
     }
     get itemURL() {
-        return 'indexedDB://' + this.databaseId.securityOrigin + '/' + this.databaseId.name + '/' + this.objectStore.name +
-            '/' + this.index.name;
+        return 'indexedDB://' + this.databaseId.getOriginOrStorageKey() + '/' + this.databaseId.name + '/' +
+            this.objectStore.name + '/' + this.index.name;
     }
     markNeedsRefresh() {
         if (this.view) {
@@ -1175,6 +1272,7 @@ export class IDBIndexTreeElement extends ApplicationPanelTreeElement {
             this.view = new IDBDataView(this.model, this.databaseId, this.objectStore, this.index, this.refreshObjectStore);
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.indexed_db]);
         return false;
     }
     clear() {
@@ -1186,16 +1284,19 @@ export class IDBIndexTreeElement extends ApplicationPanelTreeElement {
 export class DOMStorageTreeElement extends ApplicationPanelTreeElement {
     domStorage;
     constructor(storagePanel, domStorage) {
-        super(storagePanel, domStorage.securityOrigin ? domStorage.securityOrigin : i18nString(UIStrings.localFiles), false);
+        super(storagePanel, domStorage.securityOrigin ? domStorage.securityOrigin :
+            (domStorage.storageKey ? domStorage.storageKey : i18nString(UIStrings.localFiles)), false);
         this.domStorage = domStorage;
         const icon = UI.Icon.Icon.create('mediumicon-table', 'resource-tree-item');
         this.setLeadingIcons([icon]);
     }
     get itemURL() {
-        return 'storage://' + this.domStorage.securityOrigin + '/' + (this.domStorage.isLocalStorage ? 'local' : 'session');
+        return 'storage://' + this.domStorage.securityOrigin + '/' +
+            (this.domStorage.isLocalStorage ? 'local' : 'session');
     }
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.dom_storage]);
         this.resourcesPanel.showDOMStorage(this.domStorage);
         return false;
     }
@@ -1238,6 +1339,7 @@ export class CookieTreeElement extends ApplicationPanelTreeElement {
     onselect(selectedByUser) {
         super.onselect(selectedByUser);
         this.resourcesPanel.showCookies(this.target, this.cookieDomainInternal);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.cookies]);
         return false;
     }
 }
@@ -1531,6 +1633,7 @@ export class FrameTreeElement extends ApplicationPanelTreeElement {
         else {
             this.view.update();
         }
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.frame_details]);
         this.showView(this.view);
         this.listItemElement.classList.remove('hovered');
         SDK.OverlayModel.OverlayModel.hideDOMNodeHighlight();
@@ -1674,6 +1777,7 @@ export class FrameResourceTreeElement extends ApplicationPanelTreeElement {
         else {
             void this.panel.scheduleShowView(this.preparePreview());
         }
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.frame_resource]);
         return false;
     }
     ondblclick(_event) {
@@ -1751,6 +1855,7 @@ class FrameWindowTreeElement extends ApplicationPanelTreeElement {
             this.view.update();
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.frame_window]);
         return false;
     }
     get itemURL() {
@@ -1776,6 +1881,7 @@ class WorkerTreeElement extends ApplicationPanelTreeElement {
             this.view.update();
         }
         this.showView(this.view);
+        Host.userMetrics.panelShown(Host.UserMetrics.PanelCodes[Host.UserMetrics.PanelCodes.frame_worker]);
         return false;
     }
     get itemURL() {

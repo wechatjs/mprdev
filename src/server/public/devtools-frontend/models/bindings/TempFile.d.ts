@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
 import type * as SDK from '../../core/sdk/sdk.js';
-import type { ChunkedReader } from './FileUtils.js';
+import { type ChunkedReader } from './FileUtils.js';
 export declare class TempFile {
     #private;
     constructor();

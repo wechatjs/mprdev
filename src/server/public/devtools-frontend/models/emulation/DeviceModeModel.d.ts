@@ -2,7 +2,7 @@ import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Protocol from '../../generated/protocol.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { EmulatedDevice, Mode } from './EmulatedDevices.js';
+import { type EmulatedDevice, type Mode } from './EmulatedDevices.js';
 export declare class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements SDK.TargetManager.SDKModelObserver<SDK.EmulationModel.EmulationModel> {
     #private;
     private constructor();

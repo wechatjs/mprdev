@@ -59,7 +59,7 @@ async function loadPersistenceModule() {
     return loadedPersistenceModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "settings-view" /* SETTINGS_VIEW */,
+    location: "settings-view" /* UI.ViewManager.ViewLocationValues.SETTINGS_VIEW */,
     id: 'workspace',
     title: i18nLazyString(UIStrings.workspace),
     commandPrompt: i18nLazyString(UIStrings.showWorkspace),

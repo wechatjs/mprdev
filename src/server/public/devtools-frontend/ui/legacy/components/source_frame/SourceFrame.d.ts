@@ -57,7 +57,7 @@ export declare class SourceFrameImpl extends SourceFrameImpl_base implements UI.
     contentSet: boolean;
     constructor(lazyContent: () => Promise<TextUtils.ContentProvider.DeferredContent>, options?: SourceFrameOptions);
     private placeholderEditorState;
-    protected editorConfiguration(doc: string): CodeMirror.Extension;
+    protected editorConfiguration(doc: string | CodeMirror.Text): CodeMirror.Extension;
     protected onBlur(): void;
     protected onFocus(): void;
     get wasmDisassembly(): Common.WasmDisassembly.WasmDisassembly | null;
@@ -107,9 +107,9 @@ export declare class SourceFrameImpl extends SourceFrameImpl_base implements UI.
     isClean(): boolean;
     contentCommitted(): void;
     private simplifyMimeType;
-    protected getLanguageSupport(content: string): Promise<CodeMirror.Extension>;
+    protected getLanguageSupport(content: string | CodeMirror.Text): Promise<CodeMirror.Extension>;
     updateLanguageMode(content: string): Promise<void>;
-    setContent(content: string): Promise<void>;
+    setContent(content: string | CodeMirror.Text): Promise<void>;
     setSearchableView(view: UI.SearchableView.SearchableView | null): void;
     private doFindSearchMatches;
     performSearch(searchConfig: UI.SearchableView.SearchConfig, shouldJump: boolean, jumpBackwards?: boolean): void;

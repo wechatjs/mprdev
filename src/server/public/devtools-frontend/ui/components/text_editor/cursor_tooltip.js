@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as CodeMirror from '../../../third_party/codemirror.next/codemirror.next.js';
+export const closeTooltip = CodeMirror.StateEffect.define();
 export function cursorTooltip(source) {
     const openTooltip = CodeMirror.StateEffect.define();
-    const closeTooltip = CodeMirror.StateEffect.define();
     const state = CodeMirror.StateField.define({
         create() {
             return null;
@@ -35,16 +35,16 @@ export function cursorTooltip(source) {
         update(update) {
             this.updateID++;
             if (update.transactions.some(tr => tr.selection) && update.state.selection.main.empty) {
-                this.scheduleUpdate(update.view);
+                this.#scheduleUpdate(update.view);
             }
         }
-        scheduleUpdate(view) {
+        #scheduleUpdate(view) {
             if (this.pending > -1) {
                 clearTimeout(this.pending);
             }
-            this.pending = window.setTimeout(() => this.startUpdate(view), 50);
+            this.pending = window.setTimeout(() => this.#startUpdate(view), 50);
         }
-        startUpdate(view) {
+        #startUpdate(view) {
             this.pending = -1;
             const { main } = view.state.selection;
             if (main.empty) {
@@ -52,7 +52,7 @@ export function cursorTooltip(source) {
                 void source(view.state, main.from).then(tooltip => {
                     if (this.updateID !== updateID) {
                         if (this.pending < 0) {
-                            this.scheduleUpdate(view);
+                            this.#scheduleUpdate(view);
                         }
                     }
                     else if (tooltip) {

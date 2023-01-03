@@ -140,19 +140,19 @@ export class ImageView extends UI.View.SimpleView {
         void this.updateContentIfNeeded();
     }
     async updateContentIfNeeded() {
-        const { content } = await this.contentProvider.requestContent();
-        if (this.cachedContent === content) {
+        const content = await this.contentProvider.requestContent();
+        if (this.cachedContent?.content === content.content) {
             return;
         }
-        const contentEncoded = await this.contentProvider.contentEncoded();
         this.cachedContent = content;
-        const imageSrc = TextUtils.ContentProvider.contentAsDataURL(content, this.mimeType, contentEncoded) || this.url;
+        const imageSrc = TextUtils.ContentProvider.contentAsDataURL(content.content, this.mimeType, content.isEncoded) || this.url;
         const loadPromise = new Promise(x => {
             this.imagePreviewElement.onload = x;
         });
         this.imagePreviewElement.src = imageSrc;
         this.imagePreviewElement.alt = i18nString(UIStrings.imageFromS, { PH1: this.url });
-        const size = content && !contentEncoded ? content.length : Platform.StringUtilities.base64ToSize(content);
+        const size = content.content && !content.isEncoded ? content.content.length :
+            Platform.StringUtilities.base64ToSize(content.content);
         this.sizeLabel.setText(Platform.NumberUtilities.bytesToString(size));
         await loadPromise;
         this.dimensionsLabel.setText(i18nString(UIStrings.dD, { PH1: this.imagePreviewElement.naturalWidth, PH2: this.imagePreviewElement.naturalHeight }));
@@ -180,12 +180,10 @@ export class ImageView extends UI.View.SimpleView {
         Host.InspectorFrontendHost.InspectorFrontendHostInstance.copyText(this.url);
     }
     async saveImage() {
-        const contentEncoded = await this.contentProvider.contentEncoded();
-        if (!this.cachedContent) {
+        if (!this.cachedContent || !this.cachedContent.content) {
             return;
         }
-        const cachedContent = this.cachedContent;
-        const imageDataURL = TextUtils.ContentProvider.contentAsDataURL(cachedContent, this.mimeType, contentEncoded, '', false);
+        const imageDataURL = TextUtils.ContentProvider.contentAsDataURL(this.cachedContent.content, this.mimeType, this.cachedContent.isEncoded, '', false);
         if (!imageDataURL) {
             return;
         }

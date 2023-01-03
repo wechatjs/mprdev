@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
 import * as ComponentHelpers from '../helpers/helpers.js';
-import { getRowEntryForColumnId, getStringifiedCellValues } from './DataGridUtils.js';
+import { getRowEntryForColumnId, getStringifiedCellValues, } from './DataGridUtils.js';
 import { DataGrid } from './DataGrid.js';
 import dataGridControllerStyles from './dataGridController.css.js';
 export class DataGridController extends HTMLElement {
@@ -13,6 +13,7 @@ export class DataGridController extends HTMLElement {
     #columns = [];
     #rows = [];
     #contextMenus = undefined;
+    #label = undefined;
     /**
      * Because the controller will sort data in place (e.g. mutate it) when we get
      * new data in we store the original data separately. This is so we don't
@@ -23,6 +24,7 @@ export class DataGridController extends HTMLElement {
     #originalRows = [];
     #sortState = null;
     #filters = [];
+    #paddingRowsCount;
     connectedCallback() {
         this.#shadow.adoptedStyleSheets = [dataGridControllerStyles];
     }
@@ -32,6 +34,8 @@ export class DataGridController extends HTMLElement {
             rows: this.#originalRows,
             filters: this.#filters,
             contextMenus: this.#contextMenus,
+            label: this.#label,
+            paddingRowsCount: this.#paddingRowsCount,
         };
     }
     set data(data) {
@@ -40,6 +44,7 @@ export class DataGridController extends HTMLElement {
         this.#contextMenus = data.contextMenus;
         this.#filters = data.filters || [];
         this.#contextMenus = data.contextMenus;
+        this.#label = data.label;
         this.#columns = [...this.#originalColumns];
         this.#rows = this.#cloneAndFilterRows(data.rows, this.#filters);
         if (!this.#hasRenderedAtLeastOnce && data.initialSort) {
@@ -48,6 +53,7 @@ export class DataGridController extends HTMLElement {
         if (this.#sortState) {
             this.#sortRows(this.#sortState);
         }
+        this.#paddingRowsCount = data.paddingRowsCount;
         this.#render();
     }
     #testRowWithFilter(row, filter) {
@@ -104,10 +110,10 @@ export class DataGridController extends HTMLElement {
             const value1 = typeof cell1.value === 'number' ? cell1.value : String(cell1.value).toUpperCase();
             const value2 = typeof cell2.value === 'number' ? cell2.value : String(cell2.value).toUpperCase();
             if (value1 < value2) {
-                return direction === "ASC" /* ASC */ ? -1 : 1;
+                return direction === "ASC" /* SortDirection.ASC */ ? -1 : 1;
             }
             if (value1 > value2) {
-                return direction === "ASC" /* ASC */ ? 1 : -1;
+                return direction === "ASC" /* SortDirection.ASC */ ? 1 : -1;
             }
             return 0;
         });
@@ -115,7 +121,9 @@ export class DataGridController extends HTMLElement {
     }
     #onColumnHeaderClick(event) {
         const { column } = event.data;
-        this.#applySortOnColumn(column);
+        if (column.sortable) {
+            this.#applySortOnColumn(column);
+        }
     }
     #applySortOnColumn(column) {
         if (this.#sortState && this.#sortState.columnId === column.id) {
@@ -123,14 +131,14 @@ export class DataGridController extends HTMLElement {
             /* When users sort, we go No Sort => ASC => DESC => No sort
              * So if the current direction is DESC, we clear the state.
              */
-            if (direction === "DESC" /* DESC */) {
+            if (direction === "DESC" /* SortDirection.DESC */) {
                 this.#sortState = null;
             }
             else {
                 /* The state is ASC, so toggle to DESC */
                 this.#sortState = {
                     columnId,
-                    direction: "DESC" /* DESC */,
+                    direction: "DESC" /* SortDirection.DESC */,
                 };
             }
         }
@@ -138,7 +146,7 @@ export class DataGridController extends HTMLElement {
             /* The column wasn't previously sorted, so we sort it in ASC order. */
             this.#sortState = {
                 columnId: column.id,
-                direction: "ASC" /* ASC */,
+                direction: "ASC" /* SortDirection.ASC */,
             };
         }
         if (this.#sortState) {
@@ -167,6 +175,8 @@ export class DataGridController extends HTMLElement {
             rows: this.#rows,
             activeSort: this.#sortState,
             contextMenus: this.#contextMenus,
+            label: this.#label,
+            paddingRowsCount: this.#paddingRowsCount,
         }}
         @columnheaderclick=${this.#onColumnHeaderClick}
         @contextmenucolumnsortclick=${this.#onContextMenuColumnSortClick}

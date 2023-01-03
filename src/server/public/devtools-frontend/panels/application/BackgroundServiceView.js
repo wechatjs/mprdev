@@ -1,15 +1,15 @@
 // Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// eslint-disable-next-line rulesdir/es_modules_import
-import emptyWidgetStyles from '../../ui/legacy/emptyWidget.css.js';
-import backgroundServiceViewStyles from './backgroundServiceView.css.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
+// eslint-disable-next-line rulesdir/es_modules_import
+import emptyWidgetStyles from '../../ui/legacy/emptyWidget.css.js';
 import * as UI from '../../ui/legacy/legacy.js';
+import backgroundServiceViewStyles from './backgroundServiceView.css.js';
 import { Events } from './BackgroundServiceModel.js';
 const UIStrings = {
     /**
@@ -132,17 +132,17 @@ export class BackgroundServiceView extends UI.Widget.VBox {
     preview;
     static getUIString(serviceName) {
         switch (serviceName) {
-            case "backgroundFetch" /* BackgroundFetch */:
+            case "backgroundFetch" /* Protocol.BackgroundService.ServiceName.BackgroundFetch */:
                 return i18nString(UIStrings.backgroundFetch);
-            case "backgroundSync" /* BackgroundSync */:
+            case "backgroundSync" /* Protocol.BackgroundService.ServiceName.BackgroundSync */:
                 return i18nString(UIStrings.backgroundSync);
-            case "pushMessaging" /* PushMessaging */:
+            case "pushMessaging" /* Protocol.BackgroundService.ServiceName.PushMessaging */:
                 return i18nString(UIStrings.pushMessaging);
-            case "notifications" /* Notifications */:
+            case "notifications" /* Protocol.BackgroundService.ServiceName.Notifications */:
                 return i18nString(UIStrings.notifications);
-            case "paymentHandler" /* PaymentHandler */:
+            case "paymentHandler" /* Protocol.BackgroundService.ServiceName.PaymentHandler */:
                 return i18nString(UIStrings.paymentHandler);
-            case "periodicBackgroundSync" /* PeriodicBackgroundSync */:
+            case "periodicBackgroundSync" /* Protocol.BackgroundService.ServiceName.PeriodicBackgroundSync */:
                 return i18nString(UIStrings.periodicBackgroundSync);
             default:
                 return '';
@@ -327,16 +327,16 @@ export class BackgroundServiceView extends UI.Widget.VBox {
     createLearnMoreLink() {
         let url = 'https://developer.chrome.com/docs/devtools/javascript/background-services/?utm_source=devtools';
         switch (this.serviceName) {
-            case "backgroundFetch" /* BackgroundFetch */:
+            case "backgroundFetch" /* Protocol.BackgroundService.ServiceName.BackgroundFetch */:
                 url += '#fetch';
                 break;
-            case "backgroundSync" /* BackgroundSync */:
+            case "backgroundSync" /* Protocol.BackgroundService.ServiceName.BackgroundSync */:
                 url += '#sync';
                 break;
-            case "pushMessaging" /* PushMessaging */:
+            case "pushMessaging" /* Protocol.BackgroundService.ServiceName.PushMessaging */:
                 url += '#push';
                 break;
-            case "notifications" /* Notifications */:
+            case "notifications" /* Protocol.BackgroundService.ServiceName.Notifications */:
                 url += '#notifications';
                 break;
             default:

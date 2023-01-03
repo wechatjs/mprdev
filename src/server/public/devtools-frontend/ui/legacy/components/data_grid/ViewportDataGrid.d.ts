@@ -1,7 +1,6 @@
 import * as Common from '../../../../core/common/common.js';
 import * as Platform from '../../../../core/platform/platform.js';
-import type { DataGridData, Parameters } from './DataGrid.js';
-import { DataGridImpl, DataGridNode } from './DataGrid.js';
+import { DataGridImpl, DataGridNode, type DataGridData, type Parameters } from './DataGrid.js';
 declare const ViewportDataGrid_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T_1 extends Events.ViewportCalculated>(eventType: T_1, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T_1]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T_1>;

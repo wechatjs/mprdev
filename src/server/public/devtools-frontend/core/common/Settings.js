@@ -31,7 +31,7 @@ import * as Root from '../root/root.js';
 import { Format } from './Color.js';
 import { Console } from './Console.js';
 import { ObjectWrapper } from './Object.js';
-import { getLocalizedSettingsCategory, getRegisteredSettings, maybeRemoveSettingExtension, registerSettingExtension, registerSettingsForTest, resetSettings, SettingCategory, SettingType } from './SettingRegistration.js';
+import { getLocalizedSettingsCategory, getRegisteredSettings, maybeRemoveSettingExtension, registerSettingExtension, registerSettingsForTest, resetSettings, SettingCategory, SettingType, } from './SettingRegistration.js';
 let settingsInstance;
 export class Settings {
     syncedStorage;
@@ -963,6 +963,9 @@ export function detectColorFormat(color) {
     }
     else if (formatSetting === cf.HSL) {
         format = cf.HSL;
+    }
+    else if (formatSetting === cf.HWB) {
+        format = cf.HWB;
     }
     else if (formatSetting === cf.HEX) {
         format = color.detectHEXFormat();

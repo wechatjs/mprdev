@@ -1,7 +1,7 @@
 import * as Common from '../../../../core/common/common.js';
 import type * as SDK from '../../../../core/sdk/sdk.js';
 import * as UI from '../../legacy.js';
-import type { Calculator } from './TimelineGrid.js';
+import { type Calculator } from './TimelineGrid.js';
 declare const TimelineOverviewPane_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends Events.WindowChanged>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;

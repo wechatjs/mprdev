@@ -1,7 +1,7 @@
 import * as Protocol from '../../generated/protocol.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
-import type { ObjectSnapshot } from './TracingModel.js';
+import { type ObjectSnapshot } from './TracingModel.js';
 export declare class TracingManager extends SDKModel<void> {
     #private;
     constructor(target: Target);

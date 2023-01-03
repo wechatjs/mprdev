@@ -125,6 +125,11 @@ styles.replaceSync(
   margin-top: 5px;
 }
 
+.lighthouse-action-buttons {
+  align-self: end;
+  column-gap: 8px;
+}
+
 /*# sourceURL=lighthouseDialog.css */
 `);
 export default styles;

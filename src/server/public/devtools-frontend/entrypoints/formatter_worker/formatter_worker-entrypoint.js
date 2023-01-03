@@ -10,25 +10,34 @@ self.onmessage = function (event) {
         return;
     }
     switch (method) {
-        case "format" /* FORMAT */:
+        case "format" /* FormatterActions.FORMAT */:
             self.postMessage(FormatterWorker.FormatterWorker.format(params.mimeType, params.content, params.indentString));
             break;
-        case "parseCSS" /* PARSE_CSS */:
+        case "parseCSS" /* FormatterActions.PARSE_CSS */:
             FormatterWorker.CSSRuleParser.parseCSS(params.content, self.postMessage);
             break;
-        case "htmlOutline" /* HTML_OUTLINE */:
+        case "htmlOutline" /* FormatterActions.HTML_OUTLINE */:
             FormatterWorker.HTMLOutline.htmlOutline(params.content, self.postMessage);
             break;
-        case "javaScriptOutline" /* JAVASCRIPT_OUTLINE */:
+        case "javaScriptOutline" /* FormatterActions.JAVASCRIPT_OUTLINE */:
             FormatterWorker.JavaScriptOutline.javaScriptOutline(params.content, self.postMessage);
             break;
-        case "javaScriptIdentifiers" /* JAVASCRIPT_IDENTIFIERS */:
+        case "javaScriptIdentifiers" /* FormatterActions.JAVASCRIPT_IDENTIFIERS */:
             self.postMessage(FormatterWorker.FormatterWorker.javaScriptIdentifiers(params.content));
             break;
-        case "evaluatableJavaScriptSubstring" /* EVALUATE_JAVASCRIPT_SUBSTRING */:
+        case "javaScriptSubstitute" /* FormatterActions.JAVASCRIPT_SUBSTITUTE */: {
+            const mapping = new Map(params.mapping);
+            self.postMessage(FormatterWorker.Substitute.substituteExpression(params.content, mapping));
+            break;
+        }
+        case "javaScriptScopeTree" /* FormatterActions.JAVASCRIPT_SCOPE_TREE */: {
+            self.postMessage(FormatterWorker.ScopeParser.parseScopes(params.content)?.export());
+            break;
+        }
+        case "evaluatableJavaScriptSubstring" /* FormatterActions.EVALUATE_JAVASCRIPT_SUBSTRING */:
             self.postMessage(FormatterWorker.FormatterWorker.evaluatableJavaScriptSubstring(params.content));
             break;
-        case "argumentsList" /* ARGUMENTS_LIST */:
+        case "argumentsList" /* FormatterActions.ARGUMENTS_LIST */:
             self.postMessage(FormatterWorker.FormatterWorker.argumentsList(params.content));
             break;
         default:

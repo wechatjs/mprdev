@@ -1,7 +1,10 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as UI from '../../ui/legacy/legacy.js';
 export declare const Types: {
+    Authored: string;
+    Deployed: string;
     Domain: string;
     File: string;
     FileSystem: string;
@@ -19,15 +22,19 @@ export declare class NavigatorView extends UI.Widget.VBox implements SDK.TargetM
     private readonly subfolderNodes;
     private readonly rootNode;
     private readonly frameNodes;
+    private authoredNode?;
+    private deployedNode?;
     private navigatorGroupByFolderSetting;
+    private navigatorGroupByAuthoredExperiment?;
     private workspaceInternal;
     private lastSelectedUISourceCode?;
     private groupByFrame?;
+    private groupByAuthored?;
     private groupByDomain?;
     private groupByFolder?;
-    constructor();
+    constructor(enableAuthoredGrouping?: boolean);
     private static treeElementOrder;
-    static appendSearchItem(contextMenu: UI.ContextMenu.ContextMenu, path?: string): void;
+    static appendSearchItem(contextMenu: UI.ContextMenu.ContextMenu, path?: Platform.DevToolsPath.EncodedPathString): void;
     private static treeElementsCompare;
     setPlaceholder(placeholder: UI.Widget.Widget): void;
     private onBindingChanged;
@@ -65,12 +72,13 @@ export declare class NavigatorView extends UI.Widget.VBox implements SDK.TargetM
     private domainNode;
     private frameNode;
     private targetNode;
+    private rootOrDeployedNode;
     private computeProjectDisplayName;
     revealUISourceCode(uiSourceCode: Workspace.UISourceCode.UISourceCode, select?: boolean): NavigatorUISourceCodeTreeNode | null;
     sourceSelected(uiSourceCode: Workspace.UISourceCode.UISourceCode, focusSource: boolean): void;
     private removeUISourceCode;
     private removeUISourceCodeNode;
-    reset(): void;
+    reset(tearDownOnly?: boolean): void;
     handleContextMenu(_event: Event): void;
     private renameShortcut;
     private handleContextMenuCreate;
@@ -82,8 +90,9 @@ export declare class NavigatorView extends UI.Widget.VBox implements SDK.TargetM
     private handleDeleteOverridesHelper;
     handleFolderContextMenu(event: Event, node: NavigatorTreeNode): void;
     rename(node: NavigatorUISourceCodeTreeNode, creatingNewUISourceCode: boolean): void;
-    create(project: Workspace.Workspace.Project, path: string, uiSourceCodeToCopy?: Workspace.UISourceCode.UISourceCode): Promise<void>;
+    create(project: Workspace.Workspace.Project, path: Platform.DevToolsPath.EncodedPathString, uiSourceCodeToCopy?: Workspace.UISourceCode.UISourceCode): Promise<void>;
     private groupingChanged;
+    private ignoreListChanged;
     private initGrouping;
     private resetForTest;
     private discardFrame;
@@ -113,6 +122,7 @@ export declare class NavigatorSourceTreeElement extends UI.TreeOutline.TreeEleme
     uiSourceCodeInternal: Workspace.UISourceCode.UISourceCode;
     constructor(navigatorView: NavigatorView, uiSourceCode: Workspace.UISourceCode.UISourceCode, title: string, node: NavigatorUISourceCodeTreeNode);
     updateIcon(): void;
+    updateAccessibleName(): void;
     get uiSourceCode(): Workspace.UISourceCode.UISourceCode;
     onattach(): void;
     private shouldRenameOnMouseDown;
@@ -134,7 +144,8 @@ export declare class NavigatorTreeNode {
     isMerged: boolean;
     parent: NavigatorTreeNode | null;
     title: string;
-    constructor(navigatorView: NavigatorView, id: string, type: string);
+    tooltip?: string;
+    constructor(navigatorView: NavigatorView, id: string, type: string, tooltip?: string);
     treeNode(): UI.TreeOutline.TreeElement;
     dispose(): void;
     updateTitle(): void;
@@ -176,10 +187,10 @@ export declare class NavigatorUISourceCodeTreeNode extends NavigatorTreeNode {
 }
 export declare class NavigatorFolderTreeNode extends NavigatorTreeNode {
     project: Workspace.Workspace.Project | null;
-    readonly folderPath: string;
+    readonly folderPath: Platform.DevToolsPath.EncodedPathString;
     title: string;
     treeElement: NavigatorFolderTreeElement | null;
-    constructor(navigatorView: NavigatorView, project: Workspace.Workspace.Project | null, id: string, type: string, folderPath: string, title: string);
+    constructor(navigatorView: NavigatorView, project: Workspace.Workspace.Project | null, id: string, type: string, folderPath: Platform.DevToolsPath.EncodedPathString, title: string);
     treeNode(): UI.TreeOutline.TreeElement;
     updateTitle(): void;
     private createTreeElement;
@@ -194,7 +205,7 @@ export declare class NavigatorGroupTreeNode extends NavigatorTreeNode {
     title: string;
     private hoverCallback?;
     private treeElement?;
-    constructor(navigatorView: NavigatorView, project: Workspace.Workspace.Project, id: string, type: string, title: string);
+    constructor(navigatorView: NavigatorView, project: Workspace.Workspace.Project | null, id: string, type: string, title: string, tooltip?: string);
     setHoverCallback(hoverCallback: (arg0: boolean) => void): void;
     treeNode(): UI.TreeOutline.TreeElement;
     onattach(): void;

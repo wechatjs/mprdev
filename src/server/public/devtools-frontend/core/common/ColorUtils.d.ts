@@ -3,6 +3,7 @@
  */
 export declare function blendColors(fgRGBA: number[], bgRGBA: number[]): number[];
 export declare function rgbaToHsla([r, g, b, a]: number[]): number[];
+export declare function rgbaToHwba([r, g, b, a]: number[]): number[];
 /**
 * Calculate the luminance of this color using the WCAG algorithm.
 * See http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef

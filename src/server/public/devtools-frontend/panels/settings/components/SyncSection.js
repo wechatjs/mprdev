@@ -6,7 +6,7 @@ import * as ComponentHelpers from '../../../ui/components/helpers/helpers.js';
 import * as i18n from '../../../core/i18n/i18n.js';
 import * as LitHtml from '../../../ui/lit-html/lit-html.js';
 import * as Settings from '../../../ui/components/settings/settings.js';
-import * as SDK from '../../../core/sdk/sdk.js';
+import * as ChromeLink from '../../../ui/components/chrome_link/chrome_link.js';
 import syncSectionStyles from './syncSection.css.js';
 const UIStrings = {
     /**
@@ -73,9 +73,8 @@ function renderAccountInfoOrWarning(syncInfo) {
         // clang-format off
         return LitHtml.html `
       <span class="warning">
-        ${i18nString(UIStrings.syncDisabled)} <a href=${link} class="link" target="_blank"
-          @click=${(e) => openSettingsTab(link, e)}
-          @keydown=${(e) => openSettingsTab(link, e)}>${i18nString(UIStrings.settings)}</x-link>
+        ${i18nString(UIStrings.syncDisabled)}
+        <${ChromeLink.ChromeLink.ChromeLink.litTagName} .href=${link}>${i18nString(UIStrings.settings)}</${ChromeLink.ChromeLink.ChromeLink.litTagName}>
       </span>`;
         // clang-format on
     }
@@ -85,9 +84,8 @@ function renderAccountInfoOrWarning(syncInfo) {
         // clang-format off
         return LitHtml.html `
       <span class="warning">
-        ${i18nString(UIStrings.preferencesSyncDisabled)} <a href=${link} class="link" target="_blank"
-          @click=${(e) => openSettingsTab(link, e)}
-          @keydown=${(e) => openSettingsTab(link, e)}>${i18nString(UIStrings.settings)}</x-link>
+        ${i18nString(UIStrings.preferencesSyncDisabled)}
+        <${ChromeLink.ChromeLink.ChromeLink.litTagName} .href=${link}>${i18nString(UIStrings.settings)}</${ChromeLink.ChromeLink.ChromeLink.litTagName}>
       </span>`;
         // clang-format on
     }
@@ -99,15 +97,6 @@ function renderAccountInfoOrWarning(syncInfo) {
         <span>${syncInfo.accountEmail}</span>
       </div>
     </div>`;
-}
-// Navigating to a chrome:// link via a normal anchor doesn't work, so we "navigate"
-// there using CDP.
-function openSettingsTab(url, event) {
-    if (event.type === 'click' || (event.type === 'keydown' && self.isEnterOrSpaceKey(event))) {
-        const mainTarget = SDK.TargetManager.TargetManager.instance().mainTarget();
-        mainTarget && mainTarget.targetAgent().invoke_createTarget({ url });
-        event.consume(true);
-    }
 }
 ComponentHelpers.CustomElements.defineComponent('devtools-sync-section', SyncSection);
 //# sourceMappingURL=SyncSection.js.map

@@ -24,6 +24,7 @@ styles.replaceSync(
   align-items: center;
   cursor: pointer;
   color: var(--color-text-primary);
+  white-space: nowrap;
 }
 
 .overview-sidebar-panel-item:hover,
@@ -38,6 +39,7 @@ styles.replaceSync(
 
 .overview-toolbar {
   border-bottom: 1px solid var(--color-details-hairline);
+  flex: 0 0 auto;
 }
 
 /*# sourceURL=cssOverviewSidebarPanel.css */

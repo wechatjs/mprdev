@@ -85,10 +85,10 @@ export class LinearMemoryNavigator extends HTMLElement {
         this.#render();
         const addressInput = this.#shadow.querySelector('.address-input');
         if (addressInput) {
-            if (data.mode === "Submitted" /* Submitted */) {
+            if (data.mode === "Submitted" /* Mode.Submitted */) {
                 addressInput.blur();
             }
-            else if (data.mode === "InvalidSubmit" /* InvalidSubmit */) {
+            else if (data.mode === "InvalidSubmit" /* Mode.InvalidSubmit */) {
                 addressInput.select();
             }
         }
@@ -100,16 +100,16 @@ export class LinearMemoryNavigator extends HTMLElement {
       <div class="navigator">
         <div class="navigator-item">
           ${this.#createButton({ icon: 'ic_undo_16x16_icon', title: i18nString(UIStrings.goBackInAddressHistory),
-            event: new HistoryNavigationEvent("Backward" /* Backward */), enabled: this.#canGoBackInHistory })}
+            event: new HistoryNavigationEvent("Backward" /* Navigation.Backward */), enabled: this.#canGoBackInHistory })}
           ${this.#createButton({ icon: 'ic_redo_16x16_icon', title: i18nString(UIStrings.goForwardInAddressHistory),
-            event: new HistoryNavigationEvent("Forward" /* Forward */), enabled: this.#canGoForwardInHistory })}
+            event: new HistoryNavigationEvent("Forward" /* Navigation.Forward */), enabled: this.#canGoForwardInHistory })}
         </div>
         <div class="navigator-item">
           ${this.#createButton({ icon: 'ic_page_prev_16x16_icon', title: i18nString(UIStrings.previousPage),
-            event: new PageNavigationEvent("Backward" /* Backward */), enabled: true })}
+            event: new PageNavigationEvent("Backward" /* Navigation.Backward */), enabled: true })}
           ${this.#createAddressInput()}
           ${this.#createButton({ icon: 'ic_page_next_16x16_icon', title: i18nString(UIStrings.nextPage),
-            event: new PageNavigationEvent("Forward" /* Forward */), enabled: true })}
+            event: new PageNavigationEvent("Forward" /* Navigation.Forward */), enabled: true })}
         </div>
         ${this.#createButton({ icon: 'refresh_12x12_icon', title: i18nString(UIStrings.refresh),
             event: new RefreshRequestedEvent(), enabled: true })}
@@ -125,7 +125,7 @@ export class LinearMemoryNavigator extends HTMLElement {
         };
         return html `
       <input class=${LitHtml.Directives.classMap(classMap)} data-input="true" .value=${this.#address}
-        title=${this.#valid ? i18nString(UIStrings.enterAddress) : this.#error} @change=${this.#onAddressChange.bind(this, "Submitted" /* Submitted */)} @input=${this.#onAddressChange.bind(this, "Edit" /* Edit */)}/>`;
+        title=${this.#valid ? i18nString(UIStrings.enterAddress) : this.#error} @change=${this.#onAddressChange.bind(this, "Submitted" /* Mode.Submitted */)} @input=${this.#onAddressChange.bind(this, "Edit" /* Mode.Edit */)}/>`;
     }
     #onAddressChange(mode, event) {
         const addressInput = event.target;

@@ -96,7 +96,7 @@ const UIStrings = {
     /**
     *@description Text in Request Timing View of the Network panel
     */
-    waitingTtfb: 'Waiting (TTFB)',
+    waitingTtfb: 'Waiting for server response',
     /**
     *@description Text in Signed Exchange Info View of the Network panel
     */
@@ -217,12 +217,14 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export class RequestTimingView extends UI.Widget.VBox {
     request;
     calculator;
+    lastMinimumBoundary;
     tableElement;
     constructor(request, calculator) {
         super();
         this.element.classList.add('resource-timing-view');
         this.request = request;
         this.calculator = calculator;
+        this.lastMinimumBoundary = -1;
     }
     static timeRangeTitle(name) {
         switch (name) {
@@ -545,11 +547,11 @@ export class RequestTimingView extends UI.Widget.VBox {
     }
     getLocalizedResponseSourceForCode(swResponseSource) {
         switch (swResponseSource) {
-            case "cache-storage" /* CacheStorage */:
+            case "cache-storage" /* Protocol.Network.ServiceWorkerResponseSource.CacheStorage */:
                 return i18nString(UIStrings.serviceworkerCacheStorage);
-            case "http-cache" /* HttpCache */:
+            case "http-cache" /* Protocol.Network.ServiceWorkerResponseSource.HttpCache */:
                 return i18nString(UIStrings.fromHttpCache);
-            case "network" /* Network */:
+            case "network" /* Protocol.Network.ServiceWorkerResponseSource.Network */:
                 return i18nString(UIStrings.networkFetch);
             default:
                 return i18nString(UIStrings.fallbackCode);
@@ -573,14 +575,14 @@ export class RequestTimingView extends UI.Widget.VBox {
     wasShown() {
         this.request.addEventListener(SDK.NetworkRequest.Events.TimingChanged, this.refresh, this);
         this.request.addEventListener(SDK.NetworkRequest.Events.FinishedLoading, this.refresh, this);
-        this.calculator.addEventListener(Events.BoundariesChanged, this.refresh, this);
+        this.calculator.addEventListener(Events.BoundariesChanged, this.boundaryChanged, this);
         this.registerCSSFiles([networkingTimingTableStyles]);
         this.refresh();
     }
     willHide() {
         this.request.removeEventListener(SDK.NetworkRequest.Events.TimingChanged, this.refresh, this);
         this.request.removeEventListener(SDK.NetworkRequest.Events.FinishedLoading, this.refresh, this);
-        this.calculator.removeEventListener(Events.BoundariesChanged, this.refresh, this);
+        this.calculator.removeEventListener(Events.BoundariesChanged, this.boundaryChanged, this);
     }
     refresh() {
         if (this.tableElement) {
@@ -591,6 +593,13 @@ export class RequestTimingView extends UI.Widget.VBox {
         this.element.appendChild(this.tableElement);
         if (this.request.fetchedViaServiceWorker) {
             this.constructFetchDetailsView();
+        }
+    }
+    boundaryChanged() {
+        const minimumBoundary = this.calculator.minimumBoundary();
+        if (minimumBoundary !== this.lastMinimumBoundary) {
+            this.lastMinimumBoundary = minimumBoundary;
+            this.refresh();
         }
     }
 }

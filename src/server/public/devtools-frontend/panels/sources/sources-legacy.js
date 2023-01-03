@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 // @ts-nocheck
+import * as SourceMapScopesModule from '../../models/source_map_scopes/source_map_scopes.js';
 import * as SourcesModule from './sources.js';
 self.Sources = self.Sources || {};
 Sources = Sources || {};
@@ -93,10 +94,10 @@ Sources.SnippetsPlugin = SourcesModule.SnippetsPlugin.SnippetsPlugin;
 Sources.SourceMapNamesResolver = {};
 // Tests can override this global symbol and therefore can't be exported
 Object.defineProperty(Sources.SourceMapNamesResolver, '_scopeResolvedForTest', {
-    get: SourcesModule.SourceMapNamesResolver.getScopeResolvedForTest,
-    set: SourcesModule.SourceMapNamesResolver.setScopeResolvedForTest,
+    get: SourceMapScopesModule.NamesResolver.getScopeResolvedForTest,
+    set: SourceMapScopesModule.NamesResolver.setScopeResolvedForTest,
 });
-Sources.SourceMapNamesResolver.resolveExpression = SourcesModule.SourceMapNamesResolver.resolveExpression;
+Sources.SourceMapNamesResolver.resolveExpression = SourceMapScopesModule.NamesResolver.resolveExpression;
 /** @constructor */
 Sources.NetworkNavigatorView = SourcesModule.SourcesNavigator.NetworkNavigatorView;
 /** @constructor */
@@ -124,7 +125,7 @@ Sources.SourcesPanel.DebuggerPausedDetailsRevealer = SourcesModule.SourcesPanel.
 /** @constructor */
 Sources.SourcesPanel.RevealingActionDelegate = SourcesModule.SourcesPanel.RevealingActionDelegate;
 /** @constructor */
-Sources.SourcesPanel.DebuggingActionDelegate = SourcesModule.SourcesPanel.DebuggingActionDelegate;
+Sources.SourcesPanel.ActionDelegate = SourcesModule.SourcesPanel.ActionDelegate;
 /** @constructor */
 Sources.SourcesPanel.WrapperView = SourcesModule.SourcesPanel.WrapperView;
 /** @constructor */

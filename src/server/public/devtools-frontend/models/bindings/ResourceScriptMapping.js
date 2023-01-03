@@ -29,10 +29,12 @@
  */
 import * as Common from '../../core/common/common.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Workspace from '../workspace/workspace.js';
 import { BreakpointManager } from './BreakpointManager.js';
 import { ContentProviderBasedProject } from './ContentProviderBasedProject.js';
+import { DebuggerWorkspaceBinding } from './DebuggerWorkspaceBinding.js';
 import { NetworkProject } from './NetworkProject.js';
 import { metadataForURL } from './ResourceUtils.js';
 const UIStrings = {
@@ -57,7 +59,7 @@ export class ResourceScriptMapping {
     debuggerWorkspaceBinding;
     #uiSourceCodeToScriptFile;
     #projects;
-    #acceptedScripts;
+    #scriptToUISourceCode;
     #eventListeners;
     constructor(debuggerModel, workspace, debuggerWorkspaceBinding) {
         this.debuggerModel = debuggerModel;
@@ -65,15 +67,23 @@ export class ResourceScriptMapping {
         this.debuggerWorkspaceBinding = debuggerWorkspaceBinding;
         this.#uiSourceCodeToScriptFile = new Map();
         this.#projects = new Map();
-        this.#acceptedScripts = new Set();
+        this.#scriptToUISourceCode = new Map();
         const runtimeModel = debuggerModel.runtimeModel();
         this.#eventListeners = [
-            this.debuggerModel.addEventListener(SDK.DebuggerModel.Events.ParsedScriptSource, event => {
-                void this.parsedScriptSource(event);
-            }, this),
+            this.debuggerModel.addEventListener(SDK.DebuggerModel.Events.ParsedScriptSource, event => this.addScript(event.data), this),
             this.debuggerModel.addEventListener(SDK.DebuggerModel.Events.GlobalObjectCleared, this.globalObjectCleared, this),
             runtimeModel.addEventListener(SDK.RuntimeModel.Events.ExecutionContextDestroyed, this.executionContextDestroyed, this),
+            runtimeModel.target().targetManager().addEventListener(SDK.TargetManager.Events.InspectedURLChanged, this.inspectedURLChanged, this),
         ];
+    }
+    static resolveRelativeSourceURL(script, url) {
+        let target = script.debuggerModel.target();
+        while (target && target.type() !== SDK.Target.Type.Frame) {
+            target = target.parentTarget();
+        }
+        const baseURL = target?.inspectedURL() ?? Platform.DevToolsPath.EmptyUrlString;
+        url = Common.ParsedURL.ParsedURL.completeURL(baseURL, url) ?? url;
+        return url;
     }
     project(script) {
         const prefix = script.isContentScript() ? 'js:extensions:' : 'js::';
@@ -93,8 +103,7 @@ export class ResourceScriptMapping {
         if (!script) {
             return null;
         }
-        const project = this.project(script);
-        const uiSourceCode = project.uiSourceCodeForURL(script.sourceURL);
+        const uiSourceCode = this.#scriptToUISourceCode.get(script);
         if (!uiSourceCode) {
             return null;
         }
@@ -122,90 +131,102 @@ export class ResourceScriptMapping {
         }
         return [this.debuggerModel.createRawLocation(script, lineNumber, columnNumber)];
     }
-    acceptsScript(script) {
-        if (!script.sourceURL || script.isLiveEdit() || (script.isInlineScript() && !script.hasSourceURL)) {
-            return false;
-        }
-        // Filter out embedder injected content scripts.
-        if (script.isContentScript() && !script.hasSourceURL) {
-            const parsedURL = new Common.ParsedURL.ParsedURL(script.sourceURL);
-            if (!parsedURL.isValid) {
-                return false;
+    inspectedURLChanged(event) {
+        for (let target = this.debuggerModel.target(); target !== event.data; target = target.parentTarget()) {
+            if (target === null) {
+                return;
             }
         }
-        return true;
+        // Just remove and readd all scripts to ensure their URLs are reflected correctly.
+        for (const script of Array.from(this.#scriptToUISourceCode.keys())) {
+            this.removeScript(script);
+            this.addScript(script);
+        }
     }
-    async parsedScriptSource(event) {
-        const script = event.data;
-        if (!this.acceptsScript(script)) {
+    addScript(script) {
+        // Ignore live edit scripts here.
+        if (script.isLiveEdit()) {
             return;
         }
-        this.#acceptedScripts.add(script);
-        const originalContentProvider = script.originalContentProvider();
-        const url = script.sourceURL;
-        const project = this.project(script);
+        let url = script.sourceURL;
+        if (!url) {
+            return;
+        }
+        if (script.hasSourceURL) {
+            // Try to resolve `//# sourceURL=` annotations relative to
+            // the base URL, according to the sourcemap specification.
+            url = ResourceScriptMapping.resolveRelativeSourceURL(script, url);
+        }
+        else {
+            // Ignore inline <script>s without `//# sourceURL` annotation here.
+            if (script.isInlineScript()) {
+                return;
+            }
+            // Filter out embedder injected content scripts.
+            if (script.isContentScript()) {
+                const parsedURL = new Common.ParsedURL.ParsedURL(url);
+                if (!parsedURL.isValid) {
+                    return;
+                }
+            }
+        }
         // Remove previous UISourceCode, if any
+        const project = this.project(script);
         const oldUISourceCode = project.uiSourceCodeForURL(url);
         if (oldUISourceCode) {
-            const scriptFile = this.#uiSourceCodeToScriptFile.get(oldUISourceCode);
-            if (scriptFile && scriptFile.script) {
-                await this.removeScript(scriptFile.script);
+            const oldScriptFile = this.#uiSourceCodeToScriptFile.get(oldUISourceCode);
+            if (oldScriptFile && oldScriptFile.script) {
+                this.removeScript(oldScriptFile.script);
             }
         }
         // Create UISourceCode.
+        const originalContentProvider = script.originalContentProvider();
         const uiSourceCode = project.createUISourceCode(url, originalContentProvider.contentType());
         NetworkProject.setInitialFrameAttribution(uiSourceCode, script.frameId);
         const metadata = metadataForURL(this.debuggerModel.target(), script.frameId, url);
         // Bind UISourceCode to scripts.
         const scriptFile = new ResourceScriptFile(this, uiSourceCode, [script]);
         this.#uiSourceCodeToScriptFile.set(uiSourceCode, scriptFile);
+        this.#scriptToUISourceCode.set(script, uiSourceCode);
         const mimeType = script.isWasm() ? 'application/wasm' : 'text/javascript';
         project.addUISourceCodeWithProvider(uiSourceCode, originalContentProvider, metadata, mimeType);
-        await this.debuggerWorkspaceBinding.updateLocations(script);
+        void this.debuggerWorkspaceBinding.updateLocations(script);
     }
     scriptFile(uiSourceCode) {
         return this.#uiSourceCodeToScriptFile.get(uiSourceCode) || null;
     }
-    async removeScript(script) {
-        if (!this.#acceptedScripts.has(script)) {
+    removeScript(script) {
+        const uiSourceCode = this.#scriptToUISourceCode.get(script);
+        if (!uiSourceCode) {
             return;
         }
-        this.#acceptedScripts.delete(script);
-        const project = this.project(script);
-        const uiSourceCode = project.uiSourceCodeForURL(script.sourceURL);
         const scriptFile = this.#uiSourceCodeToScriptFile.get(uiSourceCode);
         if (scriptFile) {
             scriptFile.dispose();
         }
         this.#uiSourceCodeToScriptFile.delete(uiSourceCode);
-        project.removeFile(script.sourceURL);
-        await this.debuggerWorkspaceBinding.updateLocations(script);
+        this.#scriptToUISourceCode.delete(script);
+        const project = uiSourceCode.project();
+        project.removeFile(uiSourceCode.url());
+        void this.debuggerWorkspaceBinding.updateLocations(script);
     }
     executionContextDestroyed(event) {
         const executionContext = event.data;
-        const scripts = this.debuggerModel.scriptsForExecutionContext(executionContext);
-        for (const script of scripts) {
-            void this.removeScript(script);
+        for (const script of this.debuggerModel.scriptsForExecutionContext(executionContext)) {
+            this.removeScript(script);
         }
     }
     globalObjectCleared() {
-        const scripts = Array.from(this.#acceptedScripts);
-        for (const script of scripts) {
-            void this.removeScript(script);
+        for (const script of this.#scriptToUISourceCode.keys()) {
+            this.removeScript(script);
         }
     }
     resetForTest() {
-        const scripts = Array.from(this.#acceptedScripts);
-        for (const script of scripts) {
-            void this.removeScript(script);
-        }
+        this.globalObjectCleared();
     }
     dispose() {
         Common.EventTarget.removeEventListeners(this.#eventListeners);
-        const scripts = Array.from(this.#acceptedScripts);
-        for (const script of scripts) {
-            void this.removeScript(script);
-        }
+        this.globalObjectCleared();
         for (const project of this.#projects.values()) {
             project.removeProject();
         }
@@ -249,7 +270,7 @@ export class ResourceScriptFile extends Common.ObjectWrapper.ObjectWrapper {
             return false;
         }
         // Match ignoring sourceURL.
-        if (!workingCopy.startsWith(this.#scriptSource.trimRight())) {
+        if (!workingCopy.startsWith(this.#scriptSource.trimEnd())) {
             return true;
         }
         const suffix = this.#uiSourceCodeInternal.workingCopy().substr(this.#scriptSource.length);
@@ -265,32 +286,44 @@ export class ResourceScriptFile extends Common.ObjectWrapper.ObjectWrapper {
         if (!this.scriptInternal) {
             return;
         }
-        const debuggerModel = this.#resourceScriptMapping.debuggerModel;
         const breakpoints = BreakpointManager.instance()
             .breakpointLocationsForUISourceCode(this.#uiSourceCodeInternal)
             .map(breakpointLocation => breakpointLocation.breakpoint);
         const source = this.#uiSourceCodeInternal.workingCopy();
-        debuggerModel.setScriptSource(this.scriptInternal.scriptId, source, (error, exceptionDetails) => {
-            void this.scriptSourceWasSet(source, breakpoints, error, exceptionDetails);
+        void this.scriptInternal.editSource(source).then(({ status, exceptionDetails }) => {
+            void this.scriptSourceWasSet(source, breakpoints, status, exceptionDetails);
         });
     }
-    async scriptSourceWasSet(source, breakpoints, error, exceptionDetails) {
-        if (!error && !exceptionDetails) {
+    async scriptSourceWasSet(source, breakpoints, status, exceptionDetails) {
+        if (status === "Ok" /* Protocol.Debugger.SetScriptSourceResponseStatus.Ok */) {
             this.#scriptSource = source;
         }
         await this.update();
-        if (!error && !exceptionDetails) {
+        if (status === "Ok" /* Protocol.Debugger.SetScriptSourceResponseStatus.Ok */) {
             // Live edit can cause #breakpoints to be in the wrong position, or to be lost altogether.
             // If any #breakpoints were in the pre-live edit script, they need to be re-added.
             await Promise.all(breakpoints.map(breakpoint => breakpoint.refreshInDebugger()));
             return;
         }
         if (!exceptionDetails) {
-            Common.Console.Console.instance().addMessage(i18nString(UIStrings.liveEditFailed, { PH1: String(error) }), Common.Console.MessageLevel.Warning);
+            // TODO(crbug.com/1334484): Instead of to the console, report these errors in an "info bar" at the bottom
+            //                          of the text editor, similar to e.g. source mapping errors.
+            Common.Console.Console.instance().addMessage(i18nString(UIStrings.liveEditFailed, { PH1: getErrorText(status) }), Common.Console.MessageLevel.Warning);
             return;
         }
         const messageText = i18nString(UIStrings.liveEditCompileFailed, { PH1: exceptionDetails.text });
         this.#uiSourceCodeInternal.addLineMessage(Workspace.UISourceCode.Message.Level.Error, messageText, exceptionDetails.lineNumber, exceptionDetails.columnNumber);
+        function getErrorText(status) {
+            switch (status) {
+                case "BlockedByActiveFunction" /* Protocol.Debugger.SetScriptSourceResponseStatus.BlockedByActiveFunction */:
+                    return 'Functions that are on the stack (currently being executed) can not be edited';
+                case "BlockedByActiveGenerator" /* Protocol.Debugger.SetScriptSourceResponseStatus.BlockedByActiveGenerator */:
+                    return 'Async functions/generators that are active can not be edited';
+                case "CompileError" /* Protocol.Debugger.SetScriptSourceResponseStatus.CompileError */:
+                case "Ok" /* Protocol.Debugger.SetScriptSourceResponseStatus.Ok */:
+                    throw new Error('Compile errors and Ok status must not be reported on the console');
+            }
+        }
     }
     async update() {
         if (this.isDiverged() && !this.#hasDivergedFromVMInternal) {
@@ -306,7 +339,7 @@ export class ResourceScriptFile extends Common.ObjectWrapper.ObjectWrapper {
             await this.#resourceScriptMapping.debuggerWorkspaceBinding.updateLocations(this.scriptInternal);
             this.#isDivergingFromVMInternal = undefined;
             this.#hasDivergedFromVMInternal = true;
-            this.dispatchEventToListeners("DidDivergeFromVM" /* DidDivergeFromVM */);
+            this.dispatchEventToListeners("DidDivergeFromVM" /* ResourceScriptFile.Events.DidDivergeFromVM */);
         }
     }
     async mergeToVM() {
@@ -315,7 +348,7 @@ export class ResourceScriptFile extends Common.ObjectWrapper.ObjectWrapper {
             this.#isMergingToVMInternal = true;
             await this.#resourceScriptMapping.debuggerWorkspaceBinding.updateLocations(this.scriptInternal);
             this.#isMergingToVMInternal = undefined;
-            this.dispatchEventToListeners("DidMergeToVM" /* DidMergeToVM */);
+            this.dispatchEventToListeners("DidMergeToVM" /* ResourceScriptFile.Events.DidMergeToVM */);
         }
     }
     hasDivergedFromVM() {
@@ -349,8 +382,28 @@ export class ResourceScriptFile extends Common.ObjectWrapper.ObjectWrapper {
         }
         this.scriptInternal.debuggerModel.setSourceMapURL(this.scriptInternal, sourceMapURL);
     }
+    addDebugInfoURL(debugInfoURL) {
+        if (!this.scriptInternal) {
+            return;
+        }
+        const { pluginManager } = DebuggerWorkspaceBinding.instance();
+        if (pluginManager) {
+            pluginManager.setDebugInfoURL(this.scriptInternal, debugInfoURL);
+        }
+    }
     hasSourceMapURL() {
         return this.scriptInternal !== undefined && Boolean(this.scriptInternal.sourceMapURL);
+    }
+    async missingSymbolFiles() {
+        if (!this.scriptInternal) {
+            return null;
+        }
+        const { pluginManager } = this.#resourceScriptMapping.debuggerWorkspaceBinding;
+        if (!pluginManager) {
+            return null;
+        }
+        const sources = await pluginManager.getSourcesForScript(this.scriptInternal);
+        return sources && 'missingSymbolFiles' in sources ? sources.missingSymbolFiles : null;
     }
     get script() {
         return this.scriptInternal || null;

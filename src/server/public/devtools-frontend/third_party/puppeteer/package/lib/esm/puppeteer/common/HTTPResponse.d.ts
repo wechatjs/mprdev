@@ -16,7 +16,7 @@
  */
 import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping.js';
 import { EventEmitter } from './EventEmitter.js';
-import { Frame } from './FrameManager.js';
+import { Frame } from './Frame.js';
 import { HTTPRequest } from './HTTPRequest.js';
 import { SecurityDetails } from './SecurityDetails.js';
 import { Protocol } from 'devtools-protocol';
@@ -24,8 +24,8 @@ import { Protocol } from 'devtools-protocol';
  * @public
  */
 export interface RemoteAddress {
-    ip: string;
-    port: number;
+    ip?: string;
+    port?: number;
 }
 interface CDPSession extends EventEmitter {
     send<T extends keyof ProtocolMapping.Commands>(method: T, ...paramArgs: ProtocolMapping.Commands[T]['paramsType']): Promise<ProtocolMapping.Commands[T]['returnType']>;
@@ -37,27 +37,11 @@ interface CDPSession extends EventEmitter {
  * @public
  */
 export declare class HTTPResponse {
-    private _client;
-    private _request;
-    private _contentPromise;
-    private _bodyLoadedPromise;
-    private _bodyLoadedPromiseFulfill;
-    private _remoteAddress;
-    private _status;
-    private _statusText;
-    private _url;
-    private _fromDiskCache;
-    private _fromServiceWorker;
-    private _headers;
-    private _securityDetails;
+    #private;
     /**
      * @internal
      */
     constructor(client: CDPSession, request: HTTPRequest, responsePayload: Protocol.Network.Response, extraInfo: Protocol.Network.ResponseReceivedExtraInfoEvent | null);
-    /**
-     * @internal
-     */
-    _parseStatusTextFromExtrInfo(extraInfo: Protocol.Network.ResponseReceivedExtraInfoEvent | null): string | undefined;
     /**
      * @internal
      */
@@ -80,7 +64,7 @@ export declare class HTTPResponse {
      */
     status(): number;
     /**
-     * @returns  The status text of the response (e.g. usually an "OK" for a
+     * @returns The status text of the response (e.g. usually an "OK" for a
      * success).
      */
     statusText(): string;
@@ -94,6 +78,10 @@ export declare class HTTPResponse {
      * secure connection, or `null` otherwise.
      */
     securityDetails(): SecurityDetails | null;
+    /**
+     * @returns Timing information related to the response.
+     */
+    timing(): Protocol.Network.ResourceTiming | null;
     /**
      * @returns Promise which resolves to a buffer with response body.
      */

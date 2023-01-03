@@ -65,7 +65,7 @@ export class AXBreadcrumbsPane extends AccessibilitySubPane {
         };
         if (Root.Runtime.experiments.isEnabled(experiment)) {
             this.#legacyTreeDisabled = true;
-            const feedbackURL = 'https://goo.gle/devtools-a11y-tree-feedback';
+            const feedbackURL = 'https://g.co/devtools/a11y-tree-feedback';
             previewToggle.data = {
                 name,
                 helperText: i18nString(UIStrings.fullTreeExperimentDescription),

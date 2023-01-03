@@ -1,7 +1,7 @@
 import type * as Protocol from '../../generated/protocol.js';
-import type { CSSModel } from './CSSModel.js';
+import { type CSSModel } from './CSSModel.js';
 import { CSSQuery } from './CSSQuery.js';
-import type { DOMNode } from './DOMModel.js';
+import { type DOMNode } from './DOMModel.js';
 export declare class CSSContainerQuery extends CSSQuery {
     name?: string;
     static parseContainerQueriesPayload(cssModel: CSSModel, payload: Protocol.CSS.CSSContainerQuery[]): CSSContainerQuery[];

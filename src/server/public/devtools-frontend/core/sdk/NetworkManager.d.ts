@@ -1,14 +1,14 @@
 import type * as TextUtils from '../../models/text_utils/text_utils.js';
 import * as Common from '../common/common.js';
 import * as Host from '../host/host.js';
+import * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
-import type { ContentData } from './NetworkRequest.js';
-import { NetworkRequest } from './NetworkRequest.js';
-import type { Target } from './Target.js';
+import { NetworkRequest, type ContentData } from './NetworkRequest.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
-import type { SDKModelObserver } from './TargetManager.js';
-import type { Serializer } from '../common/Settings.js';
+import { type SDKModelObserver } from './TargetManager.js';
+import { type Serializer } from '../common/Settings.js';
 export declare class NetworkManager extends SDKModel<EventTypes> {
     #private;
     readonly dispatcher: NetworkDispatcher;
@@ -22,13 +22,14 @@ export declare class NetworkManager extends SDKModel<EventTypes> {
     static requestPostData(request: NetworkRequest): Promise<string | null>;
     static connectionType(conditions: Conditions): Protocol.Network.ConnectionType;
     static lowercaseHeaders(headers: Protocol.Network.Headers): Protocol.Network.Headers;
-    requestForURL(url: string): NetworkRequest | null;
+    requestForURL(url: Platform.DevToolsPath.UrlString): NetworkRequest | null;
+    requestForId(id: string): NetworkRequest | null;
     private cacheDisabledSettingChanged;
     dispose(): void;
     private bypassServiceWorkerChanged;
     getSecurityIsolationStatus(frameId: Protocol.Page.FrameId | null): Promise<Protocol.Network.SecurityIsolationStatus | null>;
     enableReportingApi(enable?: boolean): Promise<Promise<Protocol.ProtocolResponseWithError>>;
-    loadNetworkResource(frameId: Protocol.Page.FrameId | null, url: string, options: Protocol.Network.LoadNetworkResourceOptions): Promise<Protocol.Network.LoadNetworkResourcePageResult>;
+    loadNetworkResource(frameId: Protocol.Page.FrameId | null, url: Platform.DevToolsPath.UrlString, options: Protocol.Network.LoadNetworkResourceOptions): Promise<Protocol.Network.LoadNetworkResourcePageResult>;
     clearRequests(): void;
 }
 export declare enum Events {
@@ -76,8 +77,8 @@ export declare const Slow3GConditions: Conditions;
 export declare const Fast3GConditions: Conditions;
 export declare class FetchDispatcher implements ProtocolProxyApi.FetchDispatcher {
     #private;
-    constructor(agent: ProtocolProxyApi.FetchApi);
-    requestPaused({ requestId, request, resourceType, responseStatusCode, responseHeaders }: Protocol.Fetch.RequestPausedEvent): void;
+    constructor(agent: ProtocolProxyApi.FetchApi, manager: NetworkManager);
+    requestPaused({ requestId, request, resourceType, responseStatusCode, responseHeaders, networkId }: Protocol.Fetch.RequestPausedEvent): void;
     authRequired({}: Protocol.Fetch.AuthRequiredEvent): void;
 }
 export declare class NetworkDispatcher implements ProtocolProxyApi.NetworkDispatcher {
@@ -86,8 +87,8 @@ export declare class NetworkDispatcher implements ProtocolProxyApi.NetworkDispat
     private headersMapToHeadersArray;
     private updateNetworkRequestWithRequest;
     private updateNetworkRequestWithResponse;
-    requestForId(url: string): NetworkRequest | null;
-    requestForURL(url: string): NetworkRequest | null;
+    requestForId(id: string): NetworkRequest | null;
+    requestForURL(url: Platform.DevToolsPath.UrlString): NetworkRequest | null;
     resourceChangedPriority({ requestId, newPriority }: Protocol.Network.ResourceChangedPriorityEvent): void;
     signedExchangeReceived({ requestId, info }: Protocol.Network.SignedExchangeReceivedEvent): void;
     requestWillBeSent({ requestId, loaderId, documentURL, request, timestamp, wallTime, initiator, redirectResponse, type, frameId }: Protocol.Network.RequestWillBeSentEvent): void;
@@ -138,6 +139,7 @@ export declare class MultitargetNetworkManager extends Common.ObjectWrapper.Obje
     static instance(opts?: {
         forceNew: boolean | null;
     }): MultitargetNetworkManager;
+    static dispose(): void;
     static getChromeVersion(): string;
     static patchUserAgentWithChromeVersion(uaString: string): string;
     static patchUserAgentMetadataWithChromeVersion(userAgentMetadata: Protocol.Emulation.UserAgentMetadata): void;
@@ -172,7 +174,7 @@ export declare class MultitargetNetworkManager extends Common.ObjectWrapper.Obje
     clearBrowserCache(): void;
     clearBrowserCookies(): void;
     getCertificate(origin: string): Promise<string[]>;
-    loadResource(url: string): Promise<{
+    loadResource(url: Platform.DevToolsPath.UrlString): Promise<{
         success: boolean;
         content: string;
         errorDescription: Host.ResourceLoader.LoadErrorDescription;
@@ -185,7 +187,8 @@ export declare namespace MultitargetNetworkManager {
         UserAgentChanged = "UserAgentChanged",
         InterceptorsChanged = "InterceptorsChanged",
         AcceptedEncodingsChanged = "AcceptedEncodingsChanged",
-        RequestIntercepted = "RequestIntercepted"
+        RequestIntercepted = "RequestIntercepted",
+        RequestFulfilled = "RequestFulfilled"
     }
     type EventTypes = {
         [Events.BlockedPatternsChanged]: void;
@@ -193,7 +196,8 @@ export declare namespace MultitargetNetworkManager {
         [Events.UserAgentChanged]: void;
         [Events.InterceptorsChanged]: void;
         [Events.AcceptedEncodingsChanged]: void;
-        [Events.RequestIntercepted]: string;
+        [Events.RequestIntercepted]: Platform.DevToolsPath.UrlString;
+        [Events.RequestFulfilled]: Platform.DevToolsPath.UrlString;
     };
 }
 export declare class InterceptedRequest {
@@ -203,12 +207,14 @@ export declare class InterceptedRequest {
     responseStatusCode: number | undefined;
     responseHeaders: Protocol.Fetch.HeaderEntry[] | undefined;
     requestId: Protocol.Fetch.RequestId;
-    constructor(fetchAgent: ProtocolProxyApi.FetchApi, request: Protocol.Network.Request, resourceType: Protocol.Network.ResourceType, requestId: Protocol.Fetch.RequestId, responseStatusCode?: number, responseHeaders?: Protocol.Fetch.HeaderEntry[]);
+    networkRequest: NetworkRequest | null;
+    constructor(fetchAgent: ProtocolProxyApi.FetchApi, request: Protocol.Network.Request, resourceType: Protocol.Network.ResourceType, requestId: Protocol.Fetch.RequestId, networkRequest: NetworkRequest | null, responseStatusCode?: number, responseHeaders?: Protocol.Fetch.HeaderEntry[]);
     hasResponded(): boolean;
-    continueRequestWithContent(contentBlob: Blob, encoded: boolean, responseHeaders: Protocol.Fetch.HeaderEntry[]): Promise<void>;
+    continueRequestWithContent(contentBlob: Blob, encoded: boolean, responseHeaders: Protocol.Fetch.HeaderEntry[], isBodyOverridden: boolean): Promise<void>;
     continueRequestWithoutChange(): void;
     continueRequestWithError(errorReason: Protocol.Network.ErrorReason): void;
     responseBody(): Promise<ContentData>;
+    isRedirect(): boolean;
 }
 export declare class ConditionsSerializer implements Serializer<Conditions, Conditions> {
     stringify(value: unknown): string;
@@ -237,7 +243,7 @@ export interface InterceptionPattern {
 }
 export declare type RequestInterceptor = (request: InterceptedRequest) => Promise<void>;
 export interface RequestUpdateDroppedEventData {
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     frameId: Protocol.Page.FrameId | null;
     loaderId: Protocol.Network.LoaderId;
     resourceType: Protocol.Network.ResourceType;

@@ -3,8 +3,16 @@ import * as SDK from '../../core/sdk/sdk.js';
 import type * as Adorners from '../../ui/components/adorners/adorners.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import { ComputedStyleWidget } from './ComputedStyleWidget.js';
-import type { MarkerDecorator } from './MarkerDecorator.js';
+import { type MarkerDecorator } from './MarkerDecorator.js';
 import { StylesSidebarPane } from './StylesSidebarPane.js';
+/**
+ * These strings need to match the `SidebarPaneCodes` in UserMetrics.ts. DevTools
+ * collects usage metrics for the different sidebar tabs.
+ */
+export declare const enum SidebarPaneTabId {
+    Computed = "Computed",
+    Styles = "Styles"
+}
 export declare class ElementsPanel extends UI.Panel.Panel implements UI.SearchableView.Searchable, SDK.TargetManager.SDKModelObserver<SDK.DOMModel.DOMModel>, UI.View.ViewLocationResolver {
     private splitWidget;
     private readonly searchableViewInternal;
@@ -76,7 +84,7 @@ export declare class ElementsPanel extends UI.Panel.Panel implements UI.Searchab
     private treeOutlineForNode;
     private treeElementForNode;
     private leaveUserAgentShadowDOM;
-    revealAndSelectNode(node: SDK.DOMModel.DOMNode, focus: boolean, omitHighlight?: boolean): Promise<void>;
+    revealAndSelectNode(nodeToReveal: SDK.DOMModel.DOMNode, focus: boolean, omitHighlight?: boolean): Promise<void>;
     private showUAShadowDOMChanged;
     private setupTextSelectionHack;
     private initializeSidebarPanes;

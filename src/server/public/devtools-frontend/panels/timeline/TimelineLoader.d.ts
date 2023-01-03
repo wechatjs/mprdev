@@ -1,4 +1,5 @@
 import * as Common from '../../core/common/common.js';
+import type * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 export declare class TimelineLoader implements Common.StringOutputStream.OutputStream {
     private client;
@@ -15,7 +16,8 @@ export declare class TimelineLoader implements Common.StringOutputStream.OutputS
     constructor(client: Client);
     static loadFromFile(file: File, client: Client): TimelineLoader;
     static loadFromEvents(events: SDK.TracingManager.EventPayload[], client: Client): TimelineLoader;
-    static loadFromURL(url: string, client: Client): TimelineLoader;
+    static loadFromURL(url: Platform.DevToolsPath.UrlString, client: Client): TimelineLoader;
+    addEvents(events: SDK.TracingManager.EventPayload[]): Promise<void>;
     cancel(): void;
     write(chunk: string): Promise<void>;
     private writeBalancedJSON;

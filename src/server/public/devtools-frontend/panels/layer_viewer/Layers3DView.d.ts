@@ -3,8 +3,7 @@ import * as Platform from '../../core/platform/platform.js';
 import type * as Protocol from '../../generated/protocol.js';
 import type * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { LayerView, LayerViewHost } from './LayerViewHost.js';
-import { Selection } from './LayerViewHost.js';
+import { Selection, type LayerView, type LayerViewHost } from './LayerViewHost.js';
 declare const Layers3DView_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends keyof EventTypes>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;

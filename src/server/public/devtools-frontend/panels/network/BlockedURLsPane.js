@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 import * as Common from '../../core/common/common.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import blockedURLsPaneStyles from './blockedURLsPane.css.js';
@@ -108,7 +109,7 @@ export class BlockedURLsPane extends UI.Widget.VBox {
     }
     addButtonClicked() {
         this.manager.setBlockingEnabled(true);
-        this.list.addNewItem(0, { url: '', enabled: true });
+        this.list.addNewItem(0, { url: Platform.DevToolsPath.EmptyUrlString, enabled: true });
     }
     renderItem(pattern, editable) {
         const count = this.blockedRequestsCount(pattern.url);

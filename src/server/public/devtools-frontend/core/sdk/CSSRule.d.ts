@@ -1,11 +1,14 @@
 import * as Protocol from '../../generated/protocol.js';
 import * as TextUtils from '../../models/text_utils/text_utils.js';
+import * as Platform from '../platform/platform.js';
 import { CSSContainerQuery } from './CSSContainerQuery.js';
+import { CSSLayer } from './CSSLayer.js';
 import { CSSMedia } from './CSSMedia.js';
+import { CSSScope } from './CSSScope.js';
 import { CSSSupports } from './CSSSupports.js';
-import type { CSSModel, Edit } from './CSSModel.js';
+import { type CSSModel, type Edit } from './CSSModel.js';
 import { CSSStyleDeclaration } from './CSSStyleDeclaration.js';
-import type { CSSStyleSheetHeader } from './CSSStyleSheetHeader.js';
+import { type CSSStyleSheetHeader } from './CSSStyleSheetHeader.js';
 export declare class CSSRule {
     readonly cssModelInternal: CSSModel;
     styleSheetId: Protocol.CSS.StyleSheetId | undefined;
@@ -18,7 +21,7 @@ export declare class CSSRule {
         origin: Protocol.CSS.StyleSheetOrigin;
     });
     rebase(edit: Edit): void;
-    resourceURL(): string;
+    resourceURL(): Platform.DevToolsPath.UrlString;
     isUserAgent(): boolean;
     isInjected(): boolean;
     isViaInspector(): boolean;
@@ -37,6 +40,8 @@ export declare class CSSStyleRule extends CSSRule {
     media: CSSMedia[];
     containerQueries: CSSContainerQuery[];
     supports: CSSSupports[];
+    scopes: CSSScope[];
+    layers: CSSLayer[];
     wasUsed: boolean;
     constructor(cssModel: CSSModel, payload: Protocol.CSS.CSSRule, wasUsed?: boolean);
     static createDummyRule(cssModel: CSSModel, selectorText: string): CSSStyleRule;

@@ -2,8 +2,9 @@ import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as TimelineModel from '../../models/timeline_model/timeline_model.js';
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
-import type { PerformanceModel } from './PerformanceModel.js';
+import { type PerformanceModel } from './PerformanceModel.js';
 import { TimelineSelection } from './TimelinePanel.js';
+declare type TimelineFlameChartEntry = (SDK.FilmStripModel.Frame | SDK.TracingModel.Event | TimelineModel.TimelineFrameModel.TimelineFrame | TimelineModel.TimelineIRModel.Phases);
 export declare class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements PerfUI.FlameChart.FlameChartDataProvider {
     private readonly font;
     private droppedFramePatternCanvas;
@@ -24,8 +25,8 @@ export declare class TimelineFlameChartDataProvider extends Common.ObjectWrapper
     private readonly collapsibleTimingsHeader;
     private readonly timingsHeader;
     private readonly screenshotsHeader;
-    private readonly interactionsHeaderLevel1;
-    private readonly interactionsHeaderLevel2;
+    private readonly animationsHeader;
+    private readonly userInteractionsHeader;
     private readonly experienceHeader;
     private readonly flowEventIndexById;
     private entryData;
@@ -96,6 +97,7 @@ export declare class TimelineFlameChartDataProvider extends Common.ObjectWrapper
     buildFlowForInitiator(entryIndex: number): boolean;
     private eventParent;
     eventByIndex(entryIndex: number): SDK.TracingModel.Event | null;
+    entryDataByIndex(entryIndex: number): TimelineFlameChartEntry;
     setEventColorMapping(colorForEvent: (arg0: SDK.TracingModel.Event) => string): void;
 }
 export declare const InstantEventVisibleDurationMs = 0.001;
@@ -112,3 +114,4 @@ export declare enum EntryType {
     ExtensionEvent = "ExtensionEvent",
     Screenshot = "Screenshot"
 }
+export {};

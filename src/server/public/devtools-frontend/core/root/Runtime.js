@@ -33,6 +33,9 @@ export class Runtime {
     static queryParam(name) {
         return queryParamsObject.get(name);
     }
+    static setQueryParamForTesting(name, value) {
+        queryParamsObject.set(name, value);
+    }
     static experimentsSetting() {
         try {
             return JSON.parse(self.localStorage && self.localStorage['experiments'] ? self.localStorage['experiments'] : '{}');
@@ -79,17 +82,20 @@ export class ExperimentsSupport {
     #enabledTransiently;
     #enabledByDefault;
     #serverEnabled;
+    // Experiments in this set won't be shown to the user
+    #nonConfigurable;
     constructor() {
         this.#experiments = [];
         this.#experimentNames = new Set();
         this.#enabledTransiently = new Set();
         this.#enabledByDefault = new Set();
         this.#serverEnabled = new Set();
+        this.#nonConfigurable = new Set();
     }
     allConfigurableExperiments() {
         const result = [];
         for (const experiment of this.#experiments) {
-            if (!this.#enabledTransiently.has(experiment.name)) {
+            if (!this.#enabledTransiently.has(experiment.name) && !this.#nonConfigurable.has(experiment.name)) {
                 result.push(experiment);
             }
         }
@@ -104,10 +110,10 @@ export class ExperimentsSupport {
         }
         self.localStorage['experiments'] = JSON.stringify(value);
     }
-    register(experimentName, experimentTitle, unstable, docLink) {
+    register(experimentName, experimentTitle, unstable, docLink, feedbackLink) {
         Platform.DCHECK(() => !this.#experimentNames.has(experimentName), 'Duplicate registration of experiment ' + experimentName);
         this.#experimentNames.add(experimentName);
-        this.#experiments.push(new Experiment(this, experimentName, experimentTitle, Boolean(unstable), docLink ?? ''));
+        this.#experiments.push(new Experiment(this, experimentName, experimentTitle, Boolean(unstable), docLink ?? Platform.DevToolsPath.EmptyUrlString, feedbackLink ?? Platform.DevToolsPath.EmptyUrlString));
     }
     isEnabled(experimentName) {
         this.checkExperiment(experimentName);
@@ -148,9 +154,19 @@ export class ExperimentsSupport {
             this.#serverEnabled.add(experiment);
         }
     }
+    setNonConfigurableExperiments(experimentNames) {
+        for (const experiment of experimentNames) {
+            this.checkExperiment(experiment);
+            this.#nonConfigurable.add(experiment);
+        }
+    }
     enableForTest(experimentName) {
         this.checkExperiment(experimentName);
         this.#enabledTransiently.add(experimentName);
+    }
+    disableForTest(experimentName) {
+        this.checkExperiment(experimentName);
+        this.#enabledTransiently.delete(experimentName);
     }
     clearForTest() {
         this.#experiments = [];
@@ -181,12 +197,14 @@ export class Experiment {
     title;
     unstable;
     docLink;
+    feedbackLink;
     #experiments;
-    constructor(experiments, name, title, unstable, docLink) {
+    constructor(experiments, name, title, unstable, docLink, feedbackLink) {
         this.name = name;
         this.title = title;
         this.unstable = unstable;
         this.docLink = docLink;
+        this.feedbackLink = feedbackLink;
         this.#experiments = experiments;
     }
     isEnabled() {
@@ -212,11 +230,17 @@ export var ExperimentName;
     ExperimentName["ALL"] = "*";
     ExperimentName["PROTOCOL_MONITOR"] = "protocolMonitor";
     ExperimentName["WEBAUTHN_PANE"] = "webauthnPane";
-    ExperimentName["SYNC_SETTINGS"] = "syncSettings";
     ExperimentName["FULL_ACCESSIBILITY_TREE"] = "fullAccessibilityTree";
     ExperimentName["PRECISE_CHANGES"] = "preciseChanges";
     ExperimentName["STYLES_PANE_CSS_CHANGES"] = "stylesPaneCSSChanges";
     ExperimentName["HEADER_OVERRIDES"] = "headerOverrides";
+    ExperimentName["EYEDROPPER_COLOR_PICKER"] = "eyedropperColorPicker";
+    ExperimentName["INSTRUMENTATION_BREAKPOINTS"] = "instrumentationBreakpoints";
+    ExperimentName["CSS_AUTHORING_HINTS"] = "cssAuthoringHints";
+    ExperimentName["AUTHORED_DEPLOYED_GROUPING"] = "authoredDeployedGrouping";
+    ExperimentName["IMPORTANT_DOM_PROPERTIES"] = "importantDOMProperties";
+    ExperimentName["JUST_MY_CODE"] = "justMyCode";
+    ExperimentName["BREAKPOINT_VIEW"] = "breakpointView";
 })(ExperimentName || (ExperimentName = {}));
 // TODO(crbug.com/1167717): Make this a const enum again
 // eslint-disable-next-line rulesdir/const_enum

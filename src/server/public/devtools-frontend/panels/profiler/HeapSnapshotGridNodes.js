@@ -34,7 +34,7 @@ import * as SDK from '../../core/sdk/sdk.js';
 import * as HeapSnapshotModel from '../../models/heap_snapshot_model/heap_snapshot_model.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { HeapSnapshotSortableDataGridEvents } from './HeapSnapshotDataGrids.js';
+import { HeapSnapshotSortableDataGridEvents, } from './HeapSnapshotDataGrids.js';
 const UIStrings = {
     /**
     *@description Generic text with two placeholders separated by a comma
@@ -480,6 +480,7 @@ export class HeapSnapshotGenericObjectNode extends HeapSnapshotGridNode {
                 valueStyle = 'number';
                 break;
             case 'hidden':
+            case 'object shape':
                 valueStyle = 'null';
                 break;
             case 'array':
@@ -1076,7 +1077,6 @@ export class AllocationGridNode extends HeapSnapshotGridNode {
                 columnNumber: allocationNode.column - 1,
                 inlineFrameIndex: 0,
                 className: 'profile-node-file',
-                tabStop: undefined,
             });
             urlElement.style.maxWidth = '75%';
             cell.insertBefore(urlElement, cell.firstChild);

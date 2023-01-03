@@ -15,8 +15,8 @@ export class QuirksModeIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel) {
         const mode = issueDetails.isLimitedQuirksMode ? 'LimitedQuirksMode' : 'QuirksMode';
-        const umaCode = ["QuirksModeIssue" /* QuirksModeIssue */, mode].join('::');
-        super({ code: "QuirksModeIssue" /* QuirksModeIssue */, umaCode }, issuesModel);
+        const umaCode = ["QuirksModeIssue" /* Protocol.Audits.InspectorIssueCode.QuirksModeIssue */, mode].join('::');
+        super({ code: "QuirksModeIssue" /* Protocol.Audits.InspectorIssueCode.QuirksModeIssue */, umaCode }, issuesModel);
         this.#issueDetails = issueDetails;
     }
     primaryKey() {

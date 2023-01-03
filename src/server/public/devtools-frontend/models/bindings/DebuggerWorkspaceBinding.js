@@ -18,6 +18,7 @@ export class DebuggerWorkspaceBinding {
     #debuggerModelToData;
     #liveLocationPromises;
     pluginManager;
+    #targetManager;
     constructor(targetManager, workspace) {
         this.workspace = workspace;
         this.#sourceMappings = [];
@@ -25,10 +26,22 @@ export class DebuggerWorkspaceBinding {
         targetManager.addModelListener(SDK.DebuggerModel.DebuggerModel, SDK.DebuggerModel.Events.GlobalObjectCleared, this.globalObjectCleared, this);
         targetManager.addModelListener(SDK.DebuggerModel.DebuggerModel, SDK.DebuggerModel.Events.DebuggerResumed, this.debuggerResumed, this);
         targetManager.observeModels(SDK.DebuggerModel.DebuggerModel, this);
+        this.#targetManager = targetManager;
         this.#liveLocationPromises = new Set();
         this.pluginManager = Root.Runtime.experiments.isEnabled('wasmDWARFDebugging') ?
             new DebuggerLanguagePluginManager(targetManager, workspace, this) :
             null;
+    }
+    initPluginManagerForTest() {
+        if (Root.Runtime.experiments.isEnabled('wasmDWARFDebugging')) {
+            if (!this.pluginManager) {
+                this.pluginManager = new DebuggerLanguagePluginManager(this.#targetManager, this.workspace, this);
+            }
+        }
+        else {
+            this.pluginManager = null;
+        }
+        return this.pluginManager;
     }
     static instance(opts = { forceNew: null, targetManager: null, workspace: null }) {
         const { forceNew, targetManager, workspace } = opts;
@@ -45,6 +58,12 @@ export class DebuggerWorkspaceBinding {
     }
     addSourceMapping(sourceMapping) {
         this.#sourceMappings.push(sourceMapping);
+    }
+    removeSourceMapping(sourceMapping) {
+        const index = this.#sourceMappings.indexOf(sourceMapping);
+        if (index !== -1) {
+            this.#sourceMappings.splice(index, 1);
+        }
     }
     async computeAutoStepRanges(mode, callFrame) {
         function contained(location, range) {
@@ -396,7 +415,10 @@ export class Location extends LiveLocationWithPool {
     }
     async isIgnoreListed() {
         const uiLocation = await this.uiLocation();
-        return uiLocation ? IgnoreListManager.instance().isIgnoreListedUISourceCode(uiLocation.uiSourceCode) : false;
+        if (!uiLocation) {
+            return false;
+        }
+        return IgnoreListManager.instance().isUserOrSourceMapIgnoreListedUISourceCode(uiLocation.uiSourceCode);
     }
 }
 class StackTraceTopFrameLocation extends LiveLocationWithPool {

@@ -83,9 +83,8 @@ function parseOrScriptMatch(debuggerModel, url) {
     if (!url) {
         return null;
     }
-    const parsedURL = Common.ParsedURL.ParsedURL.fromString(url);
-    if (parsedURL) {
-        return parsedURL.url;
+    if (Common.ParsedURL.ParsedURL.isValidUrlString(url)) {
+        return url;
     }
     if (debuggerModel.scriptsForSourceURL(url).length) {
         return url;

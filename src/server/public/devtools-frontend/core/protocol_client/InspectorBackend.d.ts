@@ -1,3 +1,4 @@
+import type * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 export declare const DevToolsStubErrorCode = -32015;
 declare type MessageParams = {
@@ -11,7 +12,7 @@ export interface MessageError {
 }
 export declare type Message = {
     sessionId?: string;
-    url?: string;
+    url?: Platform.DevToolsPath.UrlString;
     id?: number;
     error?: MessageError | null;
     result?: Object | null;

@@ -1,11 +1,11 @@
 import * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { LevelsMask } from './ConsoleFilter.js';
-import { ConsoleFilter } from './ConsoleFilter.js';
+import { ConsoleFilter, type LevelsMask } from './ConsoleFilter.js';
 import { ConsolePinPane } from './ConsolePinPane.js';
 import { ConsoleViewMessage } from './ConsoleViewMessage.js';
-import type { ConsoleViewportElement, ConsoleViewportProvider } from './ConsoleViewport.js';
+import { type ConsoleViewportElement, type ConsoleViewportProvider } from './ConsoleViewport.js';
 export declare class ConsoleView extends UI.Widget.VBox implements UI.SearchableView.Searchable, ConsoleViewportProvider {
     private readonly searchableViewInternal;
     private readonly sidebar;
@@ -31,8 +31,6 @@ export declare class ConsoleView extends UI.Widget.VBox implements UI.Searchable
     private readonly progressToolbarItem;
     private readonly groupSimilarSetting;
     private readonly showCorsErrorsSetting;
-    private readonly preserveLogCheckbox;
-    private readonly hideNetworkMessagesCheckbox;
     private readonly timestampsSetting;
     private readonly consoleHistoryAutocompleteSetting;
     readonly pinPane: ConsolePinPane;
@@ -65,6 +63,7 @@ export declare class ConsoleView extends UI.Widget.VBox implements UI.Searchable
     private requestResolver;
     private issueResolver;
     constructor();
+    static appendSettingsCheckboxToToolbar(toolbar: UI.Toolbar.Toolbar, settingOrSetingName: Common.Settings.Setting<boolean> | string, title: string, alternateTitle?: string): UI.Toolbar.ToolbarSettingCheckbox;
     static instance(): ConsoleView;
     static clearConsole(): void;
     private onFilterChanged;
@@ -90,6 +89,7 @@ export declare class ConsoleView extends UI.Widget.VBox implements UI.Searchable
     private invalidateViewport;
     private updateIssuesToolbarItem;
     private scheduleViewportRefresh;
+    getScheduledRefreshPromiseForTest(): Promise<void> | undefined;
     private scheduleViewportRefreshForTest;
     private immediatelyScrollToBottom;
     private updateFilterStatus;
@@ -159,7 +159,7 @@ export declare class ConsoleViewFilter {
     private onFilterChanged;
     private updateLevelMenuButtonText;
     private showLevelContextMenu;
-    addMessageURLFilter(url: string): void;
+    addMessageURLFilter(url: Platform.DevToolsPath.UrlString): void;
     shouldBeVisible(viewMessage: ConsoleViewMessage): boolean;
     clear(): void;
     reset(): void;

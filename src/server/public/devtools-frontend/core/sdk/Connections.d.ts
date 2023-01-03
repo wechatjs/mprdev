@@ -1,3 +1,4 @@
+import type * as Platform from '../platform/platform.js';
 import * as ProtocolClient from '../protocol_client/protocol_client.js';
 export declare class MainConnection implements ProtocolClient.InspectorBackend.Connection {
     #private;
@@ -13,7 +14,7 @@ export declare class MainConnection implements ProtocolClient.InspectorBackend.C
 export declare class WebSocketConnection implements ProtocolClient.InspectorBackend.Connection {
     #private;
     onMessage: ((arg0: (Object | string)) => void) | null;
-    constructor(url: string, onWebSocketDisconnect: () => void);
+    constructor(url: Platform.DevToolsPath.UrlString, onWebSocketDisconnect: () => void);
     setOnMessage(onMessage: (arg0: (Object | string)) => void): void;
     setOnDisconnect(onDisconnect: (arg0: string) => void): void;
     private onError;

@@ -18,6 +18,7 @@ export declare class AppManifestView extends UI.Widget.VBox implements SDK.Targe
     private readonly identitySection;
     private readonly presentationSection;
     private readonly iconsSection;
+    private readonly protocolHandlersSection;
     private readonly shortcutSections;
     private readonly screenshotsSections;
     private nameField;
@@ -38,7 +39,10 @@ export declare class AppManifestView extends UI.Widget.VBox implements SDK.Targe
     private target?;
     private resourceTreeModel?;
     private serviceWorkerManager?;
+    private protocolHandlersView;
     constructor();
+    getStaticSections(): UI.ReportView.Section[];
+    getManifestElement(): Element;
     targetAdded(target: SDK.Target.Target): void;
     targetRemoved(target: SDK.Target.Target): void;
     private updateManifest;

@@ -66,20 +66,20 @@ export class AffectedHeavyAdView extends AffectedResourcesView {
     }
     #statusToString(status) {
         switch (status) {
-            case "HeavyAdBlocked" /* HeavyAdBlocked */:
+            case "HeavyAdBlocked" /* Protocol.Audits.HeavyAdResolutionStatus.HeavyAdBlocked */:
                 return i18nString(UIStrings.removed);
-            case "HeavyAdWarning" /* HeavyAdWarning */:
+            case "HeavyAdWarning" /* Protocol.Audits.HeavyAdResolutionStatus.HeavyAdWarning */:
                 return i18nString(UIStrings.warned);
         }
         return '';
     }
     #limitToString(status) {
         switch (status) {
-            case "CpuPeakLimit" /* CpuPeakLimit */:
+            case "CpuPeakLimit" /* Protocol.Audits.HeavyAdReason.CpuPeakLimit */:
                 return i18nString(UIStrings.cpuPeakLimit);
-            case "CpuTotalLimit" /* CpuTotalLimit */:
+            case "CpuTotalLimit" /* Protocol.Audits.HeavyAdReason.CpuTotalLimit */:
                 return i18nString(UIStrings.cpuTotalLimit);
-            case "NetworkTotalLimit" /* NetworkTotalLimit */:
+            case "NetworkTotalLimit" /* Protocol.Audits.HeavyAdReason.NetworkTotalLimit */:
                 return i18nString(UIStrings.networkLimit);
         }
         return '';

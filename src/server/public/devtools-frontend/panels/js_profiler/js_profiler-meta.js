@@ -13,12 +13,37 @@ const UIStrings = {
     */
     showProfiler: 'Show Profiler',
     /**
+    *@description Text for the performance of something
+    */
+    performance: 'Performance',
+    /**
+    *@description Command for showing the 'Performance' tool
+    */
+    showPerformance: 'Show Performance',
+    /**
     *@description Text in the Shortcuts page to explain a keyboard shortcut (start/stop recording performance)
     */
     startStopRecording: 'Start/stop recording',
+    /**
+    *@description Title of an action in the timeline tool to show history
+    */
+    showRecentTimelineSessions: 'Show recent timeline sessions',
+    /**
+    *@description Text to record a series of actions for analysis
+    */
+    record: 'Record',
+    /**
+    *@description Text of an item that stops the running task
+    */
+    stop: 'Stop',
+    /**
+    *@description Title of an action in the timeline tool to record reload
+    */
+    startProfilingAndReloadPage: 'Start profiling and reload page',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/js_profiler/js_profiler-meta.ts', UIStrings);
 const i18nLazyString = i18n.i18n.getLazilyComputedLocalizedString.bind(undefined, str_);
+let loadedTimelineModule;
 let loadedProfilerModule;
 async function loadProfilerModule() {
     if (!loadedProfilerModule) {
@@ -26,14 +51,26 @@ async function loadProfilerModule() {
     }
     return loadedProfilerModule;
 }
+async function loadTimelineModule() {
+    if (!loadedTimelineModule) {
+        loadedTimelineModule = await import('../timeline/timeline.js');
+    }
+    return loadedTimelineModule;
+}
 function maybeRetrieveContextTypes(getClassCallBack) {
     if (loadedProfilerModule === undefined) {
         return [];
     }
     return getClassCallBack(loadedProfilerModule);
 }
+function maybeRetrieveTimelineContextTypes(getClassCallBack) {
+    if (loadedTimelineModule === undefined) {
+        return [];
+    }
+    return getClassCallBack(loadedTimelineModule);
+}
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'js_profiler',
     title: i18nLazyString(UIStrings.profiler),
     commandPrompt: i18nLazyString(UIStrings.showProfiler),
@@ -43,13 +80,27 @@ UI.ViewManager.registerViewExtension({
         return Profiler.ProfilesPanel.JSProfilerPanel.instance();
     },
 });
+UI.ViewManager.registerViewExtension({
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
+    id: 'timeline',
+    title: i18nLazyString(UIStrings.performance),
+    commandPrompt: i18nLazyString(UIStrings.showPerformance),
+    order: 66,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
+    hasToolbar: false,
+    isPreviewFeature: true,
+    async loadView() {
+        const Timeline = await loadTimelineModule();
+        return Timeline.TimelinePanel.TimelinePanel.instance({ forceNew: null, isNode: true });
+    },
+});
 UI.ActionRegistration.registerActionExtension({
     actionId: 'profiler.js-toggle-recording',
     category: UI.ActionRegistration.ActionCategory.JAVASCRIPT_PROFILER,
     title: i18nLazyString(UIStrings.startStopRecording),
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     contextTypes() {
         return maybeRetrieveContextTypes(Profiler => [Profiler.ProfilesPanel.JSProfilerPanel]);
@@ -60,12 +111,92 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+E',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+E',
+        },
+    ],
+});
+UI.ActionRegistration.registerActionExtension({
+    actionId: 'timeline.show-history',
+    async loadActionDelegate() {
+        const Timeline = await loadTimelineModule();
+        return Timeline.TimelinePanel.ActionDelegate.instance();
+    },
+    category: UI.ActionRegistration.ActionCategory.PERFORMANCE,
+    title: i18nLazyString(UIStrings.showRecentTimelineSessions),
+    contextTypes() {
+        return maybeRetrieveTimelineContextTypes(Timeline => [Timeline.TimelinePanel.TimelinePanel]);
+    },
+    bindings: [
+        {
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
+            shortcut: 'Ctrl+H',
+        },
+        {
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
+            shortcut: 'Meta+Y',
+        },
+    ],
+});
+UI.ActionRegistration.registerActionExtension({
+    actionId: 'timeline.toggle-recording',
+    category: UI.ActionRegistration.ActionCategory.PERFORMANCE,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
+    toggleable: true,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
+    toggleWithRedColor: true,
+    contextTypes() {
+        return maybeRetrieveTimelineContextTypes(Timeline => [Timeline.TimelinePanel.TimelinePanel]);
+    },
+    async loadActionDelegate() {
+        const Timeline = await loadTimelineModule();
+        return Timeline.TimelinePanel.ActionDelegate.instance();
+    },
+    options: [
+        {
+            value: true,
+            title: i18nLazyString(UIStrings.record),
+        },
+        {
+            value: false,
+            title: i18nLazyString(UIStrings.stop),
+        },
+    ],
+    bindings: [
+        {
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
+            shortcut: 'Ctrl+E',
+        },
+        {
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
+            shortcut: 'Meta+E',
+        },
+    ],
+});
+UI.ActionRegistration.registerActionExtension({
+    actionId: 'timeline.record-reload',
+    iconClass: "largeicon-refresh" /* UI.ActionRegistration.IconClass.LARGEICON_REFRESH */,
+    contextTypes() {
+        return maybeRetrieveTimelineContextTypes(Timeline => [Timeline.TimelinePanel.TimelinePanel]);
+    },
+    category: UI.ActionRegistration.ActionCategory.PERFORMANCE,
+    title: i18nLazyString(UIStrings.startProfilingAndReloadPage),
+    async loadActionDelegate() {
+        const Timeline = await loadTimelineModule();
+        return Timeline.TimelinePanel.ActionDelegate.instance();
+    },
+    bindings: [
+        {
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
+            shortcut: 'Ctrl+Shift+E',
+        },
+        {
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
+            shortcut: 'Meta+Shift+E',
         },
     ],
 });

@@ -1,22 +1,23 @@
 import * as Common from '../common/common.js';
 import * as Host from '../host/host.js';
+import type * as Platform from '../platform/platform.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { ResourceTreeFrame } from './ResourceTreeModel.js';
-import type { Target } from './Target.js';
+import { type ResourceTreeFrame } from './ResourceTreeModel.js';
+import { type Target } from './Target.js';
 export declare type PageResourceLoadInitiator = {
     target: null;
     frameId: Protocol.Page.FrameId;
-    initiatorUrl: string | null;
+    initiatorUrl: Platform.DevToolsPath.UrlString | null;
 } | {
     target: Target;
     frameId: Protocol.Page.FrameId | null;
-    initiatorUrl: string | null;
+    initiatorUrl: Platform.DevToolsPath.UrlString | null;
 };
 export interface PageResource {
     success: boolean | null;
     errorMessage?: string;
     initiator: PageResourceLoadInitiator;
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     size: number | null;
 }
 /**
@@ -56,8 +57,8 @@ export declare class PageResourceLoader extends Common.ObjectWrapper.ObjectWrapp
     private acquireLoadSlot;
     private releaseLoadSlot;
     static withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T>;
-    static makeKey(url: string, initiator: PageResourceLoadInitiator): string;
-    loadResource(url: string, initiator: PageResourceLoadInitiator): Promise<{
+    static makeKey(url: Platform.DevToolsPath.UrlString, initiator: PageResourceLoadInitiator): string;
+    loadResource(url: Platform.DevToolsPath.UrlString, initiator: PageResourceLoadInitiator): Promise<{
         content: string;
     }>;
     private dispatchLoad;

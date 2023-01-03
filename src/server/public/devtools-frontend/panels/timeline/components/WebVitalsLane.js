@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as Host from '../../../core/host/host.js';
 import * as i18n from '../../../core/i18n/i18n.js';
-import { assertInstanceOf, LONG_TASK_THRESHOLD } from './WebVitalsTimeline.js';
+import { assertInstanceOf, LONG_TASK_THRESHOLD, } from './WebVitalsTimeline.js';
 class WebVitalsLane {
     context;
     timeline;
@@ -220,10 +220,10 @@ export class WebVitalsEventLane extends WebVitalsLane {
                 this.#renderTimestamp(marker.timestamp, labelMetrics ? labelMetrics.width : 0, timestampLabel, timestampMetrics);
             }
         }
-        if (marker.type === "Good" /* Good */) {
+        if (marker.type === "Good" /* MarkerType.Good */) {
             this.#renderGoodMarkerSymbol(marker.timestamp);
         }
-        else if (marker.type === "Medium" /* Medium */) {
+        else if (marker.type === "Medium" /* MarkerType.Medium */) {
             this.#renderMediumMarkerSymbol(marker.timestamp);
         }
         else {

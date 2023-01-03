@@ -31,7 +31,7 @@ export class ContrastOverlay {
         this.contrastRatioLineBuilder = new ContrastRatioLineBuilder(this.contrastInfo);
         this.contrastRatioLinesThrottler = new Common.Throttler.Throttler(0);
         this.drawContrastRatioLinesBound = this.drawContrastRatioLines.bind(this);
-        this.contrastInfo.addEventListener("ContrastInfoUpdated" /* ContrastInfoUpdated */, this.update.bind(this));
+        this.contrastInfo.addEventListener("ContrastInfoUpdated" /* Events.ContrastInfoUpdated */, this.update.bind(this));
     }
     update() {
         if (!this.visible || this.contrastInfo.isNull()) {

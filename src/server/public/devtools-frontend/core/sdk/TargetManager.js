@@ -183,6 +183,15 @@ export class TargetManager extends Common.ObjectWrapper.ObjectWrapper {
     mainTarget() {
         return this.#targetsInternal.size ? this.#targetsInternal.values().next().value : null;
     }
+    mainFrameTarget() {
+        let target = this.mainTarget();
+        if (target?.type() === TargetType.Tab) {
+            target =
+                this.targets().find(t => t.parentTarget() === target && t.type() === TargetType.Frame && t.targetInfo()?.subtype === '') ||
+                    null;
+        }
+        return target;
+    }
     browserTarget() {
         return this.#browserTargetInternal;
     }

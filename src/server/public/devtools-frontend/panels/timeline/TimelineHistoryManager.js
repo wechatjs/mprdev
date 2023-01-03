@@ -6,7 +6,7 @@ import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import timelineHistoryManagerStyles from './timelineHistoryManager.css.js';
-import { TimelineEventOverviewCPUActivity, TimelineEventOverviewFrames, TimelineEventOverviewNetwork, TimelineEventOverviewResponsiveness } from './TimelineEventOverview.js';
+import { TimelineEventOverviewCPUActivity, TimelineEventOverviewNetwork, TimelineEventOverviewResponsiveness, } from './TimelineEventOverview.js';
 const UIStrings = {
     /**
     *@description Screen reader label for the Timeline History dropdown button
@@ -71,7 +71,6 @@ export class TimelineHistoryManager {
         this.clear();
         this.allOverviews = [
             { constructor: TimelineEventOverviewResponsiveness, height: 3 },
-            { constructor: TimelineEventOverviewFrames, height: 16 },
             { constructor: TimelineEventOverviewCPUActivity, height: 20 },
             { constructor: TimelineEventOverviewNetwork, height: 8 },
         ];
@@ -282,10 +281,10 @@ export class DropDown {
     selectionDone;
     constructor(models) {
         this.glassPane = new UI.GlassPane.GlassPane();
-        this.glassPane.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        this.glassPane.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
         this.glassPane.setOutsideClickCallback(() => this.close(null));
-        this.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* BlockedByGlassPane */);
-        this.glassPane.setAnchorBehavior("PreferBottom" /* PreferBottom */);
+        this.glassPane.setPointerEventsBehavior("BlockedByGlassPane" /* UI.GlassPane.PointerEventsBehavior.BlockedByGlassPane */);
+        this.glassPane.setAnchorBehavior("PreferBottom" /* UI.GlassPane.AnchorBehavior.PreferBottom */);
         this.glassPane.element.addEventListener('blur', () => this.close(null));
         const shadowRoot = UI.Utils.createShadowRootWithCoreStyles(this.glassPane.contentElement, {
             cssFile: [timelineHistoryManagerStyles],
@@ -403,7 +402,7 @@ export class ToolbarButton extends UI.Toolbar.ToolbarItem {
         this.element.appendChild(dropdownArrowIcon);
         this.element.addEventListener('click', () => void action.execute(), false);
         this.setEnabled(action.enabled());
-        action.addEventListener("Enabled" /* Enabled */, event => this.setEnabled(event.data));
+        action.addEventListener("Enabled" /* UI.ActionRegistration.Events.Enabled */, event => this.setEnabled(event.data));
         this.setTitle(action.title());
     }
     setText(text) {

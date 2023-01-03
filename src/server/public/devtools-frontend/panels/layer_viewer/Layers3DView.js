@@ -32,7 +32,7 @@ import * as i18n from '../../core/i18n/i18n.js';
 import * as Platform from '../../core/platform/platform.js';
 import layers3DViewStyles from './layers3DView.css.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { LayerSelection, Selection, SnapshotSelection, ScrollRectSelection } from './LayerViewHost.js';
+import { LayerSelection, Selection, SnapshotSelection, ScrollRectSelection, } from './LayerViewHost.js';
 import { Events as TransformControllerEvents, TransformController } from './TransformController.js';
 const UIStrings = {
     /**
@@ -192,7 +192,7 @@ export class Layers3DView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
         this.setOutline(OutlineType.Selected, selection);
     }
     snapshotForSelection(selection) {
-        if (selection.type() === "Snapshot" /* Snapshot */) {
+        if (selection.type() === "Snapshot" /* Type.Snapshot */) {
             const snapshotWithRect = selection.snapshot();
             snapshotWithRect.snapshot.addReference();
             return Promise.resolve(snapshotWithRect);
@@ -347,9 +347,9 @@ export class Layers3DView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
                     image && LayerTextureManager.createTextureForImage(this.gl || null, image) || undefined;
             });
         }
-        loadChromeTexture.call(this, 0 /* Left */, 'Images/chromeLeft.avif');
-        loadChromeTexture.call(this, 1 /* Middle */, 'Images/chromeMiddle.avif');
-        loadChromeTexture.call(this, 2 /* Right */, 'Images/chromeRight.avif');
+        loadChromeTexture.call(this, 0 /* ChromeTexture.Left */, 'Images/chromeLeft.avif');
+        loadChromeTexture.call(this, 1 /* ChromeTexture.Middle */, 'Images/chromeMiddle.avif');
+        loadChromeTexture.call(this, 2 /* ChromeTexture.Right */, 'Images/chromeRight.avif');
     }
     initGLIfNecessary() {
         if (this.gl) {
@@ -598,7 +598,7 @@ export class Layers3DView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
                 if (!image) {
                     continue;
                 }
-                const width = i === 1 /* Middle */ ? middleFragmentWidth : image.naturalWidth;
+                const width = i === 1 /* ChromeTexture.Middle */ ? middleFragmentWidth : image.naturalWidth;
                 if (width < 0 || x + width > viewportWidth) {
                     break;
                 }
@@ -703,7 +703,7 @@ export class Layers3DView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
         contextMenu.defaultSection().appendItem(i18nString(UIStrings.resetView), () => this.transformController.resetAndNotify(), false);
         const selection = this.selectionFromEventPoint(event);
-        if (selection && selection.type() === "Snapshot" /* Snapshot */) {
+        if (selection && selection.type() === "Snapshot" /* Type.Snapshot */) {
             contextMenu.defaultSection().appendItem(i18nString(UIStrings.showPaintProfiler), () => this.dispatchEventToListeners(Events.PaintProfilerRequested, selection), false);
         }
         this.layerViewHost.showContextMenu(contextMenu, selection);
@@ -733,7 +733,7 @@ export class Layers3DView extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
     }
     onDoubleClick(event) {
         const selection = this.selectionFromEventPoint(event);
-        if (selection && (selection.type() === "Snapshot" /* Snapshot */ || selection.layer())) {
+        if (selection && (selection.type() === "Snapshot" /* Type.Snapshot */ || selection.layer())) {
             this.dispatchEventToListeners(Events.PaintProfilerRequested, selection);
         }
         event.stopPropagation();

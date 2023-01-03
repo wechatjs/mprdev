@@ -158,9 +158,9 @@ export class SignedExchangeInfoView extends UI.Widget.VBox {
                 const signature = header.signatures[i];
                 const signatureCategory = new Category(root, i18nString(UIStrings.signature));
                 signatureCategory.createLeaf(this.formatHeader(i18nString(UIStrings.label), signature.label));
-                signatureCategory.createLeaf(this.formatHeaderForHexData(i18nString(UIStrings.signature), signature.signature, errorFieldSet.has("signatureSig" /* SignatureSig */)));
+                signatureCategory.createLeaf(this.formatHeaderForHexData(i18nString(UIStrings.signature), signature.signature, errorFieldSet.has("signatureSig" /* Protocol.Network.SignedExchangeErrorField.SignatureSig */)));
                 if (signature.certUrl) {
-                    const certURLElement = this.formatHeader(i18nString(UIStrings.certificateUrl), signature.certUrl, errorFieldSet.has("signatureCertUrl" /* SignatureCertUrl */));
+                    const certURLElement = this.formatHeader(i18nString(UIStrings.certificateUrl), signature.certUrl, errorFieldSet.has("signatureCertUrl" /* Protocol.Network.SignedExchangeErrorField.SignatureCertUrl */));
                     if (signature.certificates) {
                         const viewCertLink = certURLElement.createChild('span', 'devtools-link header-toggle');
                         viewCertLink.textContent = i18nString(UIStrings.viewCertificate);
@@ -168,13 +168,13 @@ export class SignedExchangeInfoView extends UI.Widget.VBox {
                     }
                     signatureCategory.createLeaf(certURLElement);
                 }
-                signatureCategory.createLeaf(this.formatHeader(i18nString(UIStrings.integrity), signature.integrity, errorFieldSet.has("signatureIntegrity" /* SignatureIntegrity */)));
+                signatureCategory.createLeaf(this.formatHeader(i18nString(UIStrings.integrity), signature.integrity, errorFieldSet.has("signatureIntegrity" /* Protocol.Network.SignedExchangeErrorField.SignatureIntegrity */)));
                 if (signature.certSha256) {
-                    signatureCategory.createLeaf(this.formatHeaderForHexData(i18nString(UIStrings.certificateSha), signature.certSha256, errorFieldSet.has("signatureCertSha256" /* SignatureCertSha256 */)));
+                    signatureCategory.createLeaf(this.formatHeaderForHexData(i18nString(UIStrings.certificateSha), signature.certSha256, errorFieldSet.has("signatureCertSha256" /* Protocol.Network.SignedExchangeErrorField.SignatureCertSha256 */)));
                 }
-                signatureCategory.createLeaf(this.formatHeader(i18nString(UIStrings.validityUrl), signature.validityUrl, errorFieldSet.has("signatureValidityUrl" /* SignatureValidityUrl */)));
-                signatureCategory.createLeaf().title = this.formatHeader(i18nString(UIStrings.date), new Date(1000 * signature.date).toUTCString(), errorFieldSet.has("signatureTimestamps" /* SignatureTimestamps */));
-                signatureCategory.createLeaf().title = this.formatHeader(i18nString(UIStrings.expires), new Date(1000 * signature.expires).toUTCString(), errorFieldSet.has("signatureTimestamps" /* SignatureTimestamps */));
+                signatureCategory.createLeaf(this.formatHeader(i18nString(UIStrings.validityUrl), signature.validityUrl, errorFieldSet.has("signatureValidityUrl" /* Protocol.Network.SignedExchangeErrorField.SignatureValidityUrl */)));
+                signatureCategory.createLeaf().title = this.formatHeader(i18nString(UIStrings.date), new Date(1000 * signature.date).toUTCString(), errorFieldSet.has("signatureTimestamps" /* Protocol.Network.SignedExchangeErrorField.SignatureTimestamps */));
+                signatureCategory.createLeaf().title = this.formatHeader(i18nString(UIStrings.expires), new Date(1000 * signature.expires).toUTCString(), errorFieldSet.has("signatureTimestamps" /* Protocol.Network.SignedExchangeErrorField.SignatureTimestamps */));
             }
         }
         if (signedExchangeInfo.securityDetails) {

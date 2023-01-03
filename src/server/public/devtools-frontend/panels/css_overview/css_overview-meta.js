@@ -23,12 +23,12 @@ async function loadCSSOverviewModule() {
     return loadedCSSOverviewModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'cssoverview',
     commandPrompt: i18nLazyString(UIStrings.showCssOverview),
     title: i18nLazyString(UIStrings.cssOverview),
     order: 95,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const CSSOverview = await loadCSSOverviewModule();
         return CSSOverview.CSSOverviewPanel.CSSOverviewPanel.instance();

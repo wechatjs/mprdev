@@ -1,4 +1,4 @@
-import type { IconInfo } from './CSSPropertyIconResolver.js';
+import { type IconInfo } from './CSSPropertyIconResolver.js';
 declare global {
     interface HTMLElementEventMap {
         'propertyselected': PropertySelectedEvent;

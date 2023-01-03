@@ -11,7 +11,7 @@ import lockIconStyles from './lockIcon.css.js';
 import mainViewStyles from './mainView.css.js';
 import originViewStyles from './originView.css.js';
 import sidebarStyles from './sidebar.css.js';
-import { Events, SecurityModel, SecurityStyleExplanation, SummaryMessages } from './SecurityModel.js';
+import { Events, SecurityModel, SecurityStyleExplanation, SummaryMessages, } from './SecurityModel.js';
 const UIStrings = {
     /**
     *@description Title text content in Security Panel of the Security panel
@@ -104,7 +104,7 @@ const UIStrings = {
     /**
     *@description Second part of the body of message to display in devtools security tab when you are viewing a page that triggered a safety tip.
     */
-    ifYouBelieveThisIsShownIn: 'If you believe this is shown in error please visit https://bugs.chromium.org/p/chromium/issues/entry?template=Safety+Tips+Appeals.',
+    ifYouBelieveThisIsShownIn: 'If you believe this is shown in error please visit https://g.co/chrome/lookalike-warnings.',
     /**
     *@description Summary of a warning when the user visits a page that triggered a Safety Tip because the domain looked like another domain.
     */
@@ -117,7 +117,7 @@ const UIStrings = {
     /**
     *@description second part of body of a warning when the user visits a page that triggered a Safety Tip because the domain looked like another domain.
     */
-    ifYouBelieveThisIsShownInErrorSafety: 'If you believe this is shown in error please visit https://bugs.chromium.org/p/chromium/issues/entry?template=Safety+Tips+Appeals.',
+    ifYouBelieveThisIsShownInErrorSafety: 'If you believe this is shown in error please visit https://g.co/chrome/lookalike-warnings.',
     /**
     *@description Title of the devtools security tab when the page you are on triggered a safety tip.
     */
@@ -296,17 +296,25 @@ const UIStrings = {
     */
     protocol: 'Protocol',
     /**
-    *@description Text in Security Panel of the Security panel
+    *@description Text in the Security panel that refers to how the TLS handshake
+    *established encryption keys.
     */
     keyExchange: 'Key exchange',
     /**
-    *@description Text in Security Panel of the Security panel
-    */
-    keyExchangeGroup: 'Key exchange group',
-    /**
-    *@description Text in Security Panel of the Security panel
+    *@description Text in Security Panel that refers to how the TLS handshake
+    *encrypted data.
     */
     cipher: 'Cipher',
+    /**
+    *@description Text in Security Panel that refers to the signature algorithm
+    *used by the server for authenticate in the TLS handshake.
+    */
+    serverSignature: 'Server signature',
+    /**
+    *@description Text in Security Panel that refers to whether the ClientHello
+    *message in the TLS handshake was encrypted.
+    */
+    encryptedClientHello: 'Encrypted ClientHello',
     /**
     *@description Sct div text content in Security Panel of the Security panel
     */
@@ -421,10 +429,37 @@ const UIStrings = {
     *@example {2} PH1
     */
     showMoreSTotal: 'Show more ({PH1} total)',
+    /**
+    *@description Shown when a field refers to an option that is unknown to the frontend.
+    */
+    unknownField: 'unknown',
+    /**
+    *@description Shown when a field refers to a TLS feature which was enabled.
+    */
+    enabled: 'enabled',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/security/SecurityPanel.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 let securityPanelInstance;
+// See https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-signaturescheme
+// This contains signature schemes supported by Chrome.
+const SignatureSchemeStrings = new Map([
+    // The full name for these schemes is RSASSA-PKCS1-v1_5, sometimes
+    // "PKCS#1 v1.5", but those are very long, so let "RSA" vs "RSA-PSS"
+    // disambiguate.
+    [0x0201, 'RSA with SHA-1'],
+    [0x0401, 'RSA with SHA-256'],
+    [0x0501, 'RSA with SHA-384'],
+    [0x0601, 'RSA with SHA-512'],
+    // We omit the curve from these names because in TLS 1.2 these code points
+    // were not specific to a curve. Saying "P-256" for a server that used a P-384
+    // key with SHA-256 in TLS 1.2 would be confusing.
+    [0x0403, 'ECDSA with SHA-256'],
+    [0x0503, 'ECDSA with SHA-384'],
+    [0x0804, 'RSA-PSS with SHA-256'],
+    [0x0805, 'RSA-PSS with SHA-384'],
+    [0x0806, 'RSA-PSS with SHA-512'],
+]);
 export class SecurityPanel extends UI.Panel.PanelWithSidebar {
     mainView;
     sidebarMainViewElement;
@@ -551,9 +586,9 @@ export class SecurityPanel extends UI.Panel.PanelWithSidebar {
             return;
         }
         let securityState = request.securityState();
-        if (request.mixedContentType === "blockable" /* Blockable */ ||
-            request.mixedContentType === "optionally-blockable" /* OptionallyBlockable */) {
-            securityState = "insecure" /* Insecure */;
+        if (request.mixedContentType === "blockable" /* Protocol.Security.MixedContentType.Blockable */ ||
+            request.mixedContentType === "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */) {
+            securityState = "insecure" /* Protocol.Security.SecurityState.Insecure */;
         }
         const originState = this.origins.get(origin);
         if (originState) {
@@ -591,17 +626,17 @@ export class SecurityPanel extends UI.Panel.PanelWithSidebar {
         this.processRequest(request);
     }
     updateFilterRequestCounts(request) {
-        if (request.mixedContentType === "none" /* None */) {
+        if (request.mixedContentType === "none" /* Protocol.Security.MixedContentType.None */) {
             return;
         }
         let filterKey = NetworkForward.UIFilter.MixedContentFilterValues.All;
         if (request.wasBlocked()) {
             filterKey = NetworkForward.UIFilter.MixedContentFilterValues.Blocked;
         }
-        else if (request.mixedContentType === "blockable" /* Blockable */) {
+        else if (request.mixedContentType === "blockable" /* Protocol.Security.MixedContentType.Blockable */) {
             filterKey = NetworkForward.UIFilter.MixedContentFilterValues.BlockOverridden;
         }
-        else if (request.mixedContentType === "optionally-blockable" /* OptionallyBlockable */) {
+        else if (request.mixedContentType === "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */) {
             filterKey = NetworkForward.UIFilter.MixedContentFilterValues.Displayed;
         }
         const currentCount = this.filterRequestCounts.get(filterKey);
@@ -744,7 +779,7 @@ export class SecurityPanelSidebarTree extends UI.TreeOutline.TreeOutlineInShadow
         let newParent;
         if (origin === this.mainOrigin) {
             newParent = this.originGroups.get(OriginGroup.MainOrigin);
-            if (securityState === "secure" /* Secure */) {
+            if (securityState === "secure" /* Protocol.Security.SecurityState.Secure */) {
                 newParent.title = i18nString(UIStrings.mainOriginSecure);
             }
             else {
@@ -754,10 +789,10 @@ export class SecurityPanelSidebarTree extends UI.TreeOutline.TreeOutlineInShadow
         }
         else {
             switch (securityState) {
-                case "secure" /* Secure */:
+                case "secure" /* Protocol.Security.SecurityState.Secure */:
                     newParent = this.originGroupElement(OriginGroup.Secure);
                     break;
-                case "unknown" /* Unknown */:
+                case "unknown" /* Protocol.Security.SecurityState.Unknown */:
                     newParent = this.originGroupElement(OriginGroup.Unknown);
                     break;
                 default:
@@ -816,7 +851,7 @@ export class SecurityPanelSidebarTreeElement extends UI.TreeOutline.TreeElement 
         this.iconElement.classList.add(this.cssPrefix);
         this.listItemElement.appendChild(textElement);
         this.securityStateInternal = null;
-        this.setSecurityState("unknown" /* Unknown */);
+        this.setSecurityState("unknown" /* Protocol.Security.SecurityState.Unknown */);
     }
     setSecurityState(newSecurityState) {
         if (this.securityStateInternal) {
@@ -859,13 +894,13 @@ export class SecurityMainView extends UI.Widget.VBox {
         UI.ARIAUtils.markAsHeading(summaryDiv, 1);
         const lockSpectrum = this.summarySection.createChild('div', 'lock-spectrum');
         this.lockSpectrum = new Map([
-            ["secure" /* Secure */, lockSpectrum.createChild('div', 'lock-icon lock-icon-secure')],
-            ["neutral" /* Neutral */, lockSpectrum.createChild('div', 'lock-icon lock-icon-neutral')],
-            ["insecure" /* Insecure */, lockSpectrum.createChild('div', 'lock-icon lock-icon-insecure')],
+            ["secure" /* Protocol.Security.SecurityState.Secure */, lockSpectrum.createChild('div', 'lock-icon lock-icon-secure')],
+            ["neutral" /* Protocol.Security.SecurityState.Neutral */, lockSpectrum.createChild('div', 'lock-icon lock-icon-neutral')],
+            ["insecure" /* Protocol.Security.SecurityState.Insecure */, lockSpectrum.createChild('div', 'lock-icon lock-icon-insecure')],
         ]);
-        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("secure" /* Secure */), i18nString(UIStrings.secure));
-        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("neutral" /* Neutral */), i18nString(UIStrings.info));
-        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Insecure */), i18nString(UIStrings.notSecure));
+        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("secure" /* Protocol.Security.SecurityState.Secure */), i18nString(UIStrings.secure));
+        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("neutral" /* Protocol.Security.SecurityState.Neutral */), i18nString(UIStrings.info));
+        UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */), i18nString(UIStrings.notSecure));
         this.summarySection.createChild('div', 'triangle-pointer-container')
             .createChild('div', 'triangle-pointer-wrapper')
             .createChild('div', 'triangle-pointer');
@@ -917,15 +952,15 @@ export class SecurityMainView extends UI.Widget.VBox {
         this.summarySection.classList.add('security-summary-' + this.securityState);
         // Update the color and title of the triangle icon in the lock spectrum to
         // match the security state.
-        if (this.securityState === "insecure" /* Insecure */) {
-            this.getLockSpectrumDiv("insecure" /* Insecure */).classList.add('lock-icon-insecure');
-            this.getLockSpectrumDiv("insecure" /* Insecure */).classList.remove('lock-icon-insecure-broken');
-            UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Insecure */), i18nString(UIStrings.notSecure));
+        if (this.securityState === "insecure" /* Protocol.Security.SecurityState.Insecure */) {
+            this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */).classList.add('lock-icon-insecure');
+            this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */).classList.remove('lock-icon-insecure-broken');
+            UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */), i18nString(UIStrings.notSecure));
         }
-        else if (this.securityState === "insecure-broken" /* InsecureBroken */) {
-            this.getLockSpectrumDiv("insecure" /* Insecure */).classList.add('lock-icon-insecure-broken');
-            this.getLockSpectrumDiv("insecure" /* Insecure */).classList.remove('lock-icon-insecure');
-            UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Insecure */), i18nString(UIStrings.notSecureBroken));
+        else if (this.securityState === "insecure-broken" /* Protocol.Security.SecurityState.InsecureBroken */) {
+            this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */).classList.add('lock-icon-insecure-broken');
+            this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */).classList.remove('lock-icon-insecure');
+            UI.Tooltip.Tooltip.install(this.getLockSpectrumDiv("insecure" /* Protocol.Security.SecurityState.Insecure */), i18nString(UIStrings.notSecureBroken));
         }
         const { summary, explanations } = this.getSecuritySummaryAndExplanations(visibleSecurityState);
         // Use override summary if present, otherwise use base explanation
@@ -941,7 +976,7 @@ export class SecurityMainView extends UI.Widget.VBox {
         if (securityStateIssueIds.includes('malicious-content')) {
             summary = i18nString(UIStrings.thisPageIsDangerousFlaggedBy);
             // Always insert SafeBrowsing explanation at the front.
-            explanations.unshift(new SecurityStyleExplanation("insecure" /* Insecure */, undefined, i18nString(UIStrings.flaggedByGoogleSafeBrowsing), i18nString(UIStrings.toCheckThisPagesStatusVisit)));
+            explanations.unshift(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, undefined, i18nString(UIStrings.flaggedByGoogleSafeBrowsing), i18nString(UIStrings.toCheckThisPagesStatusVisit)));
         }
         else if (securityStateIssueIds.includes('is-error-page') &&
             (visibleSecurityState.certificateSecurityState === null ||
@@ -952,12 +987,12 @@ export class SecurityMainView extends UI.Widget.VBox {
             // the case of a net error, so we can early return.
             return { summary, explanations };
         }
-        else if (securityState === "insecure-broken" /* InsecureBroken */ &&
+        else if (securityState === "insecure-broken" /* Protocol.Security.SecurityState.InsecureBroken */ &&
             securityStateIssueIds.includes('scheme-is-not-cryptographic')) {
             summary = summary || i18nString(UIStrings.thisPageIsInsecureUnencrypted);
         }
         if (securityStateIssueIds.includes('scheme-is-not-cryptographic')) {
-            if (securityState === "neutral" /* Neutral */ &&
+            if (securityState === "neutral" /* Protocol.Security.SecurityState.Neutral */ &&
                 !securityStateIssueIds.includes('insecure-origin')) {
                 summary = i18nString(UIStrings.thisPageHasANonhttpsSecureOrigin);
             }
@@ -989,7 +1024,7 @@ export class SecurityMainView extends UI.Widget.VBox {
             // it's empty. The title set here can be overridden by later checks (e.g.
             // bad HTTP).
             summary = summary || i18nString(UIStrings.thisPageIsSuspiciousFlaggedBy);
-            explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, undefined, currentExplanations[0].summary, currentExplanations[0].description));
+            explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, undefined, currentExplanations[0].summary, currentExplanations[0].description));
         }
         return summary;
     }
@@ -1000,26 +1035,26 @@ export class SecurityMainView extends UI.Widget.VBox {
             const explanationSummary = i18nString(UIStrings.insecureSha);
             const description = i18nString(UIStrings.theCertificateChainForThisSite);
             if (certificateSecurityState.certificateHasWeakSignature) {
-                explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, title, explanationSummary, description, certificateSecurityState.certificate, "none" /* None */));
+                explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, title, explanationSummary, description, certificateSecurityState.certificate, "none" /* Protocol.Security.MixedContentType.None */));
             }
             else {
-                explanations.push(new SecurityStyleExplanation("neutral" /* Neutral */, title, explanationSummary, description, certificateSecurityState.certificate, "none" /* None */));
+                explanations.push(new SecurityStyleExplanation("neutral" /* Protocol.Security.SecurityState.Neutral */, title, explanationSummary, description, certificateSecurityState.certificate, "none" /* Protocol.Security.MixedContentType.None */));
             }
         }
         if (certificateSecurityState && securityStateIssueIds.includes('cert-missing-subject-alt-name')) {
-            explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, title, i18nString(UIStrings.subjectAlternativeNameMissing), i18nString(UIStrings.theCertificateForThisSiteDoesNot), certificateSecurityState.certificate, "none" /* None */));
+            explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, title, i18nString(UIStrings.subjectAlternativeNameMissing), i18nString(UIStrings.theCertificateForThisSiteDoesNot), certificateSecurityState.certificate, "none" /* Protocol.Security.MixedContentType.None */));
         }
         if (certificateSecurityState && certificateSecurityState.certificateNetworkError !== null) {
-            explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, title, i18nString(UIStrings.missing), i18nString(UIStrings.thisSiteIsMissingAValidTrusted, { PH1: certificateSecurityState.certificateNetworkError }), certificateSecurityState.certificate, "none" /* None */));
+            explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, title, i18nString(UIStrings.missing), i18nString(UIStrings.thisSiteIsMissingAValidTrusted, { PH1: certificateSecurityState.certificateNetworkError }), certificateSecurityState.certificate, "none" /* Protocol.Security.MixedContentType.None */));
         }
         else if (certificateSecurityState && !certificateSecurityState.certificateHasSha1Signature) {
-            explanations.push(new SecurityStyleExplanation("secure" /* Secure */, title, i18nString(UIStrings.validAndTrusted), i18nString(UIStrings.theConnectionToThisSiteIsUsingA, { PH1: certificateSecurityState.issuer }), certificateSecurityState.certificate, "none" /* None */));
+            explanations.push(new SecurityStyleExplanation("secure" /* Protocol.Security.SecurityState.Secure */, title, i18nString(UIStrings.validAndTrusted), i18nString(UIStrings.theConnectionToThisSiteIsUsingA, { PH1: certificateSecurityState.issuer }), certificateSecurityState.certificate, "none" /* Protocol.Security.MixedContentType.None */));
         }
         if (securityStateIssueIds.includes('pkp-bypassed')) {
-            explanations.push(new SecurityStyleExplanation("info" /* Info */, title, i18nString(UIStrings.publickeypinningBypassed), i18nString(UIStrings.publickeypinningWasBypassedByA)));
+            explanations.push(new SecurityStyleExplanation("info" /* Protocol.Security.SecurityState.Info */, title, i18nString(UIStrings.publickeypinningBypassed), i18nString(UIStrings.publickeypinningWasBypassedByA)));
         }
         if (certificateSecurityState && certificateSecurityState.isCertificateExpiringSoon()) {
-            explanations.push(new SecurityStyleExplanation("info" /* Info */, undefined, i18nString(UIStrings.certificateExpiresSoon), i18nString(UIStrings.theCertificateForThisSiteExpires)));
+            explanations.push(new SecurityStyleExplanation("info" /* Protocol.Security.SecurityState.Info */, undefined, i18nString(UIStrings.certificateExpiresSoon), i18nString(UIStrings.theCertificateForThisSiteExpires)));
         }
     }
     explainConnectionSecurity(visibleSecurityState, explanations) {
@@ -1029,7 +1064,7 @@ export class SecurityMainView extends UI.Widget.VBox {
         }
         const title = i18nString(UIStrings.connection);
         if (certificateSecurityState.modernSSL) {
-            explanations.push(new SecurityStyleExplanation("secure" /* Secure */, title, i18nString(UIStrings.secureConnectionSettings), i18nString(UIStrings.theConnectionToThisSiteIs, {
+            explanations.push(new SecurityStyleExplanation("secure" /* Protocol.Security.SecurityState.Secure */, title, i18nString(UIStrings.secureConnectionSettings), i18nString(UIStrings.theConnectionToThisSiteIs, {
                 PH1: certificateSecurityState.protocol,
                 PH2: certificateSecurityState.getKeyExchangeName(),
                 PH3: certificateSecurityState.getCipherFullName(),
@@ -1049,7 +1084,7 @@ export class SecurityMainView extends UI.Widget.VBox {
         if (certificateSecurityState.obsoleteSslSignature) {
             recommendations.push(i18nString(UIStrings.theServerSignatureUsesShaWhichIs));
         }
-        explanations.push(new SecurityStyleExplanation("info" /* Info */, title, i18nString(UIStrings.obsoleteConnectionSettings), i18nString(UIStrings.theConnectionToThisSiteIs, {
+        explanations.push(new SecurityStyleExplanation("info" /* Protocol.Security.SecurityState.Info */, title, i18nString(UIStrings.obsoleteConnectionSettings), i18nString(UIStrings.theConnectionToThisSiteIs, {
             PH1: certificateSecurityState.protocol,
             PH2: certificateSecurityState.getKeyExchangeName(),
             PH3: certificateSecurityState.getCipherFullName(),
@@ -1062,30 +1097,30 @@ export class SecurityMainView extends UI.Widget.VBox {
         const securityStateIssueIds = visibleSecurityState.securityStateIssueIds;
         if (securityStateIssueIds.includes('ran-mixed-content')) {
             addSecureExplanation = false;
-            explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, title, i18nString(UIStrings.activeMixedContent), i18nString(UIStrings.youHaveRecentlyAllowedNonsecure), [], "blockable" /* Blockable */));
+            explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, title, i18nString(UIStrings.activeMixedContent), i18nString(UIStrings.youHaveRecentlyAllowedNonsecure), [], "blockable" /* Protocol.Security.MixedContentType.Blockable */));
         }
         if (securityStateIssueIds.includes('displayed-mixed-content')) {
             addSecureExplanation = false;
-            explanations.push(new SecurityStyleExplanation("neutral" /* Neutral */, title, i18nString(UIStrings.mixedContent), i18nString(UIStrings.thisPageIncludesHttpResources), [], "optionally-blockable" /* OptionallyBlockable */));
+            explanations.push(new SecurityStyleExplanation("neutral" /* Protocol.Security.SecurityState.Neutral */, title, i18nString(UIStrings.mixedContent), i18nString(UIStrings.thisPageIncludesHttpResources), [], "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */));
         }
         if (securityStateIssueIds.includes('contained-mixed-form')) {
             addSecureExplanation = false;
-            explanations.push(new SecurityStyleExplanation("neutral" /* Neutral */, title, i18nString(UIStrings.nonsecureForm), i18nString(UIStrings.thisPageIncludesAFormWithA)));
+            explanations.push(new SecurityStyleExplanation("neutral" /* Protocol.Security.SecurityState.Neutral */, title, i18nString(UIStrings.nonsecureForm), i18nString(UIStrings.thisPageIncludesAFormWithA)));
         }
         if (visibleSecurityState.certificateSecurityState === null ||
             visibleSecurityState.certificateSecurityState.certificateNetworkError === null) {
             if (securityStateIssueIds.includes('ran-content-with-cert-error')) {
                 addSecureExplanation = false;
-                explanations.push(new SecurityStyleExplanation("insecure" /* Insecure */, title, i18nString(UIStrings.activeContentWithCertificate), i18nString(UIStrings.youHaveRecentlyAllowedContent)));
+                explanations.push(new SecurityStyleExplanation("insecure" /* Protocol.Security.SecurityState.Insecure */, title, i18nString(UIStrings.activeContentWithCertificate), i18nString(UIStrings.youHaveRecentlyAllowedContent)));
             }
             if (securityStateIssueIds.includes('displayed-content-with-cert-errors')) {
                 addSecureExplanation = false;
-                explanations.push(new SecurityStyleExplanation("neutral" /* Neutral */, title, i18nString(UIStrings.contentWithCertificateErrors), i18nString(UIStrings.thisPageIncludesResourcesThat)));
+                explanations.push(new SecurityStyleExplanation("neutral" /* Protocol.Security.SecurityState.Neutral */, title, i18nString(UIStrings.contentWithCertificateErrors), i18nString(UIStrings.thisPageIncludesResourcesThat)));
             }
         }
         if (addSecureExplanation) {
             if (!securityStateIssueIds.includes('scheme-is-not-cryptographic')) {
-                explanations.push(new SecurityStyleExplanation("secure" /* Secure */, title, i18nString(UIStrings.allServedSecurely), i18nString(UIStrings.allResourcesOnThisPageAreServed)));
+                explanations.push(new SecurityStyleExplanation("secure" /* Protocol.Security.SecurityState.Secure */, title, i18nString(UIStrings.allServedSecurely), i18nString(UIStrings.allResourcesOnThisPageAreServed)));
             }
         }
     }
@@ -1094,10 +1129,10 @@ export class SecurityMainView extends UI.Widget.VBox {
             return explanations;
         }
         const securityStateOrder = [
-            "insecure" /* Insecure */,
-            "neutral" /* Neutral */,
-            "secure" /* Secure */,
-            "info" /* Info */,
+            "insecure" /* Protocol.Security.SecurityState.Insecure */,
+            "neutral" /* Protocol.Security.SecurityState.Neutral */,
+            "secure" /* Protocol.Security.SecurityState.Secure */,
+            "info" /* Protocol.Security.SecurityState.Info */,
         ];
         const orderedExplanations = [];
         for (const securityState of securityStateOrder) {
@@ -1112,15 +1147,15 @@ export class SecurityMainView extends UI.Widget.VBox {
             return;
         }
         for (const explanation of this.explanations) {
-            if (explanation.securityState === "info" /* Info */) {
+            if (explanation.securityState === "info" /* Protocol.Security.SecurityState.Info */) {
                 this.addExplanation(this.securityExplanationsExtra, explanation);
             }
             else {
                 switch (explanation.mixedContentType) {
-                    case "blockable" /* Blockable */:
+                    case "blockable" /* Protocol.Security.MixedContentType.Blockable */:
                         this.addMixedContentExplanation(this.securityExplanationsMain, explanation, NetworkForward.UIFilter.MixedContentFilterValues.BlockOverridden);
                         break;
-                    case "optionally-blockable" /* OptionallyBlockable */:
+                    case "optionally-blockable" /* Protocol.Security.MixedContentType.OptionallyBlockable */:
                         this.addMixedContentExplanation(this.securityExplanationsMain, explanation, NetworkForward.UIFilter.MixedContentFilterValues.Displayed);
                         break;
                     default:
@@ -1131,10 +1166,10 @@ export class SecurityMainView extends UI.Widget.VBox {
         }
         if (this.panel.filterRequestCount(NetworkForward.UIFilter.MixedContentFilterValues.Blocked) > 0) {
             const explanation = {
-                securityState: "info" /* Info */,
+                securityState: "info" /* Protocol.Security.SecurityState.Info */,
                 summary: i18nString(UIStrings.blockedMixedContent),
                 description: i18nString(UIStrings.yourPageRequestedNonsecure),
-                mixedContentType: "blockable" /* Blockable */,
+                mixedContentType: "blockable" /* Protocol.Security.MixedContentType.Blockable */,
                 certificate: [],
                 title: '',
             };
@@ -1209,14 +1244,45 @@ export class SecurityOriginView extends UI.Widget.VBox {
             let table = new SecurityDetailsTable();
             connectionSection.appendChild(table.element());
             table.addRow(i18nString(UIStrings.protocol), originState.securityDetails.protocol);
-            if (originState.securityDetails.keyExchange) {
+            // A TLS connection negotiates a cipher suite and, when doing an ephemeral
+            // ECDH key exchange, a "named group". In TLS 1.2, the cipher suite is
+            // named like TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256. The DevTools protocol
+            // tried to decompose this name and calls the "ECDHE_RSA" portion the
+            // "keyExchange", because it determined the rough shape of the key
+            // exchange portion of the handshake. (A keyExchange of "RSA" meant a very
+            // different handshake set.) But ECDHE_RSA was still parameterized by a
+            // named group (e.g. X25519), which the DevTools protocol exposes as
+            // "keyExchangeGroup".
+            //
+            // Then, starting TLS 1.3, the cipher suites are named like
+            // TLS_AES_128_GCM_SHA256. The handshake shape is implicit in the
+            // protocol. keyExchange is empty and we only have keyExchangeGroup.
+            //
+            // "Key exchange group" isn't common terminology and, in TLS 1.3,
+            // something like "X25519" is better labelled as "key exchange" than "key
+            // exchange group" anyway. So combine the two fields when displaying in
+            // the UI.
+            if (originState.securityDetails.keyExchange && originState.securityDetails.keyExchangeGroup) {
+                table.addRow(i18nString(UIStrings.keyExchange), originState.securityDetails.keyExchange + ' with ' + originState.securityDetails.keyExchangeGroup);
+            }
+            else if (originState.securityDetails.keyExchange) {
                 table.addRow(i18nString(UIStrings.keyExchange), originState.securityDetails.keyExchange);
             }
-            if (originState.securityDetails.keyExchangeGroup) {
-                table.addRow(i18nString(UIStrings.keyExchangeGroup), originState.securityDetails.keyExchangeGroup);
+            else if (originState.securityDetails.keyExchangeGroup) {
+                table.addRow(i18nString(UIStrings.keyExchange), originState.securityDetails.keyExchangeGroup);
+            }
+            if (originState.securityDetails.serverSignatureAlgorithm) {
+                // See https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-signaturescheme
+                let sigString = SignatureSchemeStrings.get(originState.securityDetails.serverSignatureAlgorithm);
+                sigString ??=
+                    i18nString(UIStrings.unknownField) + ' (' + originState.securityDetails.serverSignatureAlgorithm + ')';
+                table.addRow(i18nString(UIStrings.serverSignature), sigString);
             }
             table.addRow(i18nString(UIStrings.cipher), originState.securityDetails.cipher +
                 (originState.securityDetails.mac ? ' with ' + originState.securityDetails.mac : ''));
+            if (originState.securityDetails.encryptedClientHello) {
+                table.addRow(i18nString(UIStrings.encryptedClientHello), i18nString(UIStrings.enabled));
+            }
             // Create the certificate section outside the callback, so that it appears in the right place.
             const certificateSection = this.element.createChild('div', 'origin-view-section');
             const certificateDiv = certificateSection.createChild('div', 'origin-view-section-title');
@@ -1225,7 +1291,7 @@ export class SecurityOriginView extends UI.Widget.VBox {
             const sctListLength = originState.securityDetails.signedCertificateTimestampList.length;
             const ctCompliance = originState.securityDetails.certificateTransparencyCompliance;
             let sctSection;
-            if (sctListLength || ctCompliance !== "unknown" /* Unknown */) {
+            if (sctListLength || ctCompliance !== "unknown" /* Protocol.Network.CertificateTransparencyCompliance.Unknown */) {
                 // Create the Certificate Transparency section outside the callback, so that it appears in the right place.
                 sctSection = this.element.createChild('div', 'origin-view-section');
                 const sctDiv = sctSection.createChild('div', 'origin-view-section-title');
@@ -1291,15 +1357,15 @@ export class SecurityOriginView extends UI.Widget.VBox {
                 sctSection.appendChild(toggleSctsDetailsLink);
             }
             switch (ctCompliance) {
-                case "compliant" /* Compliant */:
+                case "compliant" /* Protocol.Network.CertificateTransparencyCompliance.Compliant */:
                     sctSection.createChild('div', 'origin-view-section-notes').textContent =
                         i18nString(UIStrings.thisRequestCompliesWithChromes);
                     break;
-                case "not-compliant" /* NotCompliant */:
+                case "not-compliant" /* Protocol.Network.CertificateTransparencyCompliance.NotCompliant */:
                     sctSection.createChild('div', 'origin-view-section-notes').textContent =
                         i18nString(UIStrings.thisRequestDoesNotComplyWith);
                     break;
-                case "unknown" /* Unknown */:
+                case "unknown" /* Protocol.Network.CertificateTransparencyCompliance.Unknown */:
                     break;
             }
             const noteSection = this.element.createChild('div', 'origin-view-section origin-view-notes');
@@ -1308,7 +1374,7 @@ export class SecurityOriginView extends UI.Widget.VBox {
             }
             noteSection.createChild('div').textContent = i18nString(UIStrings.theSecurityDetailsAboveAreFrom);
         }
-        else if (originState.securityState === "secure" /* Secure */) {
+        else if (originState.securityState === "secure" /* Protocol.Security.SecurityState.Secure */) {
             // If the security state is secure but there are no security details,
             // this means that the origin is a non-cryptographic secure origin, e.g.
             // chrome:// or about:.
@@ -1318,7 +1384,7 @@ export class SecurityOriginView extends UI.Widget.VBox {
             UI.ARIAUtils.markAsHeading(secureDiv, 2);
             secureSection.createChild('div').textContent = i18nString(UIStrings.thisOriginIsANonhttpsSecure);
         }
-        else if (originState.securityState !== "unknown" /* Unknown */) {
+        else if (originState.securityState !== "unknown" /* Protocol.Security.SecurityState.Unknown */) {
             const notSecureSection = this.element.createChild('div', 'origin-view-section');
             const notSecureDiv = notSecureSection.createChild('div', 'origin-view-section-title');
             notSecureDiv.textContent = i18nString(UIStrings.notSecure);
@@ -1395,14 +1461,14 @@ export class SecurityDetailsTable {
         return this.elementInternal;
     }
     addRow(key, value) {
-        const row = this.elementInternal.createChild('div', 'details-table-row');
-        row.createChild('div').textContent = key;
-        const valueDiv = row.createChild('div');
+        const row = this.elementInternal.createChild('tr', 'details-table-row');
+        row.createChild('td').textContent = key;
+        const valueCell = row.createChild('td');
         if (typeof value === 'string') {
-            valueDiv.textContent = value;
+            valueCell.textContent = value;
         }
         else {
-            valueDiv.appendChild(value);
+            valueCell.appendChild(value);
         }
     }
 }

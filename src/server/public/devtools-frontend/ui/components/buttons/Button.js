@@ -12,7 +12,7 @@ export class Button extends HTMLElement {
     #boundRender = this.#render.bind(this);
     #boundOnClick = this.#onClick.bind(this);
     #props = {
-        size: "MEDIUM" /* MEDIUM */,
+        size: "MEDIUM" /* Size.MEDIUM */,
         disabled: false,
         active: false,
         spinner: false,
@@ -32,10 +32,22 @@ export class Button extends HTMLElement {
     set data(data) {
         this.#props.variant = data.variant;
         this.#props.iconUrl = data.iconUrl;
-        this.#props.size = data.size || "MEDIUM" /* MEDIUM */;
+        this.#props.size = "MEDIUM" /* Size.MEDIUM */;
+        if ('size' in data && data.size) {
+            this.#props.size = data.size;
+        }
+        if ('iconWidth' in data && data.iconWidth) {
+            this.#props.iconWidth = data.iconWidth;
+        }
+        if ('iconHeight' in data && data.iconHeight) {
+            this.#props.iconHeight = data.iconHeight;
+        }
         this.#props.active = Boolean(data.active);
-        this.#props.spinner = Boolean(data.spinner);
-        this.#props.type = data.type || 'button';
+        this.#props.spinner = Boolean('spinner' in data ? data.spinner : false);
+        this.#props.type = 'button';
+        if ('type' in data && data.type) {
+            this.#props.type = data.type;
+        }
         this.#setDisabledProperty(data.disabled || false);
         this.#props.title = data.title;
         void ComponentHelpers.ScheduledRender.scheduleRender(this, this.#boundRender);
@@ -50,6 +62,14 @@ export class Button extends HTMLElement {
     }
     set size(size) {
         this.#props.size = size;
+        void ComponentHelpers.ScheduledRender.scheduleRender(this, this.#boundRender);
+    }
+    set iconWidth(iconWidth) {
+        this.#props.iconWidth = iconWidth;
+        void ComponentHelpers.ScheduledRender.scheduleRender(this, this.#boundRender);
+    }
+    set iconHeight(iconHeight) {
+        this.#props.iconHeight = iconHeight;
         void ComponentHelpers.ScheduledRender.scheduleRender(this, this.#boundRender);
     }
     set type(type) {
@@ -110,7 +130,7 @@ export class Button extends HTMLElement {
         if (!this.#props.variant) {
             throw new Error('Button requires a variant to be defined');
         }
-        if (this.#props.variant === "toolbar" /* TOOLBAR */) {
+        if (this.#props.variant === "toolbar" /* Variant.TOOLBAR */ || this.#props.variant === "unified_toolbar_2022" /* Variant.UNIFIED_TOOLBAR_2022 */) {
             if (!this.#props.iconUrl) {
                 throw new Error('Toolbar button requires an icon');
             }
@@ -118,18 +138,29 @@ export class Button extends HTMLElement {
                 throw new Error('Tooblar button does not accept children');
             }
         }
+        if (this.#props.variant === "round" /* Variant.ROUND */) {
+            if (!this.#props.iconUrl) {
+                throw new Error('Round button requires an icon');
+            }
+            if (!this.#isEmpty) {
+                throw new Error('Round button does not accept children');
+            }
+        }
         const classes = {
-            primary: this.#props.variant === "primary" /* PRIMARY */,
-            secondary: this.#props.variant === "secondary" /* SECONDARY */,
-            toolbar: this.#props.variant === "toolbar" /* TOOLBAR */,
+            primary: this.#props.variant === "primary" /* Variant.PRIMARY */,
+            secondary: this.#props.variant === "secondary" /* Variant.SECONDARY */,
+            toolbar: this.#props.variant === "toolbar" /* Variant.TOOLBAR */ || this.#props.variant === "unified_toolbar_2022" /* Variant.UNIFIED_TOOLBAR_2022 */,
+            'unified-toolbar-2022': this.#props.variant === "unified_toolbar_2022" /* Variant.UNIFIED_TOOLBAR_2022 */,
+            round: this.#props.variant === "round" /* Variant.ROUND */,
             'text-with-icon': Boolean(this.#props.iconUrl) && !this.#isEmpty,
             'only-icon': Boolean(this.#props.iconUrl) && this.#isEmpty,
-            small: Boolean(this.#props.size === "SMALL" /* SMALL */),
+            small: Boolean(this.#props.size === "SMALL" /* Size.SMALL */),
             active: this.#props.active,
+            'explicit-size': Boolean(this.#props.iconHeight || this.#props.iconWidth),
         };
         const spinnerClasses = {
-            primary: this.#props.variant === "primary" /* PRIMARY */,
-            secondary: this.#props.variant === "secondary" /* SECONDARY */,
+            primary: this.#props.variant === "primary" /* Variant.PRIMARY */,
+            secondary: this.#props.variant === "secondary" /* Variant.SECONDARY */,
             disabled: Boolean(this.#props.disabled),
             'spinner-component': true,
         };
@@ -140,6 +171,8 @@ export class Button extends HTMLElement {
             .data=${{
             iconPath: this.#props.iconUrl,
             color: 'var(--color-background)',
+            width: this.#props.iconWidth || undefined,
+            height: this.#props.iconHeight || undefined,
         }}
           >
           </${IconButton.Icon.Icon.litTagName}>` : ''}

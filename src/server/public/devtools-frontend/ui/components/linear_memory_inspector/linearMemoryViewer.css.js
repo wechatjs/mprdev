@@ -73,6 +73,25 @@ styles.replaceSync(
   margin: 0 4px;
 }
 
+.highlight-area {
+  background-color: var(--color-background-elevation-2);
+}
+
+.cell.focused-area {
+  background-color: var(--color-primary-variant);
+  color: var(--color-button-primary-text);
+}
+
+.cell.focused-area.selected {
+  background: rgb(1 74 195); /* stylelint-disable-line plugin/use_theme_colors */
+  border-color: var(--color-button-outline-focus);
+}
+
+:host-context(.-theme-with-dark-background) .cell.focused-area.selected {
+  background: rgb(192 216 255); /* stylelint-disable-line plugin/use_theme_colors */
+  border-color: var(--color-button-outline-focus);
+}
+
 /*# sourceURL=linearMemoryViewer.css */
 `);
 export default styles;

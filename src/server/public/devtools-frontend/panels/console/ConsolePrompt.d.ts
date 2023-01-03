@@ -9,6 +9,7 @@ declare const ConsolePrompt_base: (new (...args: any[]) => {
     dispatchEventToListeners<T_3 extends Events.TextChanged>(eventType: import("../../core/platform/typescript-utilities.js").NoUnion<T_3>, ...eventData: Common.EventTarget.EventPayloadToRestParameters<EventTypes, T_3>): void;
 }) & typeof UI.Widget.Widget;
 export declare class ConsolePrompt extends ConsolePrompt_base {
+    #private;
     private addCompletionsFromHistory;
     private historyInternal;
     private initialText;
@@ -44,6 +45,8 @@ export declare class ConsolePrompt extends ConsolePrompt_base {
     private handleEnter;
     private updatePromptIcon;
     private appendCommand;
+    private evaluateCommandInConsole;
+    private substituteNames;
     private editorUpdate;
     private historyCompletions;
     focus(): void;

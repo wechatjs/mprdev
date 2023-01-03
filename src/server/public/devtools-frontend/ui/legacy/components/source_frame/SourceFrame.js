@@ -167,19 +167,19 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
     }
     editorConfiguration(doc) {
         return [
-            CodeMirror.EditorView.updateListener.of(update => this.dispatchEventToListeners("EditorUpdate" /* EditorUpdate */, update)),
+            CodeMirror.EditorView.updateListener.of(update => this.dispatchEventToListeners("EditorUpdate" /* Events.EditorUpdate */, update)),
             TextEditor.Config.baseConfiguration(doc),
             TextEditor.Config.closeBrackets,
             TextEditor.Config.sourcesAutocompletion.instance(),
             TextEditor.Config.showWhitespace.instance(),
             TextEditor.Config.allowScrollPastEof.instance(),
-            TextEditor.Config.codeFolding.instance(),
+            CodeMirror.Prec.lowest(TextEditor.Config.codeFolding.instance()),
             TextEditor.Config.autoDetectIndent.instance(),
             sourceFrameTheme,
             CodeMirror.EditorView.domEventHandlers({
                 focus: () => this.onFocus(),
                 blur: () => this.onBlur(),
-                scroll: () => this.dispatchEventToListeners("EditorScroll" /* EditorScroll */),
+                scroll: () => this.dispatchEventToListeners("EditorScroll" /* Events.EditorScroll */),
                 contextmenu: event => this.onContextMenu(event),
             }),
             CodeMirror.lineNumbers({
@@ -356,6 +356,7 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
             progressIndicator.setTitle(i18nString(UIStrings.loading));
             progressIndicator.setTotalWork(100);
             this.progressToolbarItem.element.appendChild(progressIndicator.element);
+            progressIndicator.setWorked(1);
             const deferredContent = await this.lazyContent();
             let error, content;
             if (deferredContent.content === null) {
@@ -364,10 +365,23 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
             }
             else {
                 content = deferredContent.content;
-                this.rawContent = deferredContent.isEncoded ? window.atob(deferredContent.content) : deferredContent.content;
+                if (deferredContent.isEncoded) {
+                    const view = new DataView(Common.Base64.decode(deferredContent.content));
+                    const decoder = new TextDecoder();
+                    this.rawContent = decoder.decode(view, { stream: true });
+                }
+                else if ('wasmDisassemblyInfo' in deferredContent && deferredContent.wasmDisassemblyInfo) {
+                    const { wasmDisassemblyInfo } = deferredContent;
+                    this.rawContent = CodeMirror.Text.of(wasmDisassemblyInfo.lines);
+                    this.wasmDisassemblyInternal = wasmDisassemblyInfo;
+                }
+                else {
+                    this.rawContent = content;
+                    this.wasmDisassemblyInternal = null;
+                }
             }
-            progressIndicator.setWorked(1);
-            if (!error && this.contentType === 'application/wasm') {
+            // If the input is wasm but v8-based wasm disassembly failed, fall back to wasmparser for backwards compatibility.
+            if (content && this.contentType === 'application/wasm' && !this.wasmDisassemblyInternal) {
                 const worker = Common.Worker.WorkerWrapper.fromURL(new URL('../../../../entrypoints/wasmparser_worker/wasmparser_worker-entrypoint.js', import.meta.url));
                 const promise = new Promise((resolve, reject) => {
                     worker.onmessage =
@@ -398,9 +412,10 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
                 });
                 worker.postMessage({ method: 'disassemble', params: { content } });
                 try {
-                    const { source, offsets, functionBodyOffsets } = await promise;
-                    this.rawContent = content = source;
-                    this.wasmDisassemblyInternal = new Common.WasmDisassembly.WasmDisassembly(offsets, functionBodyOffsets);
+                    const { lines, offsets, functionBodyOffsets } = await promise;
+                    this.rawContent = content = CodeMirror.Text.of(lines);
+                    this.wasmDisassemblyInternal =
+                        new Common.WasmDisassembly.WasmDisassembly(lines, offsets, functionBodyOffsets);
                 }
                 catch (e) {
                     this.rawContent = content = error = e.message;
@@ -420,7 +435,7 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
                 this.prettyToggle.setEnabled(false);
             }
             else {
-                if (this.shouldAutoPrettyPrint && TextUtils.TextUtils.isMinified(content)) {
+                if (this.shouldAutoPrettyPrint && TextUtils.TextUtils.isMinified(content || '')) {
                     await this.setPretty(true);
                 }
                 else {
@@ -434,8 +449,8 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
         if (this.formattedContentPromise) {
             return this.formattedContentPromise;
         }
-        this.formattedContentPromise =
-            Formatter.ScriptFormatter.formatScriptContent(this.contentType, this.rawContent || '');
+        const content = this.rawContent instanceof CodeMirror.Text ? this.rawContent.sliceString(0) : this.rawContent || '';
+        this.formattedContentPromise = Formatter.ScriptFormatter.formatScriptContent(this.contentType, content);
         return this.formattedContentPromise;
     }
     revealPosition(position, shouldHighlight) {
@@ -484,10 +499,8 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
         if (this.lineToScrollTo !== null) {
             if (this.loaded && this.isShowing()) {
                 const { textEditor } = this;
-                // DevTools history items are 0-based, but CodeMirror is 1-based, so we have to increment the
-                // line we want to scroll to by 1.
-                const position = textEditor.toOffset({ lineNumber: this.lineToScrollTo + 1, columnNumber: 0 });
-                textEditor.dispatch({ effects: CodeMirror.EditorView.scrollIntoView(position, { y: 'start' }) });
+                const position = textEditor.toOffset({ lineNumber: this.lineToScrollTo, columnNumber: 0 });
+                textEditor.dispatch({ effects: CodeMirror.EditorView.scrollIntoView(position, { y: 'start', yMargin: 0 }) });
                 this.lineToScrollTo = null;
             }
         }
@@ -553,8 +566,11 @@ export class SourceFrameImpl extends Common.ObjectWrapper.eventMixin(UI.View.Sim
             return 'text/jsx';
         }
         // A hack around the fact that files with "php" extension might be either standalone or html embedded php scripts.
-        if (mimeType === 'text/x-php' && content.match(/\<\?.*\?\>/g)) {
-            return 'application/x-httpd-php';
+        if (mimeType === 'text/x-php') {
+            const strContent = typeof content === 'string' ? content : content.sliceString(0);
+            if (strContent.match(/\<\?.*\?\>/g)) {
+                return 'application/x-httpd-php';
+            }
         }
         if (mimeType === 'application/wasm') {
             // text/webassembly is not a proper MIME type, but CodeMirror uses it for WAT syntax highlighting.

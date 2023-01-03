@@ -1,7 +1,7 @@
+import * as Protocol from '../../generated/protocol.js';
 import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import * as Protocol from '../../generated/protocol.js';
-import type { BackgroundServiceModel } from './BackgroundServiceModel.js';
+import { type BackgroundServiceModel } from './BackgroundServiceModel.js';
 export declare class BackgroundServiceView extends UI.Widget.VBox {
     private readonly serviceName;
     private readonly model;

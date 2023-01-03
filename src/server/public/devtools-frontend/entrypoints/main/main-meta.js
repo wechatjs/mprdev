@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as Common from '../../core/common/common.js';
-import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
@@ -263,11 +262,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+]',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+]',
         },
     ],
@@ -281,11 +280,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+[',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+[',
         },
     ],
@@ -313,11 +312,11 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+D',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+D',
         },
     ],
@@ -332,43 +331,43 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Plus',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+Plus',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+NumpadPlus',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+NumpadPlus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Plus',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+Plus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+NumpadPlus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+NumpadPlus',
         },
     ],
@@ -383,43 +382,43 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Minus',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+Minus',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+NumpadMinus',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+NumpadMinus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Minus',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+Minus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+NumpadMinus',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+NumpadMinus',
         },
     ],
@@ -434,19 +433,19 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+0',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Numpad0',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Numpad0',
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+0',
         },
     ],
@@ -461,23 +460,23 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+F',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+F',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'F3',
         },
     ],
@@ -507,23 +506,23 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+G',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+G',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'F3',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
     ],
@@ -538,23 +537,23 @@ UI.ActionRegistration.registerActionExtension({
     },
     bindings: [
         {
-            platform: "mac" /* Mac */,
+            platform: "mac" /* UI.ActionRegistration.Platforms.Mac */,
             shortcut: 'Meta+Shift+G',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Ctrl+Shift+G',
         },
         {
-            platform: "windows,linux" /* WindowsLinux */,
+            platform: "windows,linux" /* UI.ActionRegistration.Platforms.WindowsLinux */,
             shortcut: 'Shift+F3',
             keybindSets: [
-                "devToolsDefault" /* DEVTOOLS_DEFAULT */,
-                "vsCode" /* VS_CODE */,
+                "devToolsDefault" /* UI.ActionRegistration.KeybindSet.DEVTOOLS_DEFAULT */,
+                "vsCode" /* UI.ActionRegistration.KeybindSet.VS_CODE */,
             ],
         },
     ],
@@ -742,7 +741,6 @@ Common.Settings.registerSettingExtension({
     title: i18nLazyString(UIStrings.enableSync),
     defaultValue: false,
     reloadRequired: true,
-    experiment: Root.Runtime.ExperimentName.SYNC_SETTINGS,
 });
 Common.Settings.registerSettingExtension({
     storageType: Common.Settings.SettingStorageType.Synced,
@@ -751,21 +749,21 @@ Common.Settings.registerSettingExtension({
     defaultValue: [],
 });
 UI.ViewManager.registerLocationResolver({
-    name: "drawer-view" /* DRAWER_VIEW */,
+    name: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     category: UI.ViewManager.ViewLocationCategoryValues.DRAWER,
     async loadResolver() {
         return UI.InspectorView.InspectorView.instance();
     },
 });
 UI.ViewManager.registerLocationResolver({
-    name: "drawer-sidebar" /* DRAWER_SIDEBAR */,
+    name: "drawer-sidebar" /* UI.ViewManager.ViewLocationValues.DRAWER_SIDEBAR */,
     category: UI.ViewManager.ViewLocationCategoryValues.DRAWER_SIDEBAR,
     async loadResolver() {
         return UI.InspectorView.InspectorView.instance();
     },
 });
 UI.ViewManager.registerLocationResolver({
-    name: "panel" /* PANEL */,
+    name: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     category: UI.ViewManager.ViewLocationCategoryValues.PANEL,
     async loadResolver() {
         return UI.InspectorView.InspectorView.instance();

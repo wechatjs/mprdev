@@ -79,6 +79,10 @@ const UIStrings = {
     *@description A placeholder for an input in Protocol Monitor. The input accepts commands that are sent to the backend on Enter. CDP stands for Chrome DevTools Protocol.
     */
     sendRawCDPCommand: 'Send a raw `CDP` command',
+    /**
+     * @description A tooltip text for the input in the Protocol Monitor panel. The tooltip describes what format is expected.
+     */
+    sendRawCDPCommandExplanation: 'Format: `\'Domain.commandName\'` for a command without parameters, or `\'{"command":"Domain.commandName", "parameters": {...}}\'` as a JSON object for a command with parameters. `\'cmd\'`/`\'method\'` and `\'args\'`/`\'params\'`/`\'arguments\'` are also supported as alternative keys for the `JSON` object.',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/protocol_monitor/ProtocolMonitor.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -97,6 +101,7 @@ export class ProtocolMonitorImpl extends UI.Widget.VBox {
     textFilterUI;
     messages = [];
     isRecording = false;
+    #historyAutocompleteDataProvider = new HistoryAutocompleteDataProvider();
     constructor() {
         super(true);
         this.started = false;
@@ -128,6 +133,7 @@ export class ProtocolMonitorImpl extends UI.Widget.VBox {
         split.show(this.contentElement);
         this.infoWidget = new InfoWidget();
         const dataGridInitialData = {
+            paddingRowsCount: 100,
             columns: [
                 {
                     id: 'type',
@@ -244,29 +250,28 @@ export class ProtocolMonitorImpl extends UI.Widget.VBox {
             this.dataGridIntegrator.update({ ...this.dataGridIntegrator.data(), filters });
         });
         topToolbar.appendToolbarItem(this.textFilterUI);
-        const onSend = () => {
-            const value = input.value();
-            // If input cannot be parsed as json, we assume it's the command name
-            // for a command without parameters. Otherwise, we expect an object
-            // with "command" and "parameters" attributes.
-            let json = null;
-            try {
-                json = JSON.parse(value);
-            }
-            catch (err) {
-            }
-            const command = json ? json.command : value;
-            const parameters = json ? json.parameters : null;
-            const test = ProtocolClient.InspectorBackend.test;
-            // TODO: TS thinks that properties are read-only because
-            // in TS test is defined as a namespace.
-            // @ts-ignore
-            test.sendRawMessage(command, parameters, () => { });
-        };
-        const input = new UI.Toolbar.ToolbarInput(i18nString(UIStrings.sendRawCDPCommand), '', 1, .2, '', undefined, false);
-        input.addEventListener(UI.Toolbar.ToolbarInput.Event.EnterPressed, onSend);
         const bottomToolbar = new UI.Toolbar.Toolbar('protocol-monitor-bottom-toolbar', this.contentElement);
-        bottomToolbar.appendToolbarItem(input);
+        bottomToolbar.appendToolbarItem(this.#createCommandInput());
+    }
+    #createCommandInput() {
+        const placeholder = i18nString(UIStrings.sendRawCDPCommand);
+        const accessiblePlaceholder = placeholder;
+        const growFactor = 1;
+        const shrinkFactor = 0.2;
+        const tooltip = i18nString(UIStrings.sendRawCDPCommandExplanation);
+        const input = new UI.Toolbar.ToolbarInput(placeholder, accessiblePlaceholder, growFactor, shrinkFactor, tooltip, this.#historyAutocompleteDataProvider.buildTextPromptCompletions, false);
+        input.addEventListener(UI.Toolbar.ToolbarInput.Event.EnterPressed, () => this.#onCommandSend(input));
+        return input;
+    }
+    #onCommandSend(input) {
+        const value = input.value();
+        const { command, parameters } = parseCommandInput(value);
+        const test = ProtocolClient.InspectorBackend.test;
+        // TODO: TS thinks that properties are read-only because
+        // in TS test is defined as a namespace.
+        // @ts-ignore
+        test.sendRawMessage(command, parameters, () => { });
+        this.#historyAutocompleteDataProvider.addEntry(value);
     }
     static instance(opts = { forceNew: null }) {
         const { forceNew } = opts;
@@ -419,6 +424,34 @@ export class ProtocolMonitorImpl extends UI.Widget.VBox {
         void stream.close();
     }
 }
+export class HistoryAutocompleteDataProvider {
+    #maxHistorySize = 200;
+    #commandHistory = new Set();
+    constructor(maxHistorySize) {
+        if (maxHistorySize !== undefined) {
+            this.#maxHistorySize = maxHistorySize;
+        }
+    }
+    buildTextPromptCompletions = async (expression, prefix, force) => {
+        if (!prefix && !force && expression) {
+            return [];
+        }
+        const newestToOldest = [...this.#commandHistory].reverse();
+        return newestToOldest.filter(cmd => cmd.startsWith(prefix)).map(text => ({
+            text,
+        }));
+    };
+    addEntry(value) {
+        if (this.#commandHistory.has(value)) {
+            this.#commandHistory.delete(value);
+        }
+        this.#commandHistory.add(value);
+        if (this.#commandHistory.size > this.#maxHistorySize) {
+            const earliestEntry = this.#commandHistory.values().next().value;
+            this.#commandHistory.delete(earliestEntry);
+        }
+    }
+}
 export class InfoWidget extends UI.Widget.VBox {
     tabbedPane;
     constructor() {
@@ -446,5 +479,19 @@ export class InfoWidget extends UI.Widget.VBox {
         const responseParsed = data.response.value === '(pending)' ? null : JSON.parse(String(data.response.value) || 'null');
         this.tabbedPane.changeTabView('response', SourceFrame.JSONView.JSONView.createViewSync(responseParsed));
     }
+}
+export function parseCommandInput(input) {
+    // If input cannot be parsed as json, we assume it's the command name
+    // for a command without parameters. Otherwise, we expect an object
+    // with "command"/"method"/"cmd" and "parameters"/"params"/"args"/"arguments" attributes.
+    let json = null;
+    try {
+        json = JSON.parse(input);
+    }
+    catch (err) {
+    }
+    const command = json ? json.command || json.method || json.cmd : input;
+    const parameters = json ? json.parameters || json.params || json.args || json.arguments : null;
+    return { command, parameters };
 }
 //# sourceMappingURL=ProtocolMonitor.js.map

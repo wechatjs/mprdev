@@ -1,8 +1,9 @@
 import type * as Protocol from '../../generated/protocol.js';
-import type { DebuggerModel } from './DebuggerModel.js';
-import type { RemoteObject } from './RemoteObject.js';
+import type * as Platform from '../platform/platform.js';
+import { type DebuggerModel } from './DebuggerModel.js';
+import { type RemoteObject } from './RemoteObject.js';
 import { RuntimeModel } from './RuntimeModel.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class HeapProfilerModel extends SDKModel<EventTypes> {
     #private;
@@ -57,7 +58,7 @@ export declare type EventTypes = {
 };
 export interface NativeProfilerCallFrame {
     functionName: string;
-    url: string;
+    url: Platform.DevToolsPath.UrlString;
     scriptId?: string;
     lineNumber?: number;
     columnNumber?: number;

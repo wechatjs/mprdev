@@ -19,6 +19,8 @@ styles.replaceSync(
 
 .computed-style-trace {
   margin-left: 16px;
+  font-family: var(--monospace-font-family);
+  font-size: var(--monospace-font-size);
 }
 
 .computed-style-trace:hover {
@@ -31,6 +33,7 @@ styles.replaceSync(
   --size: 16px;
 
   display: none;
+  cursor: pointer;
   position: absolute;
   width: var(--size);
   height: var(--size);
@@ -42,6 +45,15 @@ styles.replaceSync(
 
 .computed-style-trace:hover .goto {
   display: inline-block;
+}
+
+.devtools-link {
+  --override-text-decoration-color: hsl(0deg 0% 60%);
+
+  color: var(--color-text-primary);
+  text-decoration-color: var(--override-text-decoration-color);
+  text-decoration-line: underline;
+  cursor: pointer;
 }
 
 .trace-value {
@@ -59,7 +71,7 @@ styles.replaceSync(
   padding-left: 2em;
 }
 
-::slotted([slot="trace-link"]) {
+.trace-link {
   user-select: none;
   float: right;
   padding-left: 1em;

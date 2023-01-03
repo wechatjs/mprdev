@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 import * as Common from '../../core/common/common.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as ColorPicker from '../../ui/legacy/components/color_picker/color_picker.js';
 import * as InlineEditor from '../../ui/legacy/components/inline_editor/inline_editor.js';
 import * as CodeMirror from '../../third_party/codemirror.next/codemirror.next.js';
 import * as UI from '../../ui/legacy/legacy.js';
+import { assertNotNullOrUndefined } from '../../core/platform/platform.js';
 import { Plugin } from './Plugin.js';
 // Plugin to add CSS completion, shortcuts, and color/curve swatches
 // to editors with CSS content.
@@ -23,14 +25,6 @@ const UIStrings = {
 };
 const str_ = i18n.i18n.registerUIStrings('panels/sources/CSSPlugin.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
-export function completion() {
-    const { cssCompletionSource } = CodeMirror.css;
-    return CodeMirror.autocompletion({
-        override: [async (cx) => {
-                return (await specificCssCompletion(cx)) || cssCompletionSource(cx);
-            }],
-    });
-}
 const dontCompleteIn = new Set(['ColorLiteral', 'NumberLiteral', 'StringLiteral', 'Comment', 'Important']);
 function findPropertyAt(node, pos) {
     if (dontCompleteIn.has(node.name)) {
@@ -47,18 +41,35 @@ function findPropertyAt(node, pos) {
     }
     return null;
 }
-function specificCssCompletion(cx) {
-    const node = CodeMirror.syntaxTree(cx.state).resolveInner(cx.pos, -1);
-    const property = findPropertyAt(node, cx.pos);
-    if (!property) {
-        return null;
+function getCurrentStyleSheet(url, cssModel) {
+    const currentStyleSheet = cssModel.getStyleSheetIdsForURL(url);
+    if (currentStyleSheet.length === 0) {
+        Platform.DCHECK(() => currentStyleSheet.length !== 0, 'Can\'t find style sheet ID for current URL');
     }
-    const propertyValues = SDK.CSSMetadata.cssMetadata().getPropertyValues(cx.state.sliceDoc(property.from, property.to));
-    return {
-        from: node.name === 'ValueName' ? node.from : cx.pos,
-        options: propertyValues.map(value => ({ type: 'constant', label: value })),
-        span: /^[\w\P{ASCII}\-]+$/u,
-    };
+    return currentStyleSheet[0];
+}
+async function specificCssCompletion(cx, uiSourceCode, cssModel) {
+    const node = CodeMirror.syntaxTree(cx.state).resolveInner(cx.pos, -1);
+    if (node.name === 'ClassName') {
+        // Should never happen, but let's code defensively here
+        assertNotNullOrUndefined(cssModel);
+        const currentStyleSheet = getCurrentStyleSheet(uiSourceCode.url(), cssModel);
+        const existingClassNames = await cssModel.getClassNames(currentStyleSheet);
+        return {
+            from: node.from,
+            options: existingClassNames.map(value => ({ type: 'constant', label: value })),
+        };
+    }
+    const property = findPropertyAt(node, cx.pos);
+    if (property) {
+        const propertyValues = SDK.CSSMetadata.cssMetadata().getPropertyValues(cx.state.sliceDoc(property.from, property.to));
+        return {
+            from: node.name === 'ValueName' ? node.from : cx.pos,
+            options: propertyValues.map(value => ({ type: 'constant', label: value })),
+            validFor: /^[\w\P{ASCII}\-]+$/u,
+        };
+    }
+    return null;
 }
 function findColorsAndCurves(state, from, to, onColor, onCurve) {
     let line = state.doc.lineAt(from);
@@ -75,23 +86,23 @@ function findColorsAndCurves(state, from, to, onColor, onCurve) {
     tree.iterate({
         from,
         to,
-        enter: (type, from, to, node) => {
+        enter: node => {
             let content;
-            if (type.name === 'ValueName' || type.name === 'ColorLiteral') {
-                content = getToken(from, to);
+            if (node.name === 'ValueName' || node.name === 'ColorLiteral') {
+                content = getToken(node.from, node.to);
             }
-            else if (type.name === 'Callee' && /^(?:(?:rgb|hsl)a?|cubic-bezier)$/.test(getToken(from, to))) {
-                content = state.sliceDoc(from, node().parent.to);
+            else if (node.name === 'Callee' && /^(?:(?:rgb|hsl)a?|cubic-bezier)$/.test(getToken(node.from, node.to))) {
+                content = state.sliceDoc(node.from, node.node.parent.to);
             }
             if (content) {
                 const parsedColor = Common.Color.Color.parse(content);
                 if (parsedColor) {
-                    onColor(from, parsedColor, content);
+                    onColor(node.from, parsedColor, content);
                 }
                 else {
                     const parsedCurve = UI.Geometry.CubicBezier.parse(content);
                     if (parsedCurve) {
-                        onCurve(from, parsedCurve, content);
+                        onCurve(node.from, parsedCurve, content);
                     }
                 }
             }
@@ -119,7 +130,7 @@ class ColorSwatchWidget extends CodeMirror.WidgetType {
             event.consume(true);
             view.dispatch({
                 effects: setTooltip.of({
-                    type: 0 /* Color */,
+                    type: 0 /* TooltipType.Color */,
                     pos: view.posAtDOM(swatch),
                     text: this.text,
                     swatch,
@@ -152,7 +163,7 @@ class CurveSwatchWidget extends CodeMirror.WidgetType {
             event.consume(true);
             view.dispatch({
                 effects: setTooltip.of({
-                    type: 1 /* Curve */,
+                    type: 1 /* TooltipType.Curve */,
                     pos: view.posAtDOM(swatch),
                     text: this.text,
                     swatch,
@@ -174,7 +185,7 @@ function createCSSTooltip(active) {
         create(view) {
             let text = active.text;
             let widget, addListener;
-            if (active.type === 0 /* Color */) {
+            if (active.type === 0 /* TooltipType.Color */) {
                 const spectrum = new ColorPicker.Spectrum.Spectrum();
                 addListener = (handler) => {
                     spectrum.addEventListener(ColorPicker.Spectrum.Events.ColorChanged, handler);
@@ -325,11 +336,40 @@ export function cssBindings() {
     });
 }
 export class CSSPlugin extends Plugin {
+    #cssModel;
+    constructor(uiSourceCode, _transformer) {
+        super(uiSourceCode, _transformer);
+        SDK.TargetManager.TargetManager.instance().observeModels(SDK.CSSModel.CSSModel, this);
+    }
     static accepts(uiSourceCode) {
         return uiSourceCode.contentType().isStyleSheet();
     }
+    modelAdded(cssModel) {
+        if (this.#cssModel) {
+            return;
+        }
+        this.#cssModel = cssModel;
+    }
+    modelRemoved(cssModel) {
+        if (this.#cssModel === cssModel) {
+            this.#cssModel = undefined;
+        }
+    }
     editorExtension() {
-        return [cssBindings(), completion(), cssSwatches()];
+        return [cssBindings(), this.#cssCompletion(), cssSwatches()];
+    }
+    #cssCompletion() {
+        const { cssCompletionSource } = CodeMirror.css;
+        // CodeMirror binds the function below to the state object.
+        // Therefore, we can't access `this` and retrieve the following properties.
+        // Instead, retrieve them up front to bind them to the correct closure.
+        const uiSourceCode = this.uiSourceCode;
+        const cssModel = this.#cssModel;
+        return CodeMirror.autocompletion({
+            override: [async (cx) => {
+                    return (await specificCssCompletion(cx, uiSourceCode, cssModel)) || cssCompletionSource(cx);
+                }],
+        });
     }
 }
 //# sourceMappingURL=CSSPlugin.js.map

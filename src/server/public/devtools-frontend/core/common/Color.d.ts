@@ -4,6 +4,10 @@ export declare class Color {
     static parse(text: string): Color | null;
     static fromRGBA(rgba: number[]): Color;
     static fromHSVA(hsva: number[]): Color;
+    /**
+     * Split the color parameters of (e.g.) rgb(a), hsl(a), hwb(a) functions.
+     */
+    static splitColorFunctionParameters(content: string, allowCommas: boolean): string[] | null;
     static parsePercentOrNumber(value: string): number | null;
     static parseRgbNumeric(value: string): number | null;
     static parseHueNumeric(value: string): number | null;
@@ -11,6 +15,7 @@ export declare class Color {
     static parseAlphaNumeric(value: string): number | null;
     static hsva2hsla(hsva: number[], out_hsla: number[]): void;
     static hsl2rgb(hsl: number[], out_rgb: number[]): void;
+    static hwb2rgb(hwb: number[], out_rgb: number[]): void;
     static hsva2rgba(hsva: number[], out_rgba: number[]): void;
     /**
      * Compute a desired luminance given a given luminance and a desired contrast
@@ -32,6 +37,10 @@ export declare class Color {
     /** HSVA with components within [0..1]
        */
     hsva(): number[];
+    /** HWBA with components within [0..1]
+       */
+    hwba(): number[];
+    canonicalHWBA(): number[];
     hasAlpha(): boolean;
     detectHEXFormat(): Format;
     asString(format?: string | null): string | null;
@@ -64,7 +73,9 @@ export declare enum Format {
     RGB = "rgb",
     RGBA = "rgba",
     HSL = "hsl",
-    HSLA = "hsla"
+    HSLA = "hsla",
+    HWB = "hwb",
+    HWBA = "hwba"
 }
 export declare const Nicknames: Map<string, number[]>;
 export declare const PageHighlight: {

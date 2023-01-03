@@ -49,15 +49,11 @@ export class CompilerSourceMappingContentProvider {
         this.#contentTypeInternal = contentType;
         this.#initiator = initiator;
     }
-    // TODO(crbug.com/1253323): Cast to RawPathString will be removed when migration to branded types is complete.
     contentURL() {
         return this.#sourceURL;
     }
     contentType() {
         return this.#contentTypeInternal;
-    }
-    async contentEncoded() {
-        return false;
     }
     async requestContent() {
         try {

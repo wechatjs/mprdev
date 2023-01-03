@@ -37,7 +37,7 @@ export class Action extends Common.ObjectWrapper.ObjectWrapper {
             return;
         }
         this.enabledInternal = enabled;
-        this.dispatchEventToListeners("Enabled" /* Enabled */, enabled);
+        this.dispatchEventToListeners("Enabled" /* Events.Enabled */, enabled);
     }
     enabled() {
         return this.enabledInternal;
@@ -79,7 +79,7 @@ export class Action extends Common.ObjectWrapper.ObjectWrapper {
             return;
         }
         this.toggledInternal = toggled;
-        this.dispatchEventToListeners("Toggled" /* Toggled */, toggled);
+        this.dispatchEventToListeners("Toggled" /* Events.Toggled */, toggled);
     }
     options() {
         return this.actionRegistration.options;
@@ -155,5 +155,6 @@ export const ActionCategory = {
     SETTINGS: 'Settings',
     DEBUGGER: 'Debugger',
     SOURCES: 'Sources',
+    RENDERING: 'Rendering',
 };
 //# sourceMappingURL=ActionRegistration.js.map

@@ -1,7 +1,7 @@
 import * as Common from '../../core/common/common.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { ProfileType } from './ProfileHeader.js';
-import type { ProfilesPanel } from './ProfilesPanel.js';
+import { type ProfileType } from './ProfileHeader.js';
+import { type ProfilesPanel } from './ProfilesPanel.js';
 declare const ProfileLauncherView_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends Events.ProfileTypeSelected>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;

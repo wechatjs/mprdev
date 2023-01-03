@@ -97,11 +97,11 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.EventListenerBreakpointsSidebarPane.EventListenerBreakpointsSidebarPane.instance();
     },
     id: 'sources.eventListenerBreakpoints',
-    location: "sources.sidebar-bottom" /* SOURCES_SIDEBAR_BOTTOM */,
+    location: "sources.sidebar-bottom" /* UI.ViewManager.ViewLocationValues.SOURCES_SIDEBAR_BOTTOM */,
     commandPrompt: i18nLazyString(UIStrings.showEventListenerBreakpoints),
     title: i18nLazyString(UIStrings.eventListenerBreakpoints),
     order: 9,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
 });
 UI.ViewManager.registerViewExtension({
     async loadView() {
@@ -109,11 +109,11 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.CSPViolationBreakpointsSidebarPane.CSPViolationBreakpointsSidebarPane.instance();
     },
     id: 'sources.cspViolationBreakpoints',
-    location: "sources.sidebar-bottom" /* SOURCES_SIDEBAR_BOTTOM */,
+    location: "sources.sidebar-bottom" /* UI.ViewManager.ViewLocationValues.SOURCES_SIDEBAR_BOTTOM */,
     commandPrompt: i18nLazyString(UIStrings.showCspViolationBreakpoints),
     title: i18nLazyString(UIStrings.cspViolationBreakpoints),
     order: 10,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
 });
 UI.ViewManager.registerViewExtension({
     async loadView() {
@@ -121,11 +121,11 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.XHRBreakpointsSidebarPane.XHRBreakpointsSidebarPane.instance();
     },
     id: 'sources.xhrBreakpoints',
-    location: "sources.sidebar-bottom" /* SOURCES_SIDEBAR_BOTTOM */,
+    location: "sources.sidebar-bottom" /* UI.ViewManager.ViewLocationValues.SOURCES_SIDEBAR_BOTTOM */,
     commandPrompt: i18nLazyString(UIStrings.showXhrfetchBreakpoints),
     title: i18nLazyString(UIStrings.xhrfetchBreakpoints),
     order: 5,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     hasToolbar: true,
 });
 UI.ViewManager.registerViewExtension({
@@ -134,11 +134,11 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.DOMBreakpointsSidebarPane.DOMBreakpointsSidebarPane.instance();
     },
     id: 'sources.domBreakpoints',
-    location: "sources.sidebar-bottom" /* SOURCES_SIDEBAR_BOTTOM */,
+    location: "sources.sidebar-bottom" /* UI.ViewManager.ViewLocationValues.SOURCES_SIDEBAR_BOTTOM */,
     commandPrompt: i18nLazyString(UIStrings.showDomBreakpoints),
     title: i18nLazyString(UIStrings.domBreakpoints),
     order: 7,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
 });
 UI.ViewManager.registerViewExtension({
     async loadView() {
@@ -146,11 +146,11 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.ObjectEventListenersSidebarPane.ObjectEventListenersSidebarPane.instance();
     },
     id: 'sources.globalListeners',
-    location: "sources.sidebar-bottom" /* SOURCES_SIDEBAR_BOTTOM */,
+    location: "sources.sidebar-bottom" /* UI.ViewManager.ViewLocationValues.SOURCES_SIDEBAR_BOTTOM */,
     commandPrompt: i18nLazyString(UIStrings.showGlobalListeners),
     title: i18nLazyString(UIStrings.globalListeners),
     order: 8,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     hasToolbar: true,
 });
 UI.ViewManager.registerViewExtension({
@@ -159,43 +159,43 @@ UI.ViewManager.registerViewExtension({
         return BrowserDebugger.DOMBreakpointsSidebarPane.DOMBreakpointsSidebarPane.instance();
     },
     id: 'elements.domBreakpoints',
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     commandPrompt: i18nLazyString(UIStrings.showDomBreakpoints),
     title: i18nLazyString(UIStrings.domBreakpoints),
     order: 6,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
 });
 UI.ViewManager.registerViewExtension({
-    location: "navigator-view" /* NAVIGATOR_VIEW */,
+    location: "navigator-view" /* UI.ViewManager.ViewLocationValues.NAVIGATOR_VIEW */,
     id: 'navigator-network',
     title: i18nLazyString(UIStrings.page),
     commandPrompt: i18nLazyString(UIStrings.showPage),
     order: 2,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Sources = await loadSourcesModule();
         return Sources.SourcesNavigator.NetworkNavigatorView.instance();
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "navigator-view" /* NAVIGATOR_VIEW */,
+    location: "navigator-view" /* UI.ViewManager.ViewLocationValues.NAVIGATOR_VIEW */,
     id: 'navigator-overrides',
     title: i18nLazyString(UIStrings.overrides),
     commandPrompt: i18nLazyString(UIStrings.showOverrides),
     order: 4,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Sources = await loadSourcesModule();
         return Sources.SourcesNavigator.OverridesNavigatorView.instance();
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "navigator-view" /* NAVIGATOR_VIEW */,
+    location: "navigator-view" /* UI.ViewManager.ViewLocationValues.NAVIGATOR_VIEW */,
     id: 'navigator-contentScripts',
     title: i18nLazyString(UIStrings.contentScripts),
     commandPrompt: i18nLazyString(UIStrings.showContentScripts),
     order: 5,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Sources = await loadSourcesModule();
         return Sources.SourcesNavigator.ContentScriptsNavigatorView.instance();

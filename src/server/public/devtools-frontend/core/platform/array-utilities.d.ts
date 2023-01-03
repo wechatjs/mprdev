@@ -1,4 +1,4 @@
-export declare const removeElement: <T>(array: T[], element: T, firstOnly?: boolean | undefined) => boolean;
+export declare const removeElement: <T>(array: T[], element: T, firstOnly?: boolean) => boolean;
 declare type NumberComparator = (a: number, b: number) => number;
 export declare function sortRange(array: number[], comparator: NumberComparator, leftBound: number, rightBound: number, sortWindowLeft: number, sortWindowRight: number): number[];
 export declare const binaryIndexOf: <T, S>(array: T[], value: S, comparator: (a: S, b: T) => number) => number;

@@ -1,5 +1,5 @@
 import * as Common from '../../core/common/common.js';
-import type { ContextFlavorListener } from './ContextFlavorListener.js';
+import { type ContextFlavorListener } from './ContextFlavorListener.js';
 interface ConstructorFn<T> {
     new (...args: any[]): T;
 }

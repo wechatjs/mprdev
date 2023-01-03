@@ -94,8 +94,7 @@ styles.replaceSync(
 }
 
 .info-link {
-  display: flex;
-  align-items: center;
+  height: 14px;
   margin-left: 5px;
 }
 

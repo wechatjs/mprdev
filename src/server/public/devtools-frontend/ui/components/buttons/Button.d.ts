@@ -6,7 +6,9 @@ declare global {
 export declare const enum Variant {
     PRIMARY = "primary",
     SECONDARY = "secondary",
-    TOOLBAR = "toolbar"
+    TOOLBAR = "toolbar",
+    UNIFIED_TOOLBAR_2022 = "unified_toolbar_2022",
+    ROUND = "round"
 }
 export declare const enum Size {
     SMALL = "SMALL",
@@ -14,7 +16,7 @@ export declare const enum Size {
 }
 declare type ButtonType = 'button' | 'submit' | 'reset';
 export declare type ButtonData = {
-    variant: Variant.TOOLBAR;
+    variant: Variant.TOOLBAR | Variant.ROUND;
     iconUrl: string;
     size?: Size;
     disabled?: boolean;
@@ -23,6 +25,8 @@ export declare type ButtonData = {
     type?: ButtonType;
     value?: string;
     title?: string;
+    iconWidth?: string;
+    iconHeight?: string;
 } | {
     variant: Variant.PRIMARY | Variant.SECONDARY;
     iconUrl?: string;
@@ -32,6 +36,12 @@ export declare type ButtonData = {
     spinner?: boolean;
     type?: ButtonType;
     value?: string;
+    title?: string;
+} | {
+    variant: Variant.UNIFIED_TOOLBAR_2022;
+    iconUrl: string;
+    disabled?: boolean;
+    active?: boolean;
     title?: string;
 };
 export declare class Button extends HTMLElement {
@@ -47,6 +57,8 @@ export declare class Button extends HTMLElement {
     set iconUrl(iconUrl: string | undefined);
     set variant(variant: Variant);
     set size(size: Size);
+    set iconWidth(iconWidth: string);
+    set iconHeight(iconHeight: string);
     set type(type: ButtonType);
     set title(title: string);
     set disabled(disabled: boolean);
@@ -56,7 +68,7 @@ export declare class Button extends HTMLElement {
     connectedCallback(): void;
     get value(): string;
     set value(value: string);
-    get form(): HTMLFormElement | undefined;
+    get form(): HTMLFormElement | null;
     get name(): string | null;
     get type(): ButtonType;
     get validity(): ValidityState;

@@ -30,6 +30,8 @@ export declare class SplitWidget extends SplitWidget_base {
     private animationCallback;
     private showSidebarButtonTitle;
     private hideSidebarButtonTitle;
+    private shownSidebarString;
+    private hiddenSidebarString;
     private showHideSidebarButton;
     private isVerticalInternal;
     private sidebarMinimized;
@@ -102,6 +104,7 @@ export declare class SplitWidget extends SplitWidget_base {
     private forceUpdateLayout;
     private onZoomChanged;
     createShowHideSidebarButton(showTitle: Common.UIString.LocalizedString, hideTitle: Common.UIString.LocalizedString, shownString: Common.UIString.LocalizedString, hiddenString: Common.UIString.LocalizedString): ToolbarButton;
+    toggleSidebar(): void;
     private updateShowHideSidebarButton;
 }
 export declare enum ShowMode {

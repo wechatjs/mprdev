@@ -12,6 +12,7 @@
         "navigatorTree.css.js",
         "navigatorView.css.js",
         "scopeChainSidebarPane.css.js",
+        "sourcesNavigator.css.js",
         "sourcesPanel.css.js",
         "sourcesView.css.js",
         "threadsSidebarPane.css.js",

@@ -11,7 +11,7 @@ declare global {
     }
 }
 export declare const DiffWrapper: {
-    charDiff: (text1: string, text2: string, cleanup?: boolean | undefined) => {
+    charDiff: (text1: string, text2: string, cleanup?: boolean) => {
         0: number;
         1: string;
     }[];

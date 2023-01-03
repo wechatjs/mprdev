@@ -7,7 +7,7 @@ import * as Persistence from '../../models/persistence/persistence.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as SourceFrame from '../../ui/legacy/components/source_frame/source_frame.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { Events, registerEditorAction } from './SourcesView.js';
+import { Events, registerEditorAction, } from './SourcesView.js';
 const UIStrings = {
     /**
     *@description Title of the pretty print button in the Sources panel

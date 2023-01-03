@@ -1,7 +1,7 @@
 import * as Common from '../../../../core/common/common.js';
 import * as Platform from '../../../../core/platform/platform.js';
 import * as UI from '../../legacy.js';
-import type { ContrastInfo } from './ContrastInfo.js';
+import { type ContrastInfo } from './ContrastInfo.js';
 declare const Spectrum_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends keyof EventTypes>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;
@@ -53,6 +53,7 @@ export declare class Spectrum extends Spectrum_base {
     private colorOffset?;
     private closeButton?;
     private paletteContainerMutable?;
+    private eyeDropperExperimentEnabled?;
     private shadesCloseHandler?;
     private dragElement?;
     private dragHotSpotX?;

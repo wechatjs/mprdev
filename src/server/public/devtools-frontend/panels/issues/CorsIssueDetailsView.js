@@ -220,54 +220,54 @@ export class CorsIssueDetailsView extends AffectedResourcesView {
     }
     static getHeaderFromError(corsError) {
         switch (corsError) {
-            case "InvalidAllowHeadersPreflightResponse" /* InvalidAllowHeadersPreflightResponse */:
+            case "InvalidAllowHeadersPreflightResponse" /* Protocol.Network.CorsError.InvalidAllowHeadersPreflightResponse */:
                 return 'Access-Control-Allow-Headers';
-            case "InvalidAllowMethodsPreflightResponse" /* InvalidAllowMethodsPreflightResponse */:
-            case "MethodDisallowedByPreflightResponse" /* MethodDisallowedByPreflightResponse */:
+            case "InvalidAllowMethodsPreflightResponse" /* Protocol.Network.CorsError.InvalidAllowMethodsPreflightResponse */:
+            case "MethodDisallowedByPreflightResponse" /* Protocol.Network.CorsError.MethodDisallowedByPreflightResponse */:
                 return 'Access-Control-Allow-Methods';
-            case "PreflightMissingAllowOriginHeader" /* PreflightMissingAllowOriginHeader */:
-            case "PreflightMultipleAllowOriginValues" /* PreflightMultipleAllowOriginValues */:
-            case "PreflightInvalidAllowOriginValue" /* PreflightInvalidAllowOriginValue */:
-            case "MissingAllowOriginHeader" /* MissingAllowOriginHeader */:
-            case "MultipleAllowOriginValues" /* MultipleAllowOriginValues */:
-            case "InvalidAllowOriginValue" /* InvalidAllowOriginValue */:
-            case "WildcardOriginNotAllowed" /* WildcardOriginNotAllowed */:
-            case "PreflightWildcardOriginNotAllowed" /* PreflightWildcardOriginNotAllowed */:
-            case "AllowOriginMismatch" /* AllowOriginMismatch */:
-            case "PreflightAllowOriginMismatch" /* PreflightAllowOriginMismatch */:
+            case "PreflightMissingAllowOriginHeader" /* Protocol.Network.CorsError.PreflightMissingAllowOriginHeader */:
+            case "PreflightMultipleAllowOriginValues" /* Protocol.Network.CorsError.PreflightMultipleAllowOriginValues */:
+            case "PreflightInvalidAllowOriginValue" /* Protocol.Network.CorsError.PreflightInvalidAllowOriginValue */:
+            case "MissingAllowOriginHeader" /* Protocol.Network.CorsError.MissingAllowOriginHeader */:
+            case "MultipleAllowOriginValues" /* Protocol.Network.CorsError.MultipleAllowOriginValues */:
+            case "InvalidAllowOriginValue" /* Protocol.Network.CorsError.InvalidAllowOriginValue */:
+            case "WildcardOriginNotAllowed" /* Protocol.Network.CorsError.WildcardOriginNotAllowed */:
+            case "PreflightWildcardOriginNotAllowed" /* Protocol.Network.CorsError.PreflightWildcardOriginNotAllowed */:
+            case "AllowOriginMismatch" /* Protocol.Network.CorsError.AllowOriginMismatch */:
+            case "PreflightAllowOriginMismatch" /* Protocol.Network.CorsError.PreflightAllowOriginMismatch */:
                 return 'Access-Control-Allow-Origin';
-            case "InvalidAllowCredentials" /* InvalidAllowCredentials */:
-            case "PreflightInvalidAllowCredentials" /* PreflightInvalidAllowCredentials */:
+            case "InvalidAllowCredentials" /* Protocol.Network.CorsError.InvalidAllowCredentials */:
+            case "PreflightInvalidAllowCredentials" /* Protocol.Network.CorsError.PreflightInvalidAllowCredentials */:
                 return 'Access-Control-Allow-Credentials';
-            case "PreflightMissingAllowPrivateNetwork" /* PreflightMissingAllowPrivateNetwork */:
-            case "PreflightInvalidAllowPrivateNetwork" /* PreflightInvalidAllowPrivateNetwork */:
+            case "PreflightMissingAllowPrivateNetwork" /* Protocol.Network.CorsError.PreflightMissingAllowPrivateNetwork */:
+            case "PreflightInvalidAllowPrivateNetwork" /* Protocol.Network.CorsError.PreflightInvalidAllowPrivateNetwork */:
                 return 'Access-Control-Allow-Private-Network';
-            case "RedirectContainsCredentials" /* RedirectContainsCredentials */:
-            case "PreflightDisallowedRedirect" /* PreflightDisallowedRedirect */:
+            case "RedirectContainsCredentials" /* Protocol.Network.CorsError.RedirectContainsCredentials */:
+            case "PreflightDisallowedRedirect" /* Protocol.Network.CorsError.PreflightDisallowedRedirect */:
                 return 'Location';
-            case "PreflightInvalidStatus" /* PreflightInvalidStatus */:
+            case "PreflightInvalidStatus" /* Protocol.Network.CorsError.PreflightInvalidStatus */:
                 return 'Status-Code';
         }
         return '';
     }
     static getProblemFromError(corsErrorStatus) {
         switch (corsErrorStatus.corsError) {
-            case "InvalidAllowHeadersPreflightResponse" /* InvalidAllowHeadersPreflightResponse */:
-            case "InvalidAllowMethodsPreflightResponse" /* InvalidAllowMethodsPreflightResponse */:
-            case "PreflightInvalidAllowOriginValue" /* PreflightInvalidAllowOriginValue */:
-            case "InvalidAllowOriginValue" /* InvalidAllowOriginValue */:
+            case "InvalidAllowHeadersPreflightResponse" /* Protocol.Network.CorsError.InvalidAllowHeadersPreflightResponse */:
+            case "InvalidAllowMethodsPreflightResponse" /* Protocol.Network.CorsError.InvalidAllowMethodsPreflightResponse */:
+            case "PreflightInvalidAllowOriginValue" /* Protocol.Network.CorsError.PreflightInvalidAllowOriginValue */:
+            case "InvalidAllowOriginValue" /* Protocol.Network.CorsError.InvalidAllowOriginValue */:
                 return i18nString(UIStrings.problemInvalidValue);
-            case "PreflightMultipleAllowOriginValues" /* PreflightMultipleAllowOriginValues */:
-            case "MultipleAllowOriginValues" /* MultipleAllowOriginValues */:
+            case "PreflightMultipleAllowOriginValues" /* Protocol.Network.CorsError.PreflightMultipleAllowOriginValues */:
+            case "MultipleAllowOriginValues" /* Protocol.Network.CorsError.MultipleAllowOriginValues */:
                 return i18nString(UIStrings.problemMultipleValues);
-            case "MissingAllowOriginHeader" /* MissingAllowOriginHeader */:
-            case "PreflightMissingAllowOriginHeader" /* PreflightMissingAllowOriginHeader */:
+            case "MissingAllowOriginHeader" /* Protocol.Network.CorsError.MissingAllowOriginHeader */:
+            case "PreflightMissingAllowOriginHeader" /* Protocol.Network.CorsError.PreflightMissingAllowOriginHeader */:
                 return i18nString(UIStrings.problemMissingHeader);
-            case "PreflightInvalidStatus" /* PreflightInvalidStatus */:
+            case "PreflightInvalidStatus" /* Protocol.Network.CorsError.PreflightInvalidStatus */:
                 return i18nString(UIStrings.preflightInvalidStatus);
-            case "PreflightDisallowedRedirect" /* PreflightDisallowedRedirect */:
+            case "PreflightDisallowedRedirect" /* Protocol.Network.CorsError.PreflightDisallowedRedirect */:
                 return i18nString(UIStrings.preflightDisallowedRedirect);
-            case "InvalidResponse" /* InvalidResponse */:
+            case "InvalidResponse" /* Protocol.Network.CorsError.InvalidResponse */:
                 return i18nString(UIStrings.failedRequest);
         }
         throw new Error('Invalid Argument');
@@ -284,7 +284,7 @@ export class CorsIssueDetailsView extends AffectedResourcesView {
         };
         const opts = {
             additionalOnClickAction() {
-                Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.Cors, "Request" /* Request */);
+                Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.Cors, "Request" /* AffectedItem.Request */);
             },
         };
         switch (issueCode) {
@@ -314,7 +314,7 @@ export class CorsIssueDetailsView extends AffectedResourcesView {
             case IssuesManager.CorsIssue.IssueCode.PreflightResponseInvalid: {
                 element.appendChild(this.createRequestCell(details.request, opts));
                 this.#appendStatus(element, details.isWarning);
-                const specialHighlightHeader = corsError === "PreflightInvalidStatus" /* PreflightInvalidStatus */ ?
+                const specialHighlightHeader = corsError === "PreflightInvalidStatus" /* Protocol.Network.CorsError.PreflightInvalidStatus */ ?
                     {
                         section: NetworkForward.UIRequestLocation.UIHeaderSection.General,
                         name: 'Status-Code',

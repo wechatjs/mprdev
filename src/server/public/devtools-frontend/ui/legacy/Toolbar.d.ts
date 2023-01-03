@@ -1,8 +1,8 @@
 import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
-import type { Action } from './ActionRegistration.js';
+import { type Action } from './ActionRegistration.js';
 import { ContextMenu } from './ContextMenu.js';
-import type { Suggestion } from './SuggestBox.js';
+import { type Suggestion } from './SuggestBox.js';
 export declare class Toolbar {
     private items;
     element: HTMLElement;
@@ -30,6 +30,7 @@ export declare class Toolbar {
     appendSeparator(): void;
     appendSpacer(): void;
     appendText(text: string): void;
+    removeToolbarItem(itemToRemove: ToolbarItem): void;
     removeToolbarItems(): void;
     setColor(color: string): void;
     setToggledColor(color: string): void;
@@ -75,12 +76,14 @@ export declare class ToolbarButton extends ToolbarItem<ToolbarButton.EventTypes>
     private textElement;
     private text?;
     private glyph?;
+    private icon?;
     /**
      * TODO(crbug.com/1126026): remove glyph parameter in favor of icon.
      */
     constructor(title: string, glyphOrIcon?: string | HTMLElement, text?: string);
     focus(): void;
     setText(text: string): void;
+    setGlyphOrIcon(glyphOrIcon: string | HTMLElement): void;
     setGlyph(glyph: string): void;
     setBackgroundImage(iconURL: string): void;
     setSecondary(): void;
@@ -122,13 +125,14 @@ export declare namespace ToolbarInput {
 }
 export declare class ToolbarToggle extends ToolbarButton {
     private toggledInternal;
-    private readonly untoggledGlyph;
-    private readonly toggledGlyph;
-    constructor(title: string, glyph?: string, toggledGlyph?: string);
+    private readonly untoggledGlyphOrIcon;
+    private readonly toggledGlyphOrIcon;
+    constructor(title: string, glyphOrIcon?: string | HTMLElement, toggledGlyphOrIcon?: string | HTMLElement);
     toggled(): boolean;
     setToggled(toggled: boolean): void;
     setDefaultWithRedColor(withRedColor: boolean): void;
     setToggleWithRedColor(toggleWithRedColor: boolean): void;
+    setToggleWithDot(toggleWithDot: boolean): void;
 }
 export declare class ToolbarMenuButton extends ToolbarButton {
     private readonly contextMenuHandler;
@@ -195,6 +199,7 @@ export declare class ToolbarCheckbox extends ToolbarItem<void> {
     checked(): boolean;
     setChecked(value: boolean): void;
     applyEnabledState(enabled: boolean): void;
+    setIndeterminate(indeterminate: boolean): void;
 }
 export declare class ToolbarSettingCheckbox extends ToolbarCheckbox {
     constructor(setting: Common.Settings.Setting<boolean>, tooltip?: string, alternateTitle?: string);

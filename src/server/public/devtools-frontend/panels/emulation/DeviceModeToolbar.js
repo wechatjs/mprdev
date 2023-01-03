@@ -258,8 +258,8 @@ export class DeviceModeToolbar {
         optionsToolbar.makeWrappable();
         this.fillOptionsToolbar(optionsToolbar);
         this.emulatedDevicesList = EmulationModel.EmulatedDevices.EmulatedDevicesList.instance();
-        this.emulatedDevicesList.addEventListener("CustomDevicesUpdated" /* CustomDevicesUpdated */, this.deviceListChanged, this);
-        this.emulatedDevicesList.addEventListener("StandardDevicesUpdated" /* StandardDevicesUpdated */, this.deviceListChanged, this);
+        this.emulatedDevicesList.addEventListener("CustomDevicesUpdated" /* EmulationModel.EmulatedDevices.Events.CustomDevicesUpdated */, this.deviceListChanged, this);
+        this.emulatedDevicesList.addEventListener("StandardDevicesUpdated" /* EmulationModel.EmulatedDevices.Events.StandardDevicesUpdated */, this.deviceListChanged, this);
         this.persistenceSetting = Common.Settings.Settings.instance().createSetting('emulation.deviceModeValue', { device: '', orientation: '', mode: '' });
         this.model.toolbarControlsEnabledSetting().addChangeListener(updateToolbarsEnabled);
         updateToolbarsEnabled();
@@ -365,6 +365,7 @@ export class DeviceModeToolbar {
         boundAppendScaleItem('100%', 1);
         boundAppendScaleItem('125%', 1.25);
         boundAppendScaleItem('150%', 1.5);
+        boundAppendScaleItem('200%', 2);
         function appendScaleItem(title, value) {
             contextMenu.defaultSection().appendCheckboxItem(title, this.onScaleMenuChanged.bind(this, value), this.model.scaleSetting().get() === value, false);
         }

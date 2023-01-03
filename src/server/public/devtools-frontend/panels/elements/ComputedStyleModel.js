@@ -52,7 +52,7 @@ export class ComputedStyleModel extends Common.ObjectWrapper.ObjectWrapper {
     }
     onComputedStyleChanged(event) {
         delete this.computedStylePromise;
-        this.dispatchEventToListeners("ComputedStyleChanged" /* ComputedStyleChanged */, event?.data ?? null);
+        this.dispatchEventToListeners("ComputedStyleChanged" /* Events.ComputedStyleChanged */, event?.data ?? null);
     }
     onDOMModelChanged(event) {
         // Any attribute removal or modification can affect the styles of "related" nodes.
@@ -92,7 +92,7 @@ export class ComputedStyleModel extends Common.ObjectWrapper.ObjectWrapper {
             return null;
         }
         if (!this.computedStylePromise) {
-            this.computedStylePromise = cssModel.computedStylePromise(nodeId).then(verifyOutdated.bind(this, elementNode));
+            this.computedStylePromise = cssModel.getComputedStyle(nodeId).then(verifyOutdated.bind(this, elementNode));
         }
         return this.computedStylePromise;
         function verifyOutdated(elementNode, style) {

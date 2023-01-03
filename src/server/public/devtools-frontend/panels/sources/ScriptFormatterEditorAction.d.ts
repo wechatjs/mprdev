@@ -1,5 +1,5 @@
 import * as UI from '../../ui/legacy/legacy.js';
-import type { EditorAction, SourcesView } from './SourcesView.js';
+import { type EditorAction, type SourcesView } from './SourcesView.js';
 export declare class ScriptFormatterEditorAction implements EditorAction {
     private readonly pathsToFormatOnLoad;
     private sourcesView;

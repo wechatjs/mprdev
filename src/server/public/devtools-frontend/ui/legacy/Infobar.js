@@ -194,5 +194,6 @@ export var Type;
     Type["Warning"] = "warning";
     Type["Info"] = "info";
     Type["Issue"] = "issue";
+    Type["Error"] = "error";
 })(Type || (Type = {}));
 //# sourceMappingURL=Infobar.js.map

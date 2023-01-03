@@ -31,7 +31,7 @@ export class ChildTargetManager extends SDKModel {
         else {
             void this.#targetAgent.invoke_setAutoAttach({ autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
         }
-        if (!parentTarget.parentTarget() && !Host.InspectorFrontendHost.isUnderTest()) {
+        if (parentTarget.parentTarget()?.type() !== Type.Frame && !Host.InspectorFrontendHost.isUnderTest()) {
             void this.#targetAgent.invoke_setDiscoverTargets({ discover: true });
             void this.#targetAgent.invoke_setRemoteLocations({ locations: [{ host: 'localhost', port: 9229 }] });
         }
@@ -119,7 +119,6 @@ export class ChildTargetManager extends SDKModel {
             type = Type.AuctionWorklet;
         }
         const target = this.#targetManager.createTarget(targetInfo.targetId, targetName, type, this.#parentTarget, sessionId, undefined, undefined, targetInfo);
-        target.setInspectedURL(this.#parentTarget.inspectedURL());
         this.#childTargetsBySessionId.set(sessionId, target);
         this.#childTargetsById.set(target.id(), target);
         if (ChildTargetManager.attachCallback) {

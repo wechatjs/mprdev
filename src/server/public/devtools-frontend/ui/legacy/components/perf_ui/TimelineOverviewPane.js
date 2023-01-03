@@ -338,9 +338,9 @@ export class OverviewInfo {
     constructor(anchor) {
         this.anchorElement = anchor;
         this.glassPane = new UI.GlassPane.GlassPane();
-        this.glassPane.setPointerEventsBehavior("PierceContents" /* PierceContents */);
-        this.glassPane.setMarginBehavior("Arrow" /* Arrow */);
-        this.glassPane.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        this.glassPane.setPointerEventsBehavior("PierceContents" /* UI.GlassPane.PointerEventsBehavior.PierceContents */);
+        this.glassPane.setMarginBehavior("Arrow" /* UI.GlassPane.MarginBehavior.Arrow */);
+        this.glassPane.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
         this.visible = false;
         this.element = UI.Utils
             .createShadowRootWithCoreStyles(this.glassPane.contentElement, {

@@ -244,16 +244,13 @@ export const regexSpecialCharacters = function () {
     return SPECIAL_REGEX_CHARACTERS;
 };
 export const filterRegex = function (query) {
-    let regexString = '';
+    let regexString = '^(?:.*\\0)?'; // Start from beginning or after a \0
     for (let i = 0; i < query.length; ++i) {
         let c = query.charAt(i);
         if (SPECIAL_REGEX_CHARACTERS.indexOf(c) !== -1) {
             c = '\\' + c;
         }
-        if (i) {
-            regexString += '[^\\0' + c + ']*';
-        }
-        regexString += c;
+        regexString += '[^\\0' + c + ']*' + c;
     }
     return new RegExp(regexString, 'i');
 };
@@ -424,5 +421,11 @@ export const createPlainTextSearchRegex = function (query, flags) {
         regex += c;
     }
     return new RegExp(regex, flags || '');
+};
+class LowerCaseStringTag {
+    lowerCaseStringTag;
+}
+export const toLowerCaseString = function (input) {
+    return input.toLowerCase();
 };
 //# sourceMappingURL=string-utilities.js.map

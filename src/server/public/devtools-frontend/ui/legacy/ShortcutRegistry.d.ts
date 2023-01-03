@@ -1,4 +1,4 @@
-import type { ActionRegistry } from './ActionRegistry.js';
+import { type ActionRegistry } from './ActionRegistry.js';
 import { KeyboardShortcut } from './KeyboardShortcut.js';
 export declare class ShortcutRegistry {
     private readonly actionRegistry;

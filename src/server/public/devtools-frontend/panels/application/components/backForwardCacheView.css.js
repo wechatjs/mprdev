@@ -17,13 +17,18 @@ styles.replaceSync(
 
 .gray-text {
   color: var(--color-text-secondary);
-  margin: 0 0 15px 56px;
+  margin: 0 0 5px 56px;
   display: flex;
   flex-direction: row;
   align-items: center;
   flex: auto;
   overflow-wrap: break-word;
   overflow: hidden;
+}
+
+.explanation-frames {
+  margin-left: 56px;
+  grid-column-start: span 2;
 }
 
 .help-outline-icon {
@@ -40,21 +45,22 @@ styles.replaceSync(
   flex-shrink: 0;
 }
 
-.url {
+.report-line {
   grid-column-start: span 2;
   display: flex;
   align-items: center;
   margin: 0 30px;
-  line-height: 28px;
+  line-height: 26px;
 }
 
-.url-key {
+.report-key {
   color: var(--color-text-secondary);
   min-width: auto;
   overflow-wrap: break-word;
+  align-self: start;
 }
 
-.url-value {
+.report-value {
   padding: 0 6px;
   overflow-wrap: break-word;
 }
@@ -65,6 +71,10 @@ styles.replaceSync(
   text-decoration: underline;
   cursor: pointer;
   padding: 2px 0; /* adjust focus ring size */
+}
+
+.tree-outline li .selection {
+  margin-left: -5px;
 }
 
 /*# sourceURL=backForwardCacheView.css */

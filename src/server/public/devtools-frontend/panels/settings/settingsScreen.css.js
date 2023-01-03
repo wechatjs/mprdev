@@ -206,6 +206,12 @@ label {
   color: var(--color-text-secondary);
 }
 
+.settings-experiment .feedback-link {
+  color: var(--color-primary);
+  text-decoration-line: underline;
+  margin-left: 4px;
+}
+
 @media (forced-colors: active) {
   .settings-window-title {
     color: canvastext;

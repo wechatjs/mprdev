@@ -8,6 +8,7 @@ export declare class ResourceMapping implements SDK.TargetManager.SDKModelObserv
         targetManager: SDK.TargetManager.TargetManager | null;
         workspace: Workspace.Workspace.WorkspaceImpl | null;
     }): ResourceMapping;
+    static removeInstance(): void;
     modelAdded(resourceTreeModel: SDK.ResourceTreeModel.ResourceTreeModel): void;
     modelRemoved(resourceTreeModel: SDK.ResourceTreeModel.ResourceTreeModel): void;
     private infoForTarget;

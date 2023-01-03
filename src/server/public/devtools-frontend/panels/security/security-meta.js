@@ -23,12 +23,12 @@ async function loadSecurityModule() {
     return loadedSecurityModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'security',
     title: i18nLazyString(UIStrings.security),
     commandPrompt: i18nLazyString(UIStrings.showSecurity),
     order: 80,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const Security = await loadSecurityModule();
         return Security.SecurityPanel.SecurityPanel.instance();

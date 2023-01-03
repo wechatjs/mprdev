@@ -1,6 +1,7 @@
+import type * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import { ApplicationPanelTreeElement, ExpandableApplicationPanelTreeElement } from './ApplicationPanelTreeElement.js';
-import type { ResourcesPanel } from './ResourcesPanel.js';
+import { type ResourcesPanel } from './ResourcesPanel.js';
 export declare class ServiceWorkerCacheTreeElement extends ExpandableApplicationPanelTreeElement {
     private swCacheModel;
     private swCacheTreeElements;
@@ -19,7 +20,7 @@ export declare class SWCacheTreeElement extends ApplicationPanelTreeElement {
     private cache;
     private view;
     constructor(resourcesPanel: ResourcesPanel, model: SDK.ServiceWorkerCacheModel.ServiceWorkerCacheModel, cache: SDK.ServiceWorkerCacheModel.Cache);
-    get itemURL(): string;
+    get itemURL(): Platform.DevToolsPath.UrlString;
     onattach(): void;
     private handleContextMenuEvent;
     private clearCache;
@@ -30,6 +31,6 @@ export declare class SWCacheTreeElement extends ApplicationPanelTreeElement {
 export declare class BackForwardCacheTreeElement extends ApplicationPanelTreeElement {
     private view?;
     constructor(resourcesPanel: ResourcesPanel);
-    get itemURL(): string;
+    get itemURL(): Platform.DevToolsPath.UrlString;
     onselect(selectedByUser?: boolean): boolean;
 }

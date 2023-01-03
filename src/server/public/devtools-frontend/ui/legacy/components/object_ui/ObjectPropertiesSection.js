@@ -27,12 +27,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import * as Common from '../../../../core/common/common.js';
+import * as Root from '../../../../core/root/root.js';
 import * as Host from '../../../../core/host/host.js';
 import * as i18n from '../../../../core/i18n/i18n.js';
 import * as LinearMemoryInspector from '../../../components/linear_memory_inspector/linear_memory_inspector.js';
 import * as Platform from '../../../../core/platform/platform.js';
 import * as SDK from '../../../../core/sdk/sdk.js';
 import * as TextUtils from '../../../../models/text_utils/text_utils.js';
+import * as JavaScriptMetaData from '../../../../models/javascript_metadata/javascript_metadata.js';
 import * as IconButton from '../../../components/icon_button/icon_button.js';
 import * as TextEditor from '../../../components/text_editor/text_editor.js';
 import * as UI from '../../legacy.js';
@@ -77,15 +79,18 @@ const UIStrings = {
     */
     showAllD: 'Show all {PH1}',
     /**
-    *@description Value element text content in Object Properties Section. Shown when the developer is
-    *viewing a JavaScript object, but one of the properties is not readable and therefore can't be
-    *displayed. This string should be translated.
+    * @description Value element text content in Object Properties Section. Shown when the developer is
+    * viewing a variable in the Scope view, whose value is not available (i.e. because it was optimized
+    * out) by the JavaScript engine, or inspecting a JavaScript object accessor property, which has no
+    * getter. This string should be translated.
     */
-    unreadable: '<unreadable>',
+    valueUnavailable: '<value unavailable>',
     /**
-    *@description Value element title in Object Properties Section
-    */
-    noPropertyGetter: 'No property getter',
+     * @description Tooltip for value elements in the Scope view that refer to variables whose values
+     * aren't accessible to the debugger (potentially due to being optimized out by the JavaScript
+     * engine), or for JavaScript object accessor properties which have no getter.
+     */
+    valueNotAccessibleToTheDebugger: 'Value is not accessible to the debugger',
     /**
     *@description A context menu item in the Watch Expressions Sidebar Pane of the Sources panel and Network pane request.
     */
@@ -118,8 +123,10 @@ const UIStrings = {
 const str_ = i18n.i18n.registerUIStrings('ui/legacy/components/object_ui/ObjectPropertiesSection.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 const EXPANDABLE_MAX_LENGTH = 50;
+const EXPANDABLE_MAX_DEPTH = 100;
 const parentMap = new WeakMap();
 const objectPropertiesSectionMap = new WeakMap();
+const domPinnedProperties = JavaScriptMetaData.JavaScriptMetadata.JavaScriptMetadataImpl.domPinnedProperties.DOMPinnedProperties;
 export const getObjectPropertiesSectionFrom = (element) => {
     return objectPropertiesSectionMap.get(element);
 };
@@ -180,6 +187,35 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
             objectPropertiesSection.setEditable(false);
         }
         return objectPropertiesSection;
+    }
+    static assignWebIDLMetadata(value, properties) {
+        if (!value) {
+            return;
+        }
+        const isInstance = value.type === 'object' && value.className !== null;
+        const webIdlType = isInstance ? domPinnedProperties[value.className] : undefined;
+        if (webIdlType) {
+            value.webIdl = { info: webIdlType, state: new Map() };
+        }
+        else {
+            return;
+        }
+        const includedWebIdlTypes = webIdlType.includes?.map(className => domPinnedProperties[className]) ?? [];
+        const includedWebIdlProps = includedWebIdlTypes.flatMap(webIdlType => Object.entries(webIdlType?.props ?? {}));
+        const webIdlProps = { ...webIdlType.props, ...Object.fromEntries(includedWebIdlProps) };
+        for (const property of properties) {
+            const webIdlProperty = webIdlProps[property.name];
+            if (webIdlProperty) {
+                property.webIdl = { info: webIdlProperty };
+            }
+        }
+    }
+    static getPropertyValuesByNames(properties) {
+        const map = new Map();
+        for (const property of properties) {
+            map.set(property.name, property.value);
+        }
+        return map;
     }
     static compareProperties(propertyA, propertyB) {
         if (!propertyA.synthetic && propertyB.synthetic) {
@@ -319,20 +355,21 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
             }
         }
     }
-    static createPropertyValueWithCustomSupport(value, wasThrown, showPreview, parentElement, linkifier) {
+    static createPropertyValueWithCustomSupport(value, wasThrown, showPreview, parentElement, linkifier, variableName) {
         if (value.customPreview()) {
             const result = (new CustomPreviewComponent(value)).element;
             result.classList.add('object-properties-section-custom-section');
             return new ObjectPropertyValue(result);
         }
-        return ObjectPropertiesSection.createPropertyValue(value, wasThrown, showPreview, parentElement, linkifier);
+        return ObjectPropertiesSection.createPropertyValue(value, wasThrown, showPreview, parentElement, linkifier, variableName);
     }
-    static appendMemoryIcon(element, obj) {
-        // We show the memory icon only on ArrayBuffer and WebAssembly.Memory instances.
+    static appendMemoryIcon(element, obj, expression) {
+        // We show the memory icon only on ArrayBuffer, WebAssembly.Memory and DWARF memory instances.
         // TypedArrays DataViews are also supported, but showing the icon next to their
         // previews is quite a significant visual overhead, and users can easily get to
         // their buffers and open the memory inspector from there.
-        if (obj.type !== 'object' || (obj.subtype !== 'arraybuffer' && obj.subtype !== 'webassemblymemory')) {
+        const arrayBufferOrWasmMemory = (obj.type === 'object' && (obj.subtype === 'arraybuffer' || obj.subtype === 'webassemblymemory'));
+        if (!arrayBufferOrWasmMemory && !LinearMemoryInspector.LinearMemoryInspectorController.isDWARFMemoryObject(obj)) {
             return;
         }
         const memoryIcon = new IconButton.Icon.Icon();
@@ -342,17 +379,17 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
             width: '13px',
             height: '13px',
         };
-        memoryIcon.onclick = (event) => {
-            Host.userMetrics.linearMemoryInspectorRevealedFrom(Host.UserMetrics.LinearMemoryInspectorRevealedFrom.MemoryIcon);
-            void LinearMemoryInspector.LinearMemoryInspectorController.LinearMemoryInspectorController.instance()
-                .openInspectorView(obj);
+        memoryIcon.onclick = async (event) => {
             event.stopPropagation();
+            const controller = LinearMemoryInspector.LinearMemoryInspectorController.LinearMemoryInspectorController.instance();
+            Host.userMetrics.linearMemoryInspectorRevealedFrom(Host.UserMetrics.LinearMemoryInspectorRevealedFrom.MemoryIcon);
+            void controller.openInspectorView(obj, /* address */ undefined, expression);
         };
         UI.Tooltip.Tooltip.install(memoryIcon, 'Reveal in Memory Inspector panel');
         element.classList.add('object-value-with-memory-icon');
         element.appendChild(memoryIcon);
     }
-    static createPropertyValue(value, wasThrown, showPreview, parentElement, linkifier) {
+    static createPropertyValue(value, wasThrown, showPreview, parentElement, linkifier, variableName) {
         let propertyValue;
         const type = value.type;
         const subtype = value.subtype;
@@ -361,7 +398,7 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
         if (type === 'object' && subtype === 'internal#location') {
             const rawLocation = value.debuggerModel().createRawLocationByScriptId(value.value.scriptId, value.value.lineNumber, value.value.columnNumber);
             if (rawLocation && linkifier) {
-                return new ObjectPropertyValue(linkifier.linkifyRawLocation(rawLocation, ''));
+                return new ObjectPropertyValue(linkifier.linkifyRawLocation(rawLocation, Platform.DevToolsPath.EmptyUrlString));
             }
             propertyValue = new ObjectPropertyValue(createUnknownInternalLocationElement());
         }
@@ -394,7 +431,7 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
                 propertyValue.element.textContent = description;
                 UI.Tooltip.Tooltip.install(propertyValue.element, description);
             }
-            this.appendMemoryIcon(valueElement, value);
+            this.appendMemoryIcon(valueElement, value, variableName);
         }
         if (wasThrown) {
             const wrapperElement = document.createElement('span');
@@ -502,7 +539,7 @@ export class ObjectPropertiesSection extends UI.TreeOutline.TreeOutlineInShadow 
         const contextMenu = new UI.ContextMenu.ContextMenu(event);
         contextMenu.appendApplicableItems(this.object);
         if (this.object instanceof SDK.RemoteObject.LocalJSONObject) {
-            contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.objectTreeElementInternal.expandRecursively.bind(this.objectTreeElementInternal, Number.MAX_VALUE));
+            contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.objectTreeElementInternal.expandRecursively.bind(this.objectTreeElementInternal, EXPANDABLE_MAX_DEPTH));
             contextMenu.viewSection().appendItem(i18nString(UIStrings.collapseChildren), this.objectTreeElementInternal.collapseChildren.bind(this.objectTreeElementInternal));
         }
         void contextMenu.show();
@@ -541,7 +578,7 @@ export class RootElement extends UI.TreeOutline.TreeElement {
     extraProperties;
     targetObject;
     toggleOnClick;
-    constructor(object, linkifier, emptyPlaceholder, propertiesMode = 1 /* OwnAndInternalAndInherited */, extraProperties = [], targetObject = object) {
+    constructor(object, linkifier, emptyPlaceholder, propertiesMode = 1 /* ObjectPropertiesMode.OwnAndInternalAndInherited */, extraProperties = [], targetObject = object) {
         const contentElement = document.createElement('slot');
         super(contentElement);
         this.object = object;
@@ -581,7 +618,7 @@ export class RootElement extends UI.TreeOutline.TreeElement {
             };
             contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyValue), copyValueHandler);
         }
-        contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.expandRecursively.bind(this, Number.MAX_VALUE));
+        contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.expandRecursively.bind(this, EXPANDABLE_MAX_DEPTH));
         contextMenu.viewSection().appendItem(i18nString(UIStrings.collapseChildren), this.collapseChildren.bind(this));
         void contextMenu.show();
     }
@@ -618,8 +655,9 @@ export class ObjectPropertyTreeElement extends UI.TreeOutline.TreeElement {
         this.maxNumPropertiesToShow = InitialVisibleChildrenLimit;
         this.listItemElement.addEventListener('contextmenu', this.contextMenuFired.bind(this), false);
         this.listItemElement.dataset.objectPropertyNameForTest = property.name;
+        this.setExpandRecursively(property.name !== '[[Prototype]]');
     }
-    static async populate(treeElement, value, skipProto, skipGettersAndSetters, linkifier, emptyPlaceholder, propertiesMode = 1 /* OwnAndInternalAndInherited */, extraProperties, targetValue) {
+    static async populate(treeElement, value, skipProto, skipGettersAndSetters, linkifier, emptyPlaceholder, propertiesMode = 1 /* ObjectPropertiesMode.OwnAndInternalAndInherited */, extraProperties, targetValue) {
         if (value.arrayLength() > ARRAY_LOAD_THRESHOLD) {
             treeElement.removeChildren();
             void ArrayGroupingTreeElement.populateArray(treeElement, value, 0, value.arrayLength() - 1, linkifier);
@@ -627,10 +665,10 @@ export class ObjectPropertyTreeElement extends UI.TreeOutline.TreeElement {
         }
         let properties, internalProperties = null;
         switch (propertiesMode) {
-            case 0 /* All */:
+            case 0 /* ObjectPropertiesMode.All */:
                 ({ properties } = await value.getAllProperties(false /* accessorPropertiesOnly */, true /* generatePreview */));
                 break;
-            case 1 /* OwnAndInternalAndInherited */:
+            case 1 /* ObjectPropertiesMode.OwnAndInternalAndInherited */:
                 ({ properties, internalProperties } =
                     await SDK.RemoteObject.RemoteObject.loadFromObjectPerProto(value, true /* generatePreview */));
                 break;
@@ -645,6 +683,31 @@ export class ObjectPropertyTreeElement extends UI.TreeOutline.TreeElement {
         ObjectPropertyTreeElement.populateWithProperties(treeElement, properties, internalProperties, skipProto, skipGettersAndSetters, targetValue || value, linkifier, emptyPlaceholder);
     }
     static populateWithProperties(treeNode, properties, internalProperties, skipProto, skipGettersAndSetters, value, linkifier, emptyPlaceholder) {
+        ObjectPropertiesSection.assignWebIDLMetadata(value, properties);
+        const names = ObjectPropertiesSection.getPropertyValuesByNames(properties);
+        if (value?.webIdl) {
+            const parentRules = value.webIdl.info.rules;
+            if (parentRules) {
+                for (const { when: name, is: expected } of parentRules) {
+                    if (names.get(name)?.value === expected) {
+                        value.webIdl.state.set(name, expected);
+                    }
+                }
+            }
+            for (const property of properties) {
+                if (property.webIdl) {
+                    const parentState = value.webIdl.state;
+                    const propertyRules = property.webIdl.info.rules;
+                    if (!parentRules && !propertyRules) {
+                        property.webIdl.applicable = true;
+                    }
+                    else {
+                        property.webIdl.applicable =
+                            !propertyRules || propertyRules?.some(rule => parentState.get(rule.when) === rule.is);
+                    }
+                }
+            }
+        }
         properties.sort(ObjectPropertiesSection.compareProperties);
         internalProperties = internalProperties || [];
         const entriesProperty = internalProperties.find(property => property.name === '[[Entries]]');
@@ -887,32 +950,70 @@ export class ObjectPropertyTreeElement extends UI.TreeOutline.TreeElement {
         }
         else if (this.property.value) {
             const showPreview = this.property.name !== '[[Prototype]]';
-            this.propertyValue = ObjectPropertiesSection.createPropertyValueWithCustomSupport(this.property.value, this.property.wasThrown, showPreview, this.listItemElement, this.linkifier);
+            this.propertyValue = ObjectPropertiesSection.createPropertyValueWithCustomSupport(this.property.value, this.property.wasThrown, showPreview, this.listItemElement, this.linkifier, this.path() /* variableName */);
             this.valueElement = this.propertyValue.element;
         }
         else if (this.property.getter) {
-            this.valueElement = ObjectPropertyTreeElement.createRemoteObjectAccessorPropertySpan(parentMap.get(this.property), [this.property.name], this.onInvokeGetterClick.bind(this));
+            this.valueElement = document.createElement('span');
+            const element = this.valueElement.createChild('span');
+            element.textContent = i18nString(UIStrings.dots);
+            element.classList.add('object-value-calculate-value-button');
+            UI.Tooltip.Tooltip.install(element, i18nString(UIStrings.invokePropertyGetter));
+            const object = parentMap.get(this.property);
+            const getter = this.property.getter;
+            element.addEventListener('click', (event) => {
+                event.consume();
+                const invokeGetter = `
+          function invokeGetter(getter) {
+            return Reflect.apply(getter, this, []);
+          }`;
+                // @ts-ignore No way to teach TypeScript to preserve the Function-ness of `getter`.
+                // Also passing a string instead of a Function to avoid coverage implementation messing with it.
+                void object.callFunction(invokeGetter, [SDK.RemoteObject.RemoteObject.toCallArgument(getter)])
+                    .then(this.onInvokeGetterClick.bind(this));
+            }, false);
         }
         else {
             this.valueElement = document.createElement('span');
-            this.valueElement.classList.add('object-value-undefined');
-            this.valueElement.textContent = i18nString(UIStrings.unreadable);
-            UI.Tooltip.Tooltip.install(this.valueElement, i18nString(UIStrings.noPropertyGetter));
+            this.valueElement.classList.add('object-value-unavailable');
+            this.valueElement.textContent = i18nString(UIStrings.valueUnavailable);
+            UI.Tooltip.Tooltip.install(this.valueElement, i18nString(UIStrings.valueNotAccessibleToTheDebugger));
         }
         const valueText = this.valueElement.textContent;
         if (this.property.value && valueText && !this.property.wasThrown) {
             this.expandedValueElement = this.createExpandedValueElement(this.property.value);
         }
-        this.listItemElement.removeChildren();
+        const experiment = Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.IMPORTANT_DOM_PROPERTIES);
+        let adorner = '';
         let container;
+        if (this.property.webIdl?.applicable && experiment) {
+            const icon = new IconButton.Icon.Icon();
+            icon.data = {
+                iconName: 'star_outline',
+                color: 'var(--color-text-secondary)',
+                width: '16px',
+                height: '16px',
+            };
+            adorner = UI.Fragment.html `
+         <span class='adorner'>${icon}</span>
+       `;
+        }
         if (isInternalEntries) {
-            container = UI.Fragment.html `<span class='name-and-value'>${this.nameElement}</span>`;
+            container = UI.Fragment.html `
+        <span class='name-and-value'>${adorner}${this.nameElement}</span>
+      `;
         }
         else {
-            container = UI.Fragment.html `<span class='name-and-value'>${this.nameElement}: ${this.valueElement}</span>`;
+            container = UI.Fragment.html `
+        <span class='name-and-value'>${adorner}${this.nameElement}<span class='separator'>: </span>${this.valueElement}</span>
+      `;
         }
+        this.listItemElement.removeChildren();
         this.rowContainer = container;
         this.listItemElement.appendChild(this.rowContainer);
+        if (experiment) {
+            this.listItemElement.dataset.webidl = this.property.webIdl?.applicable ? 'true' : 'false';
+        }
     }
     updatePropertyPath() {
         if (this.nameElement.title) {
@@ -963,7 +1064,7 @@ export class ObjectPropertyTreeElement extends UI.TreeOutline.TreeElement {
             contextMenu.clipboardSection().appendItem(i18nString(UIStrings.copyPropertyPath), copyPathHandler);
         }
         if (parentMap.get(this.property) instanceof SDK.RemoteObject.LocalJSONObject) {
-            contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.expandRecursively.bind(this, Number.MAX_VALUE));
+            contextMenu.viewSection().appendItem(i18nString(UIStrings.expandRecursively), this.expandRecursively.bind(this, EXPANDABLE_MAX_DEPTH));
             contextMenu.viewSection().appendItem(i18nString(UIStrings.collapseChildren), this.collapseChildren.bind(this));
         }
         if (this.propertyValue) {

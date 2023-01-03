@@ -1,5 +1,5 @@
 import * as Common from '../../../../core/common/common.js';
-import type { Calculator } from './TimelineGrid.js';
+import { type Calculator } from './TimelineGrid.js';
 export declare class OverviewGrid {
     element: HTMLDivElement;
     private readonly grid;

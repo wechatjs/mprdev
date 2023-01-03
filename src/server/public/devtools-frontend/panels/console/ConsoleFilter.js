@@ -17,10 +17,10 @@ export class ConsoleFilter {
     static allLevelsFilterValue() {
         const result = {};
         const logLevels = {
-            Verbose: "verbose" /* Verbose */,
-            Info: "info" /* Info */,
-            Warning: "warning" /* Warning */,
-            Error: "error" /* Error */,
+            Verbose: "verbose" /* Protocol.Log.LogEntryLevel.Verbose */,
+            Info: "info" /* Protocol.Log.LogEntryLevel.Info */,
+            Warning: "warning" /* Protocol.Log.LogEntryLevel.Warning */,
+            Error: "error" /* Protocol.Log.LogEntryLevel.Error */,
         };
         for (const name of Object.values(logLevels)) {
             result[name] = true;
@@ -29,7 +29,7 @@ export class ConsoleFilter {
     }
     static defaultLevelsFilterValue() {
         const result = ConsoleFilter.allLevelsFilterValue();
-        result["verbose" /* Verbose */] = false;
+        result["verbose" /* Protocol.Log.LogEntryLevel.Verbose */] = false;
         return result;
     }
     static singleLevelMask(level) {
@@ -51,7 +51,7 @@ export class ConsoleFilter {
         }
         if (message.type === SDK.ConsoleModel.FrontendMessageType.Command ||
             message.type === SDK.ConsoleModel.FrontendMessageType.Result ||
-            message.type === "endGroup" /* EndGroup */) {
+            message.type === "endGroup" /* Protocol.Runtime.ConsoleAPICalledEventType.EndGroup */) {
             return true;
         }
         if (message.level && !this.levelsMask[message.level]) {

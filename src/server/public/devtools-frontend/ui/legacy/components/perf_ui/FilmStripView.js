@@ -222,7 +222,7 @@ export class Dialog {
             // @ts-ignore See above.
             this.dialog.show();
         }
-        this.dialog.setSizeBehavior("MeasureContent" /* MeasureContent */);
+        this.dialog.setSizeBehavior("MeasureContent" /* UI.GlassPane.SizeBehavior.MeasureContent */);
     }
     keyDown(event) {
         const keyboardEvent = event;

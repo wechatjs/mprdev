@@ -1,5 +1,6 @@
-import type { ValueType, ValueTypeMode } from './ValueInterpreterDisplayUtils.js';
-import { Endianness } from './ValueInterpreterDisplayUtils.js';
+import { Endianness, type ValueType, type ValueTypeMode } from './ValueInterpreterDisplayUtils.js';
+import { type DeleteMemoryHighlightEvent } from './LinearMemoryHighlightChipList.js';
+import { type HighlightInfo } from './LinearMemoryViewerUtils.js';
 export interface LinearMemoryInspectorData {
     memory: Uint8Array;
     address: number;
@@ -8,6 +9,7 @@ export interface LinearMemoryInspectorData {
     valueTypes?: Set<ValueType>;
     valueTypeModes?: Map<ValueType, ValueTypeMode>;
     endianness?: Endianness;
+    highlightInfo?: HighlightInfo;
 }
 export declare type Settings = {
     valueTypes: Set<ValueType>;
@@ -47,5 +49,6 @@ declare global {
         'memoryrequest': MemoryRequestEvent;
         'addresschanged': AddressChangedEvent;
         'settingschanged': SettingsChangedEvent;
+        'deletememoryhighlight': DeleteMemoryHighlightEvent;
     }
 }

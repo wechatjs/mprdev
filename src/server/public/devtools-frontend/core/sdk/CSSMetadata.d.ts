@@ -1,3 +1,4 @@
+import * as Protocol from '../../generated/protocol.js';
 export declare class CSSMetadata {
     #private;
     constructor(properties: CSSPropertyDefinition[], aliasesFor: Map<string, string>);
@@ -28,6 +29,7 @@ export declare class CSSMetadata {
         startColumn: number;
         endColumn: number;
     } | null;
+    isHighlightPseudoType(pseudoType: Protocol.DOM.PseudoType): boolean;
 }
 export declare const VariableRegex: RegExp;
 export declare const CustomVariableRegex: RegExp;

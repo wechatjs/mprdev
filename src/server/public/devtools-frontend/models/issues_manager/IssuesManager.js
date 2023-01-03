@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as Common from '../../core/common/common.js';
-import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import { AttributionReportingIssue } from './AttributionReportingIssue.js';
 import { ClientHintIssue } from './ClientHintIssue.js';
@@ -17,7 +16,7 @@ import { LowTextContrastIssue } from './LowTextContrastIssue.js';
 import { MixedContentIssue } from './MixedContentIssue.js';
 import { NavigatorUserAgentIssue } from './NavigatorUserAgentIssue.js';
 import { QuirksModeIssue } from './QuirksModeIssue.js';
-import { SameSiteCookieIssue } from './SameSiteCookieIssue.js';
+import { CookieIssue } from './CookieIssue.js';
 import { SharedArrayBufferIssue } from './SharedArrayBufferIssue.js';
 import { SourceFrameIssuesManager } from './SourceFrameIssuesManager.js';
 import { TrustedWebActivityIssue } from './TrustedWebActivityIssue.js';
@@ -35,64 +34,64 @@ function createIssuesForBlockedByResponseIssue(issuesModel, inspectorIssue) {
 }
 const issueCodeHandlers = new Map([
     [
-        "SameSiteCookieIssue" /* SameSiteCookieIssue */,
-        SameSiteCookieIssue.fromInspectorIssue,
+        "CookieIssue" /* Protocol.Audits.InspectorIssueCode.CookieIssue */,
+        CookieIssue.fromInspectorIssue,
     ],
     [
-        "MixedContentIssue" /* MixedContentIssue */,
+        "MixedContentIssue" /* Protocol.Audits.InspectorIssueCode.MixedContentIssue */,
         MixedContentIssue.fromInspectorIssue,
     ],
     [
-        "HeavyAdIssue" /* HeavyAdIssue */,
+        "HeavyAdIssue" /* Protocol.Audits.InspectorIssueCode.HeavyAdIssue */,
         HeavyAdIssue.fromInspectorIssue,
     ],
     [
-        "ContentSecurityPolicyIssue" /* ContentSecurityPolicyIssue */,
+        "ContentSecurityPolicyIssue" /* Protocol.Audits.InspectorIssueCode.ContentSecurityPolicyIssue */,
         ContentSecurityPolicyIssue.fromInspectorIssue,
     ],
-    ["BlockedByResponseIssue" /* BlockedByResponseIssue */, createIssuesForBlockedByResponseIssue],
+    ["BlockedByResponseIssue" /* Protocol.Audits.InspectorIssueCode.BlockedByResponseIssue */, createIssuesForBlockedByResponseIssue],
     [
-        "SharedArrayBufferIssue" /* SharedArrayBufferIssue */,
+        "SharedArrayBufferIssue" /* Protocol.Audits.InspectorIssueCode.SharedArrayBufferIssue */,
         SharedArrayBufferIssue.fromInspectorIssue,
     ],
     [
-        "TrustedWebActivityIssue" /* TrustedWebActivityIssue */,
+        "TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */,
         TrustedWebActivityIssue.fromInspectorIssue,
     ],
     [
-        "LowTextContrastIssue" /* LowTextContrastIssue */,
+        "LowTextContrastIssue" /* Protocol.Audits.InspectorIssueCode.LowTextContrastIssue */,
         LowTextContrastIssue.fromInspectorIssue,
     ],
     [
-        "CorsIssue" /* CorsIssue */,
+        "CorsIssue" /* Protocol.Audits.InspectorIssueCode.CorsIssue */,
         CorsIssue.fromInspectorIssue,
     ],
     [
-        "QuirksModeIssue" /* QuirksModeIssue */,
+        "QuirksModeIssue" /* Protocol.Audits.InspectorIssueCode.QuirksModeIssue */,
         QuirksModeIssue.fromInspectorIssue,
     ],
     [
-        "NavigatorUserAgentIssue" /* NavigatorUserAgentIssue */,
+        "NavigatorUserAgentIssue" /* Protocol.Audits.InspectorIssueCode.NavigatorUserAgentIssue */,
         NavigatorUserAgentIssue.fromInspectorIssue,
     ],
     [
-        "AttributionReportingIssue" /* AttributionReportingIssue */,
+        "AttributionReportingIssue" /* Protocol.Audits.InspectorIssueCode.AttributionReportingIssue */,
         AttributionReportingIssue.fromInspectorIssue,
     ],
     [
-        "GenericIssue" /* GenericIssue */,
+        "GenericIssue" /* Protocol.Audits.InspectorIssueCode.GenericIssue */,
         GenericIssue.fromInspectorIssue,
     ],
     [
-        "DeprecationIssue" /* DeprecationIssue */,
+        "DeprecationIssue" /* Protocol.Audits.InspectorIssueCode.DeprecationIssue */,
         DeprecationIssue.fromInspectorIssue,
     ],
     [
-        "ClientHintIssue" /* ClientHintIssue */,
+        "ClientHintIssue" /* Protocol.Audits.InspectorIssueCode.ClientHintIssue */,
         ClientHintIssue.fromInspectorIssue,
     ],
     [
-        "FederatedAuthRequestIssue" /* FederatedAuthRequestIssue */,
+        "FederatedAuthRequestIssue" /* Protocol.Audits.InspectorIssueCode.FederatedAuthRequestIssue */,
         FederatedAuthRequestIssue.fromInspectorIssue,
     ],
 ]);
@@ -147,9 +146,7 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
         // issueFilter uses the 'showThirdPartyIssues' setting. Clients of IssuesManager need
         // a full update when the setting changes to get an up-to-date issues list.
         this.showThirdPartyIssuesSetting?.addChangeListener(() => this.#updateFilteredIssues());
-        if (Root.Runtime.experiments.isEnabled('hideIssuesFeature')) {
-            this.hideIssueSetting?.addChangeListener(() => this.#updateFilteredIssues());
-        }
+        this.hideIssueSetting?.addChangeListener(() => this.#updateFilteredIssues());
     }
     static instance(opts = {
         forceNew: false,
@@ -162,6 +159,9 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
             issuesManagerInstance = new IssuesManager(opts.showThirdPartyIssuesSetting, opts.hideIssueSetting);
         }
         return issuesManagerInstance;
+    }
+    static removeInstance() {
+        issuesManagerInstance = null;
     }
     /**
      * Once we have seen at least one `TopFrameNavigated` event, we can be reasonably sure
@@ -195,7 +195,7 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
         }
     }
     modelAdded(issuesModel) {
-        const listener = issuesModel.addEventListener("IssueAdded" /* IssueAdded */, this.#onIssueAddedEvent, this);
+        const listener = issuesModel.addEventListener("IssueAdded" /* SDK.IssuesModel.Events.IssueAdded */, this.#onIssueAddedEvent, this);
         this.#eventListeners.set(issuesModel, listener);
     }
     modelRemoved(issuesModel) {
@@ -229,18 +229,15 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
                 this.#issuesById.set(issueId, issue);
             }
             const values = this.hideIssueSetting?.get();
-            const hideIssuesFeature = Root.Runtime.experiments.isEnabled('hideIssuesFeature');
-            if (hideIssuesFeature) {
-                this.#updateIssueHiddenStatus(issue, values);
-            }
+            this.#updateIssueHiddenStatus(issue, values);
             if (issue.isHidden()) {
                 this.#hiddenIssueCount.set(issue.getKind(), 1 + (this.#hiddenIssueCount.get(issue.getKind()) || 0));
             }
-            this.dispatchEventToListeners("IssueAdded" /* IssueAdded */, { issuesModel, issue });
+            this.dispatchEventToListeners("IssueAdded" /* Events.IssueAdded */, { issuesModel, issue });
         }
         // Always fire the "count" event even if the issue was filtered out.
         // The result of `hasOnlyThirdPartyIssues` could still change.
-        this.dispatchEventToListeners("IssuesCountUpdated" /* IssuesCountUpdated */);
+        this.dispatchEventToListeners("IssuesCountUpdated" /* Events.IssuesCountUpdated */);
     }
     issues() {
         return this.#filteredIssues.values();
@@ -276,7 +273,7 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
         // In case a user wants to hide a specific issue, the issue code is added to "code" section
         // of our setting and its value is set to IssueStatus.Hidden. Then issue then gets hidden.
         if (values && values[code]) {
-            if (values[code] === "Hidden" /* Hidden */) {
+            if (values[code] === "Hidden" /* IssueStatus.Hidden */) {
                 issue.setHidden(true);
                 return;
             }
@@ -290,12 +287,9 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
         this.#issuesById.clear();
         this.#hiddenIssueCount.clear();
         const values = this.hideIssueSetting?.get();
-        const hideIssuesFeature = Root.Runtime.experiments.isEnabled('hideIssuesFeature');
         for (const [key, issue] of this.#allIssues) {
             if (this.#issueFilter(issue)) {
-                if (hideIssuesFeature) {
-                    this.#updateIssueHiddenStatus(issue, values);
-                }
+                this.#updateIssueHiddenStatus(issue, values);
                 this.#filteredIssues.set(key, issue);
                 this.#issueCounts.set(issue.getKind(), 1 + (this.#issueCounts.get(issue.getKind()) ?? 0));
                 if (issue.isHidden()) {
@@ -307,8 +301,8 @@ export class IssuesManager extends Common.ObjectWrapper.ObjectWrapper {
                 }
             }
         }
-        this.dispatchEventToListeners("FullUpdateRequired" /* FullUpdateRequired */);
-        this.dispatchEventToListeners("IssuesCountUpdated" /* IssuesCountUpdated */);
+        this.dispatchEventToListeners("FullUpdateRequired" /* Events.FullUpdateRequired */);
+        this.dispatchEventToListeners("IssuesCountUpdated" /* Events.IssuesCountUpdated */);
     }
     unhideAllIssues() {
         for (const issue of this.#allIssues.values()) {

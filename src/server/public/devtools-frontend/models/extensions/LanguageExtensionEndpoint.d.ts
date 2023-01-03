@@ -1,17 +1,14 @@
 import type * as SDK from '../../core/sdk/sdk.js';
 import * as Bindings from '../bindings/bindings.js';
-import type { Chrome } from '../../../extension-api/ExtensionAPI.js';
-export declare class LanguageExtensionEndpoint extends Bindings.DebuggerLanguagePlugins.DebuggerLanguagePlugin {
+import { type Chrome } from '../../../extension-api/ExtensionAPI.js';
+export declare class LanguageExtensionEndpoint implements Bindings.DebuggerLanguagePlugins.DebuggerLanguagePlugin {
     private readonly supportedScriptTypes;
-    private readonly port;
-    private nextRequestId;
-    private pendingRequests;
+    private endpoint;
+    name: string;
     constructor(name: string, supportedScriptTypes: {
         language: string;
         symbol_types: Array<string>;
     }, port: MessagePort);
-    private sendRequest;
-    private onResponse;
     handleScript(script: SDK.Script.Script): boolean;
     /** Notify the plugin about a new script
        */
@@ -60,5 +57,7 @@ export declare class LanguageExtensionEndpoint extends Bindings.DebuggerLanguage
         js: string;
     }>;
     getMappedLines(rawModuleId: string, sourceFileURL: string): Promise<number[] | undefined>;
-    dispose(): void;
+    evaluate(expression: string, context: Chrome.DevTools.RawLocation, stopId: number): Promise<Chrome.DevTools.RemoteObject>;
+    getProperties(objectId: Chrome.DevTools.RemoteObjectId): Promise<Chrome.DevTools.PropertyDescriptor[]>;
+    releaseObject(objectId: Chrome.DevTools.RemoteObjectId): Promise<void>;
 }

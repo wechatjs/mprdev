@@ -11,7 +11,6 @@ import * as MarkdownView from '../../ui/components/markdown_view/markdown_view.j
 import * as UI from '../../ui/legacy/legacy.js';
 import * as Adorners from '../../ui/components/adorners/adorners.js';
 import * as NetworkForward from '../../panels/network/forward/forward.js';
-import * as Root from '../../core/root/root.js';
 import * as Components from './components/components.js';
 import { AffectedDirectivesView } from './AffectedDirectivesView.js';
 import { AffectedBlockedByResponseView } from './AffectedBlockedByResponseView.js';
@@ -88,7 +87,7 @@ class AffectedRequestsView extends AffectedResourcesView {
             element.appendChild(this.createRequestCell(affectedRequest, {
                 networkTab: tab,
                 additionalOnClickAction() {
-                    Host.userMetrics.issuesPanelResourceOpened(category, "Request" /* Request */);
+                    Host.userMetrics.issuesPanelResourceOpened(category, "Request" /* AffectedItem.Request */);
                 },
             }));
             this.affectedResources.appendChild(element);
@@ -118,7 +117,7 @@ class AffectedRequestsView extends AffectedResourcesView {
 }
 const issueTypeToNetworkHeaderMap = new Map([
     [
-        IssuesManager.Issue.IssueCategory.SameSiteCookie,
+        IssuesManager.Issue.IssueCategory.Cookie,
         NetworkForward.UIRequestLocation.UIRequestTabs.Cookies,
     ],
     [
@@ -156,7 +155,7 @@ class AffectedMixedContentView extends AffectedResourcesView {
             element.appendChild(this.createRequestCell(mixedContent.request, {
                 networkTab,
                 additionalOnClickAction() {
-                    Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.MixedContent, "Request" /* Request */);
+                    Host.userMetrics.issuesPanelResourceOpened(IssuesManager.Issue.IssueCategory.MixedContent, "Request" /* AffectedItem.Request */);
                 },
             }));
         }
@@ -170,11 +169,11 @@ class AffectedMixedContentView extends AffectedResourcesView {
     }
     static translateStatus(resolutionStatus) {
         switch (resolutionStatus) {
-            case "MixedContentBlocked" /* MixedContentBlocked */:
+            case "MixedContentBlocked" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentBlocked */:
                 return i18nString(UIStrings.blocked);
-            case "MixedContentAutomaticallyUpgraded" /* MixedContentAutomaticallyUpgraded */:
+            case "MixedContentAutomaticallyUpgraded" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentAutomaticallyUpgraded */:
                 return i18nString(UIStrings.automaticallyUpgraded);
-            case "MixedContentWarning" /* MixedContentWarning */:
+            case "MixedContentWarning" /* Protocol.Audits.MixedContentResolutionStatus.MixedContentWarning */:
                 return i18nString(UIStrings.warned);
         }
     }
@@ -224,9 +223,7 @@ export class IssueView extends UI.TreeOutline.TreeElement {
             new AttributionReportingIssueDetailsView(this, this.#issue),
             new AffectedRawCookieLinesView(this, this.#issue),
         ];
-        if (Root.Runtime.experiments.isEnabled('hideIssuesFeature')) {
-            this.#hiddenIssuesMenu = new Components.HideIssuesMenu.HideIssuesMenu();
-        }
+        this.#hiddenIssuesMenu = new Components.HideIssuesMenu.HideIssuesMenu();
         this.#aggregatedIssuesCount = null;
         this.#hasBeenExpandedBefore = false;
     }
@@ -330,8 +327,8 @@ export class IssueView extends UI.TreeOutline.TreeElement {
                 menuItemAction: () => {
                     const setting = IssuesManager.IssuesManager.getHideIssueByCodeSetting();
                     const values = setting.get();
-                    values[this.#issue.code()] = this.#issue.isHidden() ? "Unhidden" /* Unhidden */ :
-                        "Hidden" /* Hidden */;
+                    values[this.#issue.code()] = this.#issue.isHidden() ? "Unhidden" /* IssuesManager.IssuesManager.IssueStatus.Unhidden */ :
+                        "Hidden" /* IssuesManager.IssuesManager.IssueStatus.Hidden */;
                     setting.set(values);
                 },
             };
@@ -377,7 +374,7 @@ export class IssueView extends UI.TreeOutline.TreeElement {
             linkIcon.classList.add('link-icon');
             link.prepend(linkIcon);
             link.addEventListener('x-link-invoke', () => {
-                Host.userMetrics.issuesPanelResourceOpened(this.#issue.getCategory(), "LearnMore" /* LearnMore */);
+                Host.userMetrics.issuesPanelResourceOpened(this.#issue.getCategory(), "LearnMore" /* AffectedItem.LearnMore */);
             });
             const linkListItem = linkList.createChild('li');
             linkListItem.appendChild(link);

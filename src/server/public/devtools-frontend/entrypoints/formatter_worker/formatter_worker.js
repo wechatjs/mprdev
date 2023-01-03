@@ -14,5 +14,7 @@ import * as HTMLOutline from './HTMLOutline.js';
 import * as JavaScriptFormatter from './JavaScriptFormatter.js';
 import * as JavaScriptOutline from './JavaScriptOutline.js';
 import * as JSONFormatter from './JSONFormatter.js';
-export { CSSFormatter, CSSRuleParser, FormattedContentBuilder, FormatterWorker, HTMLFormatter, HTMLOutline, JavaScriptFormatter, JavaScriptOutline, JSONFormatter, };
+import * as ScopeParser from './ScopeParser.js';
+import * as Substitute from './Substitute.js';
+export { CSSFormatter, CSSRuleParser, FormattedContentBuilder, FormatterWorker, HTMLFormatter, HTMLOutline, JavaScriptFormatter, JavaScriptOutline, JSONFormatter, ScopeParser, Substitute, };
 //# sourceMappingURL=formatter_worker.js.map

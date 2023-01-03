@@ -4,6 +4,7 @@
 import * as Common from '../../core/common/common.js';
 import * as Host from '../../core/host/host.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as Root from '../../core/root/root.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import keybindsSettingsTabStyles from './keybindsSettingsTab.css.js';
@@ -234,7 +235,7 @@ export class KeybindsSettingsTab extends UI.Widget.VBox {
         return items;
     }
     onEscapeKeyPressed(event) {
-        const deepActiveElement = document.deepActiveElement();
+        const deepActiveElement = Platform.DOMUtilities.deepActiveElement(document);
         if (this.editingRow && deepActiveElement && deepActiveElement.nodeName === 'INPUT') {
             this.editingRow.onEscapeKeyPressed(event);
         }
@@ -336,7 +337,7 @@ export class ShortcutListItem {
         this.element.appendChild(this.confirmButton);
         this.element.appendChild(this.createIconButton(i18nString(UIStrings.discardChanges), 'largeicon-delete', 'keybinds-cancel-button', () => this.settingsTab.stopEditing(this.item)));
         this.element.addEventListener('keydown', event => {
-            if (isEscKey(event)) {
+            if (Platform.KeyboardUtilities.isEscKey(event)) {
                 this.settingsTab.stopEditing(this.item);
                 event.consume(true);
             }
@@ -408,6 +409,7 @@ export class ShortcutListItem {
     }
     createIconButton(label, iconName, className, listener) {
         const button = document.createElement('button');
+        button.setAttribute('title', label);
         button.appendChild(UI.Icon.Icon.create(iconName));
         button.addEventListener('click', listener);
         UI.ARIAUtils.setAccessibleName(button, label);
@@ -488,7 +490,7 @@ export class ShortcutListItem {
         this.focus();
     }
     onEscapeKeyPressed(event) {
-        const activeElement = document.deepActiveElement();
+        const activeElement = Platform.DOMUtilities.deepActiveElement(document);
         for (const [shortcut, shortcutInput] of this.shortcutInputs.entries()) {
             if (activeElement === shortcutInput) {
                 this.onShortcutInputKeyDown(shortcut, shortcutInput, event);

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 import * as Common from '../common/common.js';
 import * as Host from '../host/host.js';
+import * as Platform from '../platform/platform.js';
 import * as ProtocolClient from '../protocol_client/protocol_client.js';
 import { SDKModel } from './SDKModel.js';
 export class Target extends ProtocolClient.InspectorBackend.TargetBase {
@@ -23,7 +24,7 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
         super(needsNodeJSPatching, parentTarget, sessionId, connection);
         this.#targetManagerInternal = targetManager;
         this.#nameInternal = name;
-        this.#inspectedURLInternal = '';
+        this.#inspectedURLInternal = Platform.DevToolsPath.EmptyUrlString;
         this.#inspectedURLName = '';
         this.#capabilitiesMask = 0;
         switch (type) {
@@ -32,7 +33,7 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
                     Capability.Log | Capability.Network | Capability.Target | Capability.Tracing | Capability.Emulation |
                     Capability.Input | Capability.Inspector | Capability.Audits | Capability.WebAuthn | Capability.IO |
                     Capability.Media;
-                if (!parentTarget) {
+                if (parentTarget?.type() !== Type.Frame) {
                     // This matches backend exposing certain capabilities only for the main frame.
                     this.#capabilitiesMask |=
                         Capability.DeviceEmulation | Capability.ScreenCapture | Capability.Security | Capability.ServiceWorker;
@@ -43,7 +44,7 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
             case Type.ServiceWorker:
                 this.#capabilitiesMask = Capability.JS | Capability.Log | Capability.Network | Capability.Target |
                     Capability.Inspector | Capability.IO;
-                if (!parentTarget) {
+                if (parentTarget?.type() !== Type.Frame) {
                     this.#capabilitiesMask |= Capability.Browser;
                 }
                 break;
@@ -52,8 +53,8 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
                     Capability.IO | Capability.Media | Capability.Inspector;
                 break;
             case Type.Worker:
-                this.#capabilitiesMask =
-                    Capability.JS | Capability.Log | Capability.Network | Capability.Target | Capability.IO | Capability.Media;
+                this.#capabilitiesMask = Capability.JS | Capability.Log | Capability.Network | Capability.Target |
+                    Capability.IO | Capability.Media | Capability.Emulation;
                 break;
             case Type.Node:
                 this.#capabilitiesMask = Capability.JS;
@@ -63,6 +64,9 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
                 break;
             case Type.Browser:
                 this.#capabilitiesMask = Capability.Target | Capability.IO;
+                break;
+            case Type.Tab:
+                this.#capabilitiesMask = Capability.Target;
                 break;
         }
         this.#typeInternal = type;
@@ -151,8 +155,8 @@ export class Target extends ProtocolClient.InspectorBackend.TargetBase {
         this.#inspectedURLInternal = inspectedURL;
         const parsedURL = Common.ParsedURL.ParsedURL.fromString(inspectedURL);
         this.#inspectedURLName = parsedURL ? parsedURL.lastPathComponentWithFragment() : '#' + this.#idInternal;
-        if (!this.parentTarget()) {
-            Host.InspectorFrontendHost.InspectorFrontendHostInstance.inspectedURLChanged(inspectedURL || '');
+        if (this.parentTarget()?.type() !== Type.Frame) {
+            Host.InspectorFrontendHost.InspectorFrontendHostInstance.inspectedURLChanged(inspectedURL || Platform.DevToolsPath.EmptyUrlString);
         }
         this.#targetManagerInternal.onInspectedURLChange(this);
         if (!this.#nameInternal) {
@@ -196,6 +200,7 @@ export var Type;
     Type["Node"] = "node";
     Type["Browser"] = "browser";
     Type["AuctionWorklet"] = "auction-worklet";
+    Type["Tab"] = "tab";
 })(Type || (Type = {}));
 // TODO(crbug.com/1167717): Make this a const enum again
 // eslint-disable-next-line rulesdir/const_enum

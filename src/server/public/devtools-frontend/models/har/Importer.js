@@ -23,6 +23,8 @@ export class Importer {
                     type: initiatorEntry.type,
                     url: initiatorEntry.url,
                     lineNumber: initiatorEntry.lineNumber,
+                    requestId: initiatorEntry.requestId,
+                    stack: initiatorEntry.stack,
                 };
             }
             const request = SDK.NetworkRequest.NetworkRequest.createWithoutBackendRequest('har-' + requests.length, entry.request.url, documentURL, initiator);

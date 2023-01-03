@@ -124,11 +124,11 @@ export const bindCheckbox = function (inputElement, setting) {
 };
 export const createCustomSetting = function (name, element) {
     const p = document.createElement('p');
-    const fieldsetElement = p.createChild('fieldset');
-    const label = fieldsetElement.createChild('label');
+    p.classList.add('settings-select');
+    const label = p.createChild('label');
     label.textContent = name;
     ARIAUtils.bindLabelToControl(label, element);
-    fieldsetElement.appendChild(element);
+    p.appendChild(element);
     return p;
 };
 export const createControlForSetting = function (setting, subtitle) {

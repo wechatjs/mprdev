@@ -1,10 +1,9 @@
 import * as Common from '../common/common.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { Resource } from './Resource.js';
-import type { ResourceTreeFrame } from './ResourceTreeModel.js';
-import { ResourceTreeModel } from './ResourceTreeModel.js';
-import type { Target } from './Target.js';
-import type { SDKModelObserver } from './TargetManager.js';
+import { type Resource } from './Resource.js';
+import { ResourceTreeModel, type ResourceTreeFrame } from './ResourceTreeModel.js';
+import { type Target } from './Target.js';
+import { type SDKModelObserver } from './TargetManager.js';
 /**
  * The FrameManager is a central storage for all #frames. It collects #frames from all
  * ResourceTreeModel-instances (one per target), so that #frames can be found by id

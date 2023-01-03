@@ -242,7 +242,7 @@ export class WorkerDetailsView extends UI.ThrottledWidget.ThrottledWidget {
         if (!info) {
             return;
         }
-        const coepIsEnabled = (value) => value !== "None" /* None */;
+        const coepIsEnabled = (value) => value !== "None" /* Protocol.Network.CrossOriginEmbedderPolicyValue.None */;
         this.fillCrossOriginPolicy(this.coepPolicy, coepIsEnabled, info.coep);
     }
     fillCrossOriginPolicy(field, isEnabled, info) {

@@ -32,7 +32,7 @@ export class SurveyLink extends HTMLElement {
     #promptText = Common.UIString.LocalizedEmptyString;
     #canShowSurvey = () => { };
     #showSurvey = () => { };
-    #state = "Checking" /* Checking */;
+    #state = "Checking" /* State.Checking */;
     connectedCallback() {
         this.#shadow.adoptedStyleSheets = [surveyLinkStyles];
     }
@@ -45,52 +45,52 @@ export class SurveyLink extends HTMLElement {
         this.#checkSurvey();
     }
     #checkSurvey() {
-        this.#state = "Checking" /* Checking */;
+        this.#state = "Checking" /* State.Checking */;
         this.#canShowSurvey(this.#trigger, ({ canShowSurvey }) => {
             if (!canShowSurvey) {
-                this.#state = "DontShowLink" /* DontShowLink */;
+                this.#state = "DontShowLink" /* State.DontShowLink */;
             }
             else {
-                this.#state = "ShowLink" /* ShowLink */;
+                this.#state = "ShowLink" /* State.ShowLink */;
             }
             this.#render();
         });
     }
     #sendSurvey() {
-        this.#state = "Sending" /* Sending */;
+        this.#state = "Sending" /* State.Sending */;
         this.#render();
         this.#showSurvey(this.#trigger, ({ surveyShown }) => {
             if (!surveyShown) {
-                this.#state = "Failed" /* Failed */;
+                this.#state = "Failed" /* State.Failed */;
             }
             else {
-                this.#state = "SurveyShown" /* SurveyShown */;
+                this.#state = "SurveyShown" /* State.SurveyShown */;
             }
             this.#render();
         });
     }
     #render() {
-        if (this.#state === "Checking" /* Checking */ || this.#state === "DontShowLink" /* DontShowLink */) {
+        if (this.#state === "Checking" /* State.Checking */ || this.#state === "DontShowLink" /* State.DontShowLink */) {
             return;
         }
         let linkText = this.#promptText;
-        if (this.#state === "Sending" /* Sending */) {
+        if (this.#state === "Sending" /* State.Sending */) {
             linkText = i18nString(UIStrings.openingSurvey);
         }
-        else if (this.#state === "SurveyShown" /* SurveyShown */) {
+        else if (this.#state === "SurveyShown" /* State.SurveyShown */) {
             linkText = i18nString(UIStrings.thankYouForYourFeedback);
         }
-        else if (this.#state === "Failed" /* Failed */) {
+        else if (this.#state === "Failed" /* State.Failed */) {
             linkText = i18nString(UIStrings.anErrorOccurredWithTheSurvey);
         }
         let linkState = '';
-        if (this.#state === "Sending" /* Sending */) {
+        if (this.#state === "Sending" /* State.Sending */) {
             linkState = 'pending-link';
         }
-        else if (this.#state === "Failed" /* Failed */ || this.#state === "SurveyShown" /* SurveyShown */) {
+        else if (this.#state === "Failed" /* State.Failed */ || this.#state === "SurveyShown" /* State.SurveyShown */) {
             linkState = 'disabled-link';
         }
-        const ariaDisabled = this.#state !== "ShowLink" /* ShowLink */;
+        const ariaDisabled = this.#state !== "ShowLink" /* State.ShowLink */;
         // clang-format off
         // eslint-disable-next-line rulesdir/ban_style_tags_in_lit_html
         const output = LitHtml.html `

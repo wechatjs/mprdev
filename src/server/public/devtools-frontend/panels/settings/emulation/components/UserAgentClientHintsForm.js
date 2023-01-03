@@ -485,7 +485,7 @@ export class UserAgentClientHintsForm extends HTMLElement {
         const deviceModelSection = this.#renderDeviceModelSection();
         const submitButton = this.#showSubmitButton ? LitHtml.html `
       <${Buttons.Button.Button.litTagName}
-        .variant=${"secondary" /* SECONDARY */}
+        .variant=${"secondary" /* Buttons.Button.Variant.SECONDARY */}
         .type=${'submit'}
       >
         ${i18nString(UIStrings.update)}

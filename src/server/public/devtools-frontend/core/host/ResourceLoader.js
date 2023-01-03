@@ -77,9 +77,9 @@ const _discardOutputStream = function (id) {
 export const streamWrite = function (id, chunk) {
     void _boundStreams[id].write(chunk);
 };
-export let load = function (url, headers, callback) {
+export let load = function (url, headers, callback, allowRemoteFilePaths) {
     const stream = new Common.StringOutputStream.StringOutputStream();
-    loadAsStream(url, headers, stream, mycallback);
+    loadAsStream(url, headers, stream, mycallback, allowRemoteFilePaths);
     function mycallback(success, headers, errorDescription) {
         callback(success, headers, stream.data(), errorDescription);
     }
@@ -182,11 +182,32 @@ const loadXHR = (url) => {
         xhr.send(null);
     });
 };
-export const loadAsStream = function (url, headers, stream, callback) {
+function canBeRemoteFilePath(url) {
+    try {
+        const urlObject = new URL(url);
+        return urlObject.protocol === 'file:' && urlObject.host !== '';
+    }
+    catch (exception) {
+        return false;
+    }
+}
+export const loadAsStream = function (url, headers, stream, callback, allowRemoteFilePaths) {
     const streamId = _bindOutputStream(stream);
     const parsedURL = new Common.ParsedURL.ParsedURL(url);
     if (parsedURL.isDataURL()) {
         loadXHR(url).then(dataURLDecodeSuccessful).catch(dataURLDecodeFailed);
+        return;
+    }
+    if (!allowRemoteFilePaths && canBeRemoteFilePath(url)) {
+        // Remote file paths can cause security problems, see crbug.com/1342722.
+        if (callback) {
+            callback(/* success */ false, /* headers */ {}, {
+                statusCode: 400,
+                netError: -20,
+                netErrorName: 'net::BLOCKED_BY_CLIENT',
+                message: 'Loading from a remote file path is prohibited for security reasons.',
+            });
+        }
         return;
     }
     const rawHeaders = [];

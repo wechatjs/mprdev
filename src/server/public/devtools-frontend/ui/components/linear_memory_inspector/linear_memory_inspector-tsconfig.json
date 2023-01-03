@@ -26,6 +26,7 @@
     "useUnknownInCatchVariables": false
   },
   "files": [
+    "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryHighlightChipList.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryInspector.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryInspectorController.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryInspectorPane.ts",
@@ -33,6 +34,7 @@
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryNavigator.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryValueInterpreter.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryViewer.ts",
+    "../../../../../../../front_end/ui/components/linear_memory_inspector/LinearMemoryViewerUtils.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/ValueInterpreterDisplay.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/ValueInterpreterDisplayUtils.ts",
     "../../../../../../../front_end/ui/components/linear_memory_inspector/ValueInterpreterSettings.ts",

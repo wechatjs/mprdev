@@ -1,11 +1,9 @@
 import * as Common from '../../core/common/common.js';
 import { TabbedPane } from './TabbedPane.js';
-import type { ToolbarItem } from './Toolbar.js';
-import { ToolbarMenuButton } from './Toolbar.js';
-import type { TabbedViewLocation, View, ViewLocation } from './View.js';
-import { getRegisteredLocationResolvers, getRegisteredViewExtensions, maybeRemoveViewExtension, registerLocationResolver, registerViewExtension, ViewLocationCategoryValues, ViewLocationValues, ViewPersistence, type ViewRegistration } from './ViewRegistration.js';
-import type { Widget } from './Widget.js';
-import { VBox } from './Widget.js';
+import { ToolbarMenuButton, type ToolbarItem } from './Toolbar.js';
+import { type TabbedViewLocation, type View, type ViewLocation } from './View.js';
+import { getRegisteredLocationResolvers, getRegisteredViewExtensions, maybeRemoveViewExtension, registerLocationResolver, registerViewExtension, ViewLocationCategoryValues, ViewLocationValues, ViewPersistence, type ViewRegistration, resetViewRegistration } from './ViewRegistration.js';
+import { VBox, type Widget } from './Widget.js';
 export declare const defaultOptionsForTabs: {
     security: boolean;
 };
@@ -119,4 +117,4 @@ export declare class _TabbedLocation extends Location implements TabbedViewLocat
     getCloseableTabSetting(): Common.Settings.Setting<any>;
     static orderStep: number;
 }
-export { ViewRegistration, ViewPersistence, getRegisteredViewExtensions, maybeRemoveViewExtension, registerViewExtension, ViewLocationValues, getRegisteredLocationResolvers, registerLocationResolver, ViewLocationCategoryValues, };
+export { ViewRegistration, ViewPersistence, getRegisteredViewExtensions, maybeRemoveViewExtension, registerViewExtension, ViewLocationValues, getRegisteredLocationResolvers, registerLocationResolver, ViewLocationCategoryValues, resetViewRegistration, };

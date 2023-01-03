@@ -39,7 +39,7 @@ export class TextPrompt extends HTMLElement {
         this.#input().focus();
     }
     #input() {
-        const inputElement = this.#shadow.querySelector('input');
+        const inputElement = this.#shadow.querySelector('.input');
         if (!inputElement) {
             throw new Error('Expected an input element!');
         }
@@ -49,8 +49,8 @@ export class TextPrompt extends HTMLElement {
         this.setSelectedRange(this.#text().length, this.#text().length);
     }
     onInput() {
-        this.#suggestion().textContent = this.#text();
-        this.dispatchEvent(new PromptInputEvent(this.#text().trim()));
+        this.#suggestion().value = this.#text();
+        this.dispatchEvent(new PromptInputEvent(this.#text()));
     }
     onKeyDown(event) {
         if (event.key === Platform.KeyboardUtilities.ENTER_KEY) {
@@ -76,11 +76,12 @@ export class TextPrompt extends HTMLElement {
     }
     setSuggestion(suggestion) {
         this.#suggestionText = suggestion;
+        this.#suggestion().value += this.#suggestionText;
         this.#render();
     }
     setText(text) {
         this.#input().value = text;
-        this.#suggestion().textContent = this.#text();
+        this.#suggestion().value = this.#text();
         if (this.#input().hasFocus()) {
             this.moveCaretToEndOfInput();
             this.#input().scrollIntoView();
@@ -99,7 +100,7 @@ export class TextPrompt extends HTMLElement {
     #render() {
         const output = LitHtml.html `
       <span class="prefix">${this.#prefixText} </span>
-      <span class="text-prompt-input"><input aria-label=${this.#ariaLabelText} spellcheck="false" @input=${this.onInput} @keydown=${this.onKeyDown}/><span class='suggestion' suggestion=${this.#suggestionText}></span></span>`;
+      <span class="text-prompt-input"><input class="input" aria-label=${this.#ariaLabelText} spellcheck="false" @input=${this.onInput} @keydown=${this.onKeyDown}/><input class="suggestion" aria-label=${this.#ariaLabelText + ' Suggestion'}></span>`;
         LitHtml.render(output, this.#shadow, { host: this });
     }
 }

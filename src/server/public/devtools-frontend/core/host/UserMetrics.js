@@ -193,6 +193,9 @@ export class UserMetrics {
     recordingReplayFinished(value) {
         InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.RecordingReplayFinished, value, RecordingReplayFinished.MaxValue);
     }
+    recordingReplaySpeed(value) {
+        InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.RecordingReplaySpeed, value, RecordingReplaySpeed.MaxValue);
+    }
     recordingReplayStarted(value) {
         InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.RecordingReplayStarted, value, RecordingReplayStarted.MaxValue);
     }
@@ -201,6 +204,16 @@ export class UserMetrics {
     }
     recordingExported(value) {
         InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.RecordingExported, value, RecordingExported.MaxValue);
+    }
+    styleTextCopied(value) {
+        InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.StyleTextCopied, value, StyleTextCopied.MaxValue);
+    }
+    manifestSectionSelected(sectionTitle) {
+        const code = ManifestSectionCodes[sectionTitle] || ManifestSectionCodes.OtherSection;
+        InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.ManifestSectionSelected, code, ManifestSectionCodes.MaxValue);
+    }
+    cssHintShown(type) {
+        InspectorFrontendHostInstance.recordEnumeratedHistogram(EnumeratedHistogram.CSSHintShown, type, CSSHintType.MaxValue);
     }
 }
 /**
@@ -275,7 +288,9 @@ export var Action;
     Action[Action["ConsoleSidebarOpened"] = 53] = "ConsoleSidebarOpened";
     Action[Action["PerfPanelTraceImported"] = 54] = "PerfPanelTraceImported";
     Action[Action["PerfPanelTraceExported"] = 55] = "PerfPanelTraceExported";
-    Action[Action["MaxValue"] = 56] = "MaxValue";
+    Action[Action["StackFrameRestarted"] = 56] = "StackFrameRestarted";
+    Action[Action["CaptureTestProtocolClicked"] = 57] = "CaptureTestProtocolClicked";
+    Action[Action["MaxValue"] = 58] = "MaxValue";
 })(Action || (Action = {}));
 /* eslint-disable @typescript-eslint/naming-convention */
 // TODO(crbug.com/1167717): Make this a const enum again
@@ -321,7 +336,30 @@ export var PanelCodes;
     PanelCodes[PanelCodes["settings-keybinds"] = 38] = "settings-keybinds";
     PanelCodes[PanelCodes["cssoverview"] = 39] = "cssoverview";
     PanelCodes[PanelCodes["chrome_recorder"] = 40] = "chrome_recorder";
-    PanelCodes[PanelCodes["MaxValue"] = 41] = "MaxValue";
+    PanelCodes[PanelCodes["trust_tokens"] = 41] = "trust_tokens";
+    PanelCodes[PanelCodes["reporting_api"] = 42] = "reporting_api";
+    PanelCodes[PanelCodes["interest_groups"] = 43] = "interest_groups";
+    PanelCodes[PanelCodes["back_forward_cache"] = 44] = "back_forward_cache";
+    PanelCodes[PanelCodes["service_worker_cache"] = 45] = "service_worker_cache";
+    PanelCodes[PanelCodes["background_service_backgroundFetch"] = 46] = "background_service_backgroundFetch";
+    PanelCodes[PanelCodes["background_service_backgroundSync"] = 47] = "background_service_backgroundSync";
+    PanelCodes[PanelCodes["background_service_pushMessaging"] = 48] = "background_service_pushMessaging";
+    PanelCodes[PanelCodes["background_service_notifications"] = 49] = "background_service_notifications";
+    PanelCodes[PanelCodes["background_service_paymentHandler"] = 50] = "background_service_paymentHandler";
+    PanelCodes[PanelCodes["background_service_periodicBackgroundSync"] = 51] = "background_service_periodicBackgroundSync";
+    PanelCodes[PanelCodes["service_workers"] = 52] = "service_workers";
+    PanelCodes[PanelCodes["app_manifest"] = 53] = "app_manifest";
+    PanelCodes[PanelCodes["storage"] = 54] = "storage";
+    PanelCodes[PanelCodes["cookies"] = 55] = "cookies";
+    PanelCodes[PanelCodes["frame_details"] = 56] = "frame_details";
+    PanelCodes[PanelCodes["frame_resource"] = 57] = "frame_resource";
+    PanelCodes[PanelCodes["frame_window"] = 58] = "frame_window";
+    PanelCodes[PanelCodes["frame_worker"] = 59] = "frame_worker";
+    PanelCodes[PanelCodes["dom_storage"] = 60] = "dom_storage";
+    PanelCodes[PanelCodes["indexed_db"] = 61] = "indexed_db";
+    PanelCodes[PanelCodes["web_sql"] = 62] = "web_sql";
+    PanelCodes[PanelCodes["performance_insights"] = 63] = "performance_insights";
+    PanelCodes[PanelCodes["MaxValue"] = 64] = "MaxValue";
 })(PanelCodes || (PanelCodes = {}));
 /* eslint-enable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -462,7 +500,8 @@ export var KeyboardShortcutAction;
     KeyboardShortcutAction[KeyboardShortcutAction["layers.left"] = 104] = "layers.left";
     KeyboardShortcutAction[KeyboardShortcutAction["layers.right"] = 105] = "layers.right";
     KeyboardShortcutAction[KeyboardShortcutAction["help.report-translation-issue"] = 106] = "help.report-translation-issue";
-    KeyboardShortcutAction[KeyboardShortcutAction["MaxValue"] = 107] = "MaxValue";
+    KeyboardShortcutAction[KeyboardShortcutAction["rendering.toggle-prefers-color-scheme"] = 107] = "rendering.toggle-prefers-color-scheme";
+    KeyboardShortcutAction[KeyboardShortcutAction["MaxValue"] = 108] = "MaxValue";
 })(KeyboardShortcutAction || (KeyboardShortcutAction = {}));
 /* eslint-enable @typescript-eslint/naming-convention */
 // TODO(crbug.com/1167717): Make this a const enum again
@@ -499,14 +538,13 @@ export var DevtoolsExperiments;
     DevtoolsExperiments[DevtoolsExperiments["developerResourcesView"] = 15] = "developerResourcesView";
     DevtoolsExperiments[DevtoolsExperiments["recordCoverageWithPerformanceTracing"] = 16] = "recordCoverageWithPerformanceTracing";
     DevtoolsExperiments[DevtoolsExperiments["samplingHeapProfilerTimeline"] = 17] = "samplingHeapProfilerTimeline";
-    DevtoolsExperiments[DevtoolsExperiments["showOptionToNotTreatGlobalObjectsAsRoots"] = 18] = "showOptionToNotTreatGlobalObjectsAsRoots";
+    DevtoolsExperiments[DevtoolsExperiments["showOptionToExposeInternalsInHeapSnapshot"] = 18] = "showOptionToExposeInternalsInHeapSnapshot";
     DevtoolsExperiments[DevtoolsExperiments["sourceOrderViewer"] = 20] = "sourceOrderViewer";
     DevtoolsExperiments[DevtoolsExperiments["webauthnPane"] = 22] = "webauthnPane";
     DevtoolsExperiments[DevtoolsExperiments["timelineEventInitiators"] = 24] = "timelineEventInitiators";
     DevtoolsExperiments[DevtoolsExperiments["timelineInvalidationTracking"] = 26] = "timelineInvalidationTracking";
     DevtoolsExperiments[DevtoolsExperiments["timelineShowAllEvents"] = 27] = "timelineShowAllEvents";
     DevtoolsExperiments[DevtoolsExperiments["timelineV8RuntimeCallStats"] = 28] = "timelineV8RuntimeCallStats";
-    DevtoolsExperiments[DevtoolsExperiments["timelineWebGL"] = 29] = "timelineWebGL";
     DevtoolsExperiments[DevtoolsExperiments["timelineReplayEvent"] = 30] = "timelineReplayEvent";
     DevtoolsExperiments[DevtoolsExperiments["wasmDWARFDebugging"] = 31] = "wasmDWARFDebugging";
     DevtoolsExperiments[DevtoolsExperiments["dualScreenSupport"] = 32] = "dualScreenSupport";
@@ -518,9 +556,6 @@ export var DevtoolsExperiments;
     DevtoolsExperiments[DevtoolsExperiments["ignoreListJSFramesOnTimeline"] = 43] = "ignoreListJSFramesOnTimeline";
     DevtoolsExperiments[DevtoolsExperiments["contrastIssues"] = 44] = "contrastIssues";
     DevtoolsExperiments[DevtoolsExperiments["experimentalCookieFeatures"] = 45] = "experimentalCookieFeatures";
-    DevtoolsExperiments[DevtoolsExperiments["hideIssuesFeature"] = 48] = "hideIssuesFeature";
-    DevtoolsExperiments[DevtoolsExperiments["reportingApiDebugging"] = 49] = "reportingApiDebugging";
-    DevtoolsExperiments[DevtoolsExperiments["syncSettings"] = 50] = "syncSettings";
     DevtoolsExperiments[DevtoolsExperiments["groupAndHideIssuesByKind"] = 51] = "groupAndHideIssuesByKind";
     DevtoolsExperiments[DevtoolsExperiments["cssTypeComponentLength"] = 52] = "cssTypeComponentLength";
     DevtoolsExperiments[DevtoolsExperiments["preciseChanges"] = 53] = "preciseChanges";
@@ -528,8 +563,16 @@ export var DevtoolsExperiments;
     DevtoolsExperiments[DevtoolsExperiments["stylesPaneCSSChanges"] = 55] = "stylesPaneCSSChanges";
     DevtoolsExperiments[DevtoolsExperiments["headerOverrides"] = 56] = "headerOverrides";
     DevtoolsExperiments[DevtoolsExperiments["lighthousePanelFR"] = 57] = "lighthousePanelFR";
+    DevtoolsExperiments[DevtoolsExperiments["evaluateExpressionsWithSourceMaps"] = 58] = "evaluateExpressionsWithSourceMaps";
+    DevtoolsExperiments[DevtoolsExperiments["eyedropperColorPicker"] = 60] = "eyedropperColorPicker";
+    DevtoolsExperiments[DevtoolsExperiments["instrumentationBreakpoints"] = 61] = "instrumentationBreakpoints";
+    DevtoolsExperiments[DevtoolsExperiments["cssAuthoringHints"] = 62] = "cssAuthoringHints";
+    DevtoolsExperiments[DevtoolsExperiments["authoredDeployedGrouping"] = 63] = "authoredDeployedGrouping";
+    DevtoolsExperiments[DevtoolsExperiments["importantDOMProperties"] = 64] = "importantDOMProperties";
+    DevtoolsExperiments[DevtoolsExperiments["justMyCode"] = 65] = "justMyCode";
+    DevtoolsExperiments[DevtoolsExperiments["breakpointView"] = 66] = "breakpointView";
     // Increment this when new experiments are added.
-    DevtoolsExperiments[DevtoolsExperiments["MaxValue"] = 58] = "MaxValue";
+    DevtoolsExperiments[DevtoolsExperiments["MaxValue"] = 67] = "MaxValue";
 })(DevtoolsExperiments || (DevtoolsExperiments = {}));
 /* eslint-enable @typescript-eslint/naming-convention */
 // TODO(crbug.com/1167717): Make this a const enum again
@@ -538,7 +581,7 @@ export var IssueExpanded;
 (function (IssueExpanded) {
     IssueExpanded[IssueExpanded["CrossOriginEmbedderPolicy"] = 0] = "CrossOriginEmbedderPolicy";
     IssueExpanded[IssueExpanded["MixedContent"] = 1] = "MixedContent";
-    IssueExpanded[IssueExpanded["SameSiteCookie"] = 2] = "SameSiteCookie";
+    IssueExpanded[IssueExpanded["Cookie"] = 2] = "Cookie";
     IssueExpanded[IssueExpanded["HeavyAd"] = 3] = "HeavyAd";
     IssueExpanded[IssueExpanded["ContentSecurityPolicy"] = 4] = "ContentSecurityPolicy";
     IssueExpanded[IssueExpanded["Other"] = 5] = "Other";
@@ -585,28 +628,28 @@ export var IssueCreated;
     IssueCreated[IssueCreated["CrossOriginEmbedderPolicyIssue::CorpNotSameOrigin"] = 11] = "CrossOriginEmbedderPolicyIssue::CorpNotSameOrigin";
     IssueCreated[IssueCreated["CrossOriginEmbedderPolicyIssue::CorpNotSameOriginAfterDefaultedToSameOriginByCoep"] = 12] = "CrossOriginEmbedderPolicyIssue::CorpNotSameOriginAfterDefaultedToSameOriginByCoep";
     IssueCreated[IssueCreated["CrossOriginEmbedderPolicyIssue::CorpNotSameSite"] = 13] = "CrossOriginEmbedderPolicyIssue::CorpNotSameSite";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeSameSiteNoneInsecure::ReadCookie"] = 14] = "SameSiteCookieIssue::ExcludeSameSiteNoneInsecure::ReadCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeSameSiteNoneInsecure::SetCookie"] = 15] = "SameSiteCookieIssue::ExcludeSameSiteNoneInsecure::SetCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteNoneInsecure::ReadCookie"] = 16] = "SameSiteCookieIssue::WarnSameSiteNoneInsecure::ReadCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteNoneInsecure::SetCookie"] = 17] = "SameSiteCookieIssue::WarnSameSiteNoneInsecure::SetCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Secure"] = 18] = "SameSiteCookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Insecure"] = 19] = "SameSiteCookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnCrossDowngrade::ReadCookie::Secure"] = 20] = "SameSiteCookieIssue::WarnCrossDowngrade::ReadCookie::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnCrossDowngrade::ReadCookie::Insecure"] = 21] = "SameSiteCookieIssue::WarnCrossDowngrade::ReadCookie::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnCrossDowngrade::SetCookie::Secure"] = 22] = "SameSiteCookieIssue::WarnCrossDowngrade::SetCookie::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnCrossDowngrade::SetCookie::Insecure"] = 23] = "SameSiteCookieIssue::WarnCrossDowngrade::SetCookie::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeNavigationContextDowngrade::Secure"] = 24] = "SameSiteCookieIssue::ExcludeNavigationContextDowngrade::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeNavigationContextDowngrade::Insecure"] = 25] = "SameSiteCookieIssue::ExcludeNavigationContextDowngrade::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeContextDowngrade::ReadCookie::Secure"] = 26] = "SameSiteCookieIssue::ExcludeContextDowngrade::ReadCookie::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeContextDowngrade::ReadCookie::Insecure"] = 27] = "SameSiteCookieIssue::ExcludeContextDowngrade::ReadCookie::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeContextDowngrade::SetCookie::Secure"] = 28] = "SameSiteCookieIssue::ExcludeContextDowngrade::SetCookie::Secure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeContextDowngrade::SetCookie::Insecure"] = 29] = "SameSiteCookieIssue::ExcludeContextDowngrade::SetCookie::Insecure";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::ReadCookie"] = 30] = "SameSiteCookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::ReadCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::SetCookie"] = 31] = "SameSiteCookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::SetCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::ReadCookie"] = 32] = "SameSiteCookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::ReadCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::SetCookie"] = 33] = "SameSiteCookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::SetCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::ReadCookie"] = 34] = "SameSiteCookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::ReadCookie";
-    IssueCreated[IssueCreated["SameSiteCookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::SetCookie"] = 35] = "SameSiteCookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::SetCookie";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeSameSiteNoneInsecure::ReadCookie"] = 14] = "CookieIssue::ExcludeSameSiteNoneInsecure::ReadCookie";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeSameSiteNoneInsecure::SetCookie"] = 15] = "CookieIssue::ExcludeSameSiteNoneInsecure::SetCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteNoneInsecure::ReadCookie"] = 16] = "CookieIssue::WarnSameSiteNoneInsecure::ReadCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteNoneInsecure::SetCookie"] = 17] = "CookieIssue::WarnSameSiteNoneInsecure::SetCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Secure"] = 18] = "CookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Secure";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Insecure"] = 19] = "CookieIssue::WarnSameSiteStrictLaxDowngradeStrict::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::WarnCrossDowngrade::ReadCookie::Secure"] = 20] = "CookieIssue::WarnCrossDowngrade::ReadCookie::Secure";
+    IssueCreated[IssueCreated["CookieIssue::WarnCrossDowngrade::ReadCookie::Insecure"] = 21] = "CookieIssue::WarnCrossDowngrade::ReadCookie::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::WarnCrossDowngrade::SetCookie::Secure"] = 22] = "CookieIssue::WarnCrossDowngrade::SetCookie::Secure";
+    IssueCreated[IssueCreated["CookieIssue::WarnCrossDowngrade::SetCookie::Insecure"] = 23] = "CookieIssue::WarnCrossDowngrade::SetCookie::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeNavigationContextDowngrade::Secure"] = 24] = "CookieIssue::ExcludeNavigationContextDowngrade::Secure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeNavigationContextDowngrade::Insecure"] = 25] = "CookieIssue::ExcludeNavigationContextDowngrade::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeContextDowngrade::ReadCookie::Secure"] = 26] = "CookieIssue::ExcludeContextDowngrade::ReadCookie::Secure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeContextDowngrade::ReadCookie::Insecure"] = 27] = "CookieIssue::ExcludeContextDowngrade::ReadCookie::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeContextDowngrade::SetCookie::Secure"] = 28] = "CookieIssue::ExcludeContextDowngrade::SetCookie::Secure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeContextDowngrade::SetCookie::Insecure"] = 29] = "CookieIssue::ExcludeContextDowngrade::SetCookie::Insecure";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::ReadCookie"] = 30] = "CookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::ReadCookie";
+    IssueCreated[IssueCreated["CookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::SetCookie"] = 31] = "CookieIssue::ExcludeSameSiteUnspecifiedTreatedAsLax::SetCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::ReadCookie"] = 32] = "CookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::ReadCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::SetCookie"] = 33] = "CookieIssue::WarnSameSiteUnspecifiedLaxAllowUnsafe::SetCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::ReadCookie"] = 34] = "CookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::ReadCookie";
+    IssueCreated[IssueCreated["CookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::SetCookie"] = 35] = "CookieIssue::WarnSameSiteUnspecifiedCrossSiteContext::SetCookie";
     IssueCreated[IssueCreated["SharedArrayBufferIssue::TransferIssue"] = 36] = "SharedArrayBufferIssue::TransferIssue";
     IssueCreated[IssueCreated["SharedArrayBufferIssue::CreationIssue"] = 37] = "SharedArrayBufferIssue::CreationIssue";
     IssueCreated[IssueCreated["TrustedWebActivityIssue::kHttpError"] = 38] = "TrustedWebActivityIssue::kHttpError";
@@ -803,6 +846,16 @@ export var RecordingReplayFinished;
 })(RecordingReplayFinished || (RecordingReplayFinished = {}));
 // TODO(crbug.com/1167717): Make this a const enum again
 // eslint-disable-next-line rulesdir/const_enum
+export var RecordingReplaySpeed;
+(function (RecordingReplaySpeed) {
+    RecordingReplaySpeed[RecordingReplaySpeed["Normal"] = 1] = "Normal";
+    RecordingReplaySpeed[RecordingReplaySpeed["Slow"] = 2] = "Slow";
+    RecordingReplaySpeed[RecordingReplaySpeed["VerySlow"] = 3] = "VerySlow";
+    RecordingReplaySpeed[RecordingReplaySpeed["ExtremelySlow"] = 4] = "ExtremelySlow";
+    RecordingReplaySpeed[RecordingReplaySpeed["MaxValue"] = 5] = "MaxValue";
+})(RecordingReplaySpeed || (RecordingReplaySpeed = {}));
+// TODO(crbug.com/1167717): Make this a const enum again
+// eslint-disable-next-line rulesdir/const_enum
 export var RecordingReplayStarted;
 (function (RecordingReplayStarted) {
     RecordingReplayStarted[RecordingReplayStarted["ReplayOnly"] = 1] = "ReplayOnly";
@@ -831,7 +884,10 @@ export var RecordingExported;
 (function (RecordingExported) {
     RecordingExported[RecordingExported["ToPuppeteer"] = 1] = "ToPuppeteer";
     RecordingExported[RecordingExported["ToJSON"] = 2] = "ToJSON";
-    RecordingExported[RecordingExported["MaxValue"] = 3] = "MaxValue";
+    RecordingExported[RecordingExported["ToPuppeteerReplay"] = 3] = "ToPuppeteerReplay";
+    RecordingExported[RecordingExported["ToExtension"] = 4] = "ToExtension";
+    RecordingExported[RecordingExported["ToLighthouse"] = 5] = "ToLighthouse";
+    RecordingExported[RecordingExported["MaxValue"] = 6] = "MaxValue";
 })(RecordingExported || (RecordingExported = {}));
 /* eslint-disable @typescript-eslint/naming-convention */
 // TODO(crbug.com/1167717): Make this a const enum again
@@ -842,5 +898,50 @@ export var ConsoleShowsCorsErrors;
     ConsoleShowsCorsErrors[ConsoleShowsCorsErrors["true"] = 1] = "true";
     ConsoleShowsCorsErrors[ConsoleShowsCorsErrors["MaxValue"] = 2] = "MaxValue";
 })(ConsoleShowsCorsErrors || (ConsoleShowsCorsErrors = {}));
+// TODO(crbug.com/1167717): Make this a const enum again
+// eslint-disable-next-line rulesdir/const_enum
+export var StyleTextCopied;
+(function (StyleTextCopied) {
+    StyleTextCopied[StyleTextCopied["DeclarationViaChangedLine"] = 1] = "DeclarationViaChangedLine";
+    StyleTextCopied[StyleTextCopied["AllChangesViaStylesPane"] = 2] = "AllChangesViaStylesPane";
+    StyleTextCopied[StyleTextCopied["DeclarationViaContextMenu"] = 3] = "DeclarationViaContextMenu";
+    StyleTextCopied[StyleTextCopied["PropertyViaContextMenu"] = 4] = "PropertyViaContextMenu";
+    StyleTextCopied[StyleTextCopied["ValueViaContextMenu"] = 5] = "ValueViaContextMenu";
+    StyleTextCopied[StyleTextCopied["DeclarationAsJSViaContextMenu"] = 6] = "DeclarationAsJSViaContextMenu";
+    StyleTextCopied[StyleTextCopied["RuleViaContextMenu"] = 7] = "RuleViaContextMenu";
+    StyleTextCopied[StyleTextCopied["AllDeclarationsViaContextMenu"] = 8] = "AllDeclarationsViaContextMenu";
+    StyleTextCopied[StyleTextCopied["AllDeclarationsAsJSViaContextMenu"] = 9] = "AllDeclarationsAsJSViaContextMenu";
+    StyleTextCopied[StyleTextCopied["SelectorViaContextMenu"] = 10] = "SelectorViaContextMenu";
+    StyleTextCopied[StyleTextCopied["MaxValue"] = 11] = "MaxValue";
+})(StyleTextCopied || (StyleTextCopied = {}));
+// TODO(crbug.com/1167717): Make this a const enum again
+// eslint-disable-next-line rulesdir/const_enum
+export var ManifestSectionCodes;
+(function (ManifestSectionCodes) {
+    ManifestSectionCodes[ManifestSectionCodes["OtherSection"] = 0] = "OtherSection";
+    ManifestSectionCodes[ManifestSectionCodes["Identity"] = 1] = "Identity";
+    ManifestSectionCodes[ManifestSectionCodes["Presentation"] = 2] = "Presentation";
+    ManifestSectionCodes[ManifestSectionCodes["Protocol Handlers"] = 3] = "Protocol Handlers";
+    ManifestSectionCodes[ManifestSectionCodes["Icons"] = 4] = "Icons";
+    ManifestSectionCodes[ManifestSectionCodes["MaxValue"] = 5] = "MaxValue";
+})(ManifestSectionCodes || (ManifestSectionCodes = {}));
+// The names here match the CSSRuleValidator names in CSSRuleValidator.ts.
+// TODO(crbug.com/1167717): Make this a const enum again
+// eslint-disable-next-line rulesdir/const_enum
+export var CSSHintType;
+(function (CSSHintType) {
+    CSSHintType[CSSHintType["Other"] = 0] = "Other";
+    CSSHintType[CSSHintType["AlignContent"] = 1] = "AlignContent";
+    CSSHintType[CSSHintType["FlexItem"] = 2] = "FlexItem";
+    CSSHintType[CSSHintType["FlexContainer"] = 3] = "FlexContainer";
+    CSSHintType[CSSHintType["GridContainer"] = 4] = "GridContainer";
+    CSSHintType[CSSHintType["GridItem"] = 5] = "GridItem";
+    CSSHintType[CSSHintType["FlexGrid"] = 6] = "FlexGrid";
+    CSSHintType[CSSHintType["MulticolFlexGrid"] = 7] = "MulticolFlexGrid";
+    CSSHintType[CSSHintType["Padding"] = 8] = "Padding";
+    CSSHintType[CSSHintType["Position"] = 9] = "Position";
+    CSSHintType[CSSHintType["ZIndex"] = 10] = "ZIndex";
+    CSSHintType[CSSHintType["MaxValue"] = 11] = "MaxValue";
+})(CSSHintType || (CSSHintType = {}));
 /* eslint-enable @typescript-eslint/naming-convention */
 //# sourceMappingURL=UserMetrics.js.map

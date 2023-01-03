@@ -18,12 +18,14 @@ styles.replaceSync(
   font-size: var(--source-code-font-size);
   white-space: pre;
   line-height: 1.2em;
+  user-select: text;
 }
 
 .diff-line-number {
   color: var(--color-line-number);
   padding: 0 3px 0 9px;
   text-align: right;
+  user-select: none;
 }
 
 .diff-line-marker {

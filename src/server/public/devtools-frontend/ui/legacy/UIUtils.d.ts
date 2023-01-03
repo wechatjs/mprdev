@@ -1,7 +1,8 @@
+import * as Platform from '../../core/platform/platform.js';
 import * as TextUtils from '../../models/text_utils/text_utils.js';
 import { Size } from './Geometry.js';
-import type { ToolbarButton } from './Toolbar.js';
-import type { TreeOutline } from './Treeoutline.js';
+import { type ToolbarButton } from './Toolbar.js';
+import { type TreeOutline } from './Treeoutline.js';
 export declare const highlightedSearchResultClassName = "highlighted-search-result";
 export declare const highlightedCurrentSearchResultClassName = "current-search-result";
 export declare function installDragHandle(element: Element, elementDragStart: ((arg0: MouseEvent) => boolean) | null, elementDrag: (arg0: MouseEvent) => void, elementDragEnd: ((arg0: MouseEvent) => void) | null, cursor: string | null, hoverCursor?: string | null, startDelay?: number): void;
@@ -120,12 +121,12 @@ export declare function measureTextWidth(context: CanvasRenderingContext2D, text
 /**
  * Adds a 'utm_source=devtools' as query parameter to the url.
  */
-export declare function addReferrerToURL(url: string): string;
+export declare function addReferrerToURL(url: Platform.DevToolsPath.UrlString): Platform.DevToolsPath.UrlString;
 /**
  * We want to add a referrer query param to every request to
  * 'web.dev' or 'developers.google.com'.
  */
-export declare function addReferrerToURLIfNecessary(url: string): string;
+export declare function addReferrerToURLIfNecessary(url: Platform.DevToolsPath.UrlString): Platform.DevToolsPath.UrlString;
 export declare function loadImage(url: string): Promise<HTMLImageElement | null>;
 export declare function loadImageFromData(data: string | null): Promise<HTMLImageElement | null>;
 export declare function createFileSelectorElement(callback: (arg0: File) => void): HTMLInputElement;

@@ -1,4 +1,4 @@
-import type { AdornerSettingsMap } from './AdornerManager.js';
+import { type AdornerSettingsMap } from './AdornerManager.js';
 export declare class AdornerSettingUpdatedEvent extends Event {
     static readonly eventName = "adornersettingupdated";
     data: {

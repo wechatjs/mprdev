@@ -35,11 +35,11 @@ async function loadCoverageModule() {
     return loadedCoverageModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'coverage',
     title: i18nLazyString(UIStrings.coverage),
     commandPrompt: i18nLazyString(UIStrings.showCoverage),
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     order: 100,
     async loadView() {
         const Coverage = await loadCoverageModule();
@@ -48,9 +48,9 @@ UI.ViewManager.registerViewExtension({
 });
 UI.ActionRegistration.registerActionExtension({
     actionId: 'coverage.toggle-recording',
-    iconClass: "largeicon-start-recording" /* LARGEICON_START_RECORDING */,
+    iconClass: "largeicon-start-recording" /* UI.ActionRegistration.IconClass.LARGEICON_START_RECORDING */,
     toggleable: true,
-    toggledIconClass: "largeicon-stop-recording" /* LARGEICON_STOP_RECORDING */,
+    toggledIconClass: "largeicon-stop-recording" /* UI.ActionRegistration.IconClass.LARGEICON_STOP_RECORDING */,
     toggleWithRedColor: true,
     async loadActionDelegate() {
         const Coverage = await loadCoverageModule();
@@ -70,7 +70,7 @@ UI.ActionRegistration.registerActionExtension({
 });
 UI.ActionRegistration.registerActionExtension({
     actionId: 'coverage.start-with-reload',
-    iconClass: "largeicon-refresh" /* LARGEICON_REFRESH */,
+    iconClass: "largeicon-refresh" /* UI.ActionRegistration.IconClass.LARGEICON_REFRESH */,
     async loadActionDelegate() {
         const Coverage = await loadCoverageModule();
         return Coverage.CoverageView.ActionDelegate.instance();

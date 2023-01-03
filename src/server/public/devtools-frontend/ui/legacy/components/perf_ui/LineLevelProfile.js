@@ -64,7 +64,7 @@ export class Performance {
             if (!node) {
                 continue;
             }
-            const scriptIdOrUrl = node.scriptId || node.url;
+            const scriptIdOrUrl = Number(node.scriptId) || node.url;
             if (!scriptIdOrUrl) {
                 continue;
             }
@@ -151,13 +151,9 @@ export class Helper {
         // Map from sources to line->value profile maps.
         const decorationsBySource = new Map();
         const pending = [];
-        for (const targetToScript of this.lineData) {
-            const target = targetToScript[0];
+        for (const [target, scriptToLineMap] of this.lineData) {
             const debuggerModel = target ? target.model(SDK.DebuggerModel.DebuggerModel) : null;
-            const scriptToLineMap = targetToScript[1];
-            for (const scriptToLine of scriptToLineMap) {
-                const scriptIdOrUrl = scriptToLine[0];
-                const lineToDataMap = scriptToLine[1];
+            for (const [scriptIdOrUrl, lineToDataMap] of scriptToLineMap) {
                 // debuggerModel is null when the profile is loaded from file.
                 // Try to get UISourceCode by the URL in this case.
                 const workspace = Workspace.Workspace.WorkspaceImpl.instance();

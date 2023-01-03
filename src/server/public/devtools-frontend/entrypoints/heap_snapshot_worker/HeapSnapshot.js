@@ -1409,10 +1409,10 @@ export class HeapSnapshot {
                 return;
             }
             snapshot.nodes[nodeIndex + snapshot.#nodeDetachednessOffset] = newState;
-            if (newState === 1 /* Attached */) {
+            if (newState === 1 /* DOMLinkState.Attached */) {
                 attached.push(nodeOrdinal);
             }
-            else if (newState === 2 /* Detached */) {
+            else if (newState === 2 /* DOMLinkState.Detached */) {
                 // Detached state: Rewire node name.
                 addDetachedPrefixToNodeName(snapshot, nodeIndex);
                 detached.push(nodeOrdinal);
@@ -1429,7 +1429,7 @@ export class HeapSnapshot {
         for (let nodeOrdinal = 0; nodeOrdinal < this.nodeCount; ++nodeOrdinal) {
             const state = this.nodes[nodeOrdinal * this.nodeFieldCount + this.#nodeDetachednessOffset];
             // Bail out for objects that have no known state. For all other objects set that state.
-            if (state === 0 /* Unknown */) {
+            if (state === 0 /* DOMLinkState.Unknown */) {
                 continue;
             }
             processNode(this, nodeOrdinal, state);
@@ -1437,17 +1437,17 @@ export class HeapSnapshot {
         // 2. If the parent is attached, then the child is also attached.
         while (attached.length !== 0) {
             const nodeOrdinal = attached.pop();
-            propagateState(this, nodeOrdinal, 1 /* Attached */);
+            propagateState(this, nodeOrdinal, 1 /* DOMLinkState.Attached */);
         }
         // 3. If the parent is not attached, then the child inherits the parent's state.
         while (detached.length !== 0) {
             const nodeOrdinal = detached.pop();
             const nodeState = this.nodes[nodeOrdinal * this.nodeFieldCount + this.#nodeDetachednessOffset];
             // Ignore if the node has been found through propagating forward attached state.
-            if (nodeState === 1 /* Attached */) {
+            if (nodeState === 1 /* DOMLinkState.Attached */) {
                 continue;
             }
-            propagateState(this, nodeOrdinal, 2 /* Detached */);
+            propagateState(this, nodeOrdinal, 2 /* DOMLinkState.Detached */);
         }
         console.timeEnd('propagateDOMState');
     }

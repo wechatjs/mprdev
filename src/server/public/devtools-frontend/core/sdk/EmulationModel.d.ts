@@ -1,10 +1,11 @@
 import * as Protocol from '../../generated/protocol.js';
 import { OverlayModel } from './OverlayModel.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class EmulationModel extends SDKModel<void> {
     #private;
     constructor(target: Target);
+    setTouchEmulationAllowed(touchEmulationAllowed: boolean): void;
     supportsDeviceEmulation(): boolean;
     resetPageScaleFactor(): Promise<void>;
     emulateDevice(metrics: Protocol.Page.SetDeviceMetricsOverrideRequest | null): Promise<void>;
@@ -22,6 +23,7 @@ export declare class EmulationModel extends SDKModel<void> {
     private setLocalFontsDisabled;
     private setDisabledImageTypes;
     setCPUThrottlingRate(rate: number): Promise<void>;
+    setHardwareConcurrency(hardwareConcurrency: number): Promise<void>;
     emulateTouch(enabled: boolean, mobile: boolean): Promise<void>;
     overrideEmulateTouch(enabled: boolean): Promise<void>;
     private updateTouch;

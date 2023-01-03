@@ -52,6 +52,10 @@ styles.replaceSync(
   z-index: 0;
 }
 
+.sources-toolbar .toolbar {
+  cursor: default;
+}
+
 .source-frame-debugger-script {
   --override-debugger-background-tint: rgb(255 255 194 / 50%);
 

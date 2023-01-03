@@ -1,5 +1,5 @@
 import * as Common from '../../core/common/common.js';
-import type { LighthouseController } from './LighthouseController.js';
+import { type LighthouseController } from './LighthouseController.js';
 export declare class StatusView {
     private readonly controller;
     private statusView;

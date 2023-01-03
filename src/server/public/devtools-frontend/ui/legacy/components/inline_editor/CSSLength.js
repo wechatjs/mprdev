@@ -15,7 +15,7 @@ export class DraggingFinishedEvent extends Event {
 }
 const DefaultLength = {
     value: 0,
-    unit: "px" /* PIXEL */,
+    unit: "px" /* LengthUnit.PIXEL */,
 };
 export class CSSLength extends HTMLElement {
     static litTagName = LitHtml.literal `devtools-css-length`;
@@ -25,6 +25,7 @@ export class CSSLength extends HTMLElement {
     isEditingSlot = false;
     isDraggingValue = false;
     currentMouseClientX = 0;
+    #valueMousedownTime = 0;
     set data(data) {
         const parsedResult = parseText(data.lengthText);
         if (!parsedResult) {
@@ -45,6 +46,10 @@ export class CSSLength extends HTMLElement {
     dragValue(event) {
         event.preventDefault();
         event.stopPropagation();
+        if (Date.now() - this.#valueMousedownTime <= 300) {
+            // Delay drag callback by 300ms to prioritize click over drag.
+            return;
+        }
         this.isDraggingValue = true;
         let displacement = event.clientX - this.currentMouseClientX;
         this.currentMouseClientX = event.clientX;
@@ -62,6 +67,7 @@ export class CSSLength extends HTMLElement {
         if (event.button !== 0) {
             return;
         }
+        this.#valueMousedownTime = Date.now();
         this.currentMouseClientX = event.clientX;
         const targetDocument = event.target instanceof Node && event.target.ownerDocument;
         if (targetDocument) {

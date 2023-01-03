@@ -38,7 +38,7 @@ export var IssueCategory;
     IssueCategory["CrossOriginEmbedderPolicy"] = "CrossOriginEmbedderPolicy";
     IssueCategory["Generic"] = "Generic";
     IssueCategory["MixedContent"] = "MixedContent";
-    IssueCategory["SameSiteCookie"] = "SameSiteCookie";
+    IssueCategory["Cookie"] = "Cookie";
     IssueCategory["HeavyAd"] = "HeavyAd";
     IssueCategory["ContentSecurityPolicy"] = "ContentSecurityPolicy";
     IssueCategory["TrustedWebActivity"] = "TrustedWebActivity";

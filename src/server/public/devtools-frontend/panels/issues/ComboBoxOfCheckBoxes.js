@@ -2,6 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import * as UI from '../../ui/legacy/legacy.js';
+import * as i18n from '../../core/i18n/i18n.js';
+const UIStrings = {
+    /**
+    *@description Generic menu name accessibility label
+    */
+    genericMenuLabel: 'Menu',
+};
+const str_ = i18n.i18n.registerUIStrings('panels/issues/ComboBoxOfCheckBoxes.ts', UIStrings);
+const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export class ComboBoxOfCheckBoxes extends UI.Toolbar.ToolbarButton {
     #options = new Array();
     #headers = new Array();
@@ -32,7 +41,7 @@ export class ComboBoxOfCheckBoxes extends UI.Toolbar.ToolbarButton {
     getOptions() {
         return this.#options;
     }
-    #showLevelContextMenu({ data: mouseEvent }) {
+    async #showLevelContextMenu({ data: mouseEvent }) {
         const contextMenu = new UI.ContextMenu.ContextMenu(mouseEvent, {
             useSoftMenu: true,
             x: this.element.totalOffsetLeft(),
@@ -46,7 +55,9 @@ export class ComboBoxOfCheckBoxes extends UI.Toolbar.ToolbarButton {
                 this.setOptionEnabled(index, !enabled);
             }, enabled);
         }
-        void contextMenu.show();
+        contextMenu.setContextMenuLabel(this.title ?? i18nString(UIStrings.genericMenuLabel));
+        await contextMenu.show();
+        contextMenu.markAsMenuItemCheckBox();
     }
 }
 //# sourceMappingURL=ComboBoxOfCheckBoxes.js.map

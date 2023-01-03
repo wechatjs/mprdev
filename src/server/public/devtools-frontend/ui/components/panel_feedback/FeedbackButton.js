@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 import * as Host from '../../../core/host/host.js';
 import * as i18n from '../../../core/i18n/i18n.js';
+import * as Platform from '../../../core/platform/platform.js';
 import * as ComponentHelpers from '../../components/helpers/helpers.js';
 import * as LitHtml from '../../lit-html/lit-html.js';
 import * as Buttons from '../buttons/buttons.js';
@@ -20,7 +21,7 @@ export class FeedbackButton extends HTMLElement {
     #shadow = this.attachShadow({ mode: 'open' });
     #boundRender = this.#render.bind(this);
     #props = {
-        feedbackUrl: '',
+        feedbackUrl: Platform.DevToolsPath.EmptyUrlString,
     };
     set data(data) {
         this.#props = data;
@@ -38,7 +39,7 @@ export class FeedbackButton extends HTMLElement {
       <${Buttons.Button.Button.litTagName}
           @click=${this.#onFeedbackClick}
           .iconUrl=${feedbackIconUrl}
-          .variant=${"secondary" /* SECONDARY */}
+          .variant=${"secondary" /* Buttons.Button.Variant.SECONDARY */}
       >${i18nString(UIStrings.feedback)}</${Buttons.Button.Button.litTagName}>
       `, this.#shadow, { host: this });
         // clang-format on

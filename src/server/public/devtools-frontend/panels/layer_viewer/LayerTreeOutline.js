@@ -30,7 +30,7 @@
 import * as Common from '../../core/common/common.js';
 import * as i18n from '../../core/i18n/i18n.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { LayerSelection } from './LayerViewHost.js';
+import { LayerSelection, } from './LayerViewHost.js';
 const UIStrings = {
     /**
     *@description Label for layers sidepanel tree
@@ -202,7 +202,7 @@ export class LayerTreeOutline extends Common.ObjectWrapper.eventMixin(UI.TreeOut
         if (layer) {
             this.layerSnapshotMap = this.layerViewHost.getLayerSnapshotMap();
             if (this.layerSnapshotMap.has(layer)) {
-                contextMenu.defaultSection().appendItem(i18nString(UIStrings.showPaintProfiler), () => this.dispatchEventToListeners("PaintProfilerRequested" /* PaintProfilerRequested */, selection), false);
+                contextMenu.defaultSection().appendItem(i18nString(UIStrings.showPaintProfiler), () => this.dispatchEventToListeners("PaintProfilerRequested" /* Events.PaintProfilerRequested */, selection), false);
             }
         }
         this.layerViewHost.showContextMenu(contextMenu, selection);

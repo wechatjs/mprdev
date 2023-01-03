@@ -1,3 +1,4 @@
+import * as Common from '../../core/common/common.js';
 import * as Bindings from '../../models/bindings/bindings.js';
 import * as Workspace from '../../models/workspace/workspace.js';
 import * as CodeMirror from '../../third_party/codemirror.next/codemirror.next.js';
@@ -14,7 +15,7 @@ export declare class DebuggerPlugin extends Plugin {
     private sourceMapInfobar;
     private readonly scriptsPanel;
     private readonly breakpointManager;
-    private readonly popoverHelper;
+    private popoverHelper;
     private scriptFileForDebuggerModel;
     private breakpoints;
     private continueToLocations;
@@ -25,6 +26,8 @@ export declare class DebuggerPlugin extends Plugin {
     private prettyPrintInfobar;
     private refreshBreakpointsTimeout;
     private activeBreakpointDialog;
+    private missingDebugInfoBar;
+    private readonly ignoreListCallback;
     constructor(uiSourceCode: Workspace.UISourceCode.UISourceCode, transformer: SourceFrame.SourceFrame.Transformer);
     editorExtension(): CodeMirror.Extension;
     private shortcutHandlers;
@@ -35,6 +38,7 @@ export declare class DebuggerPlugin extends Plugin {
     removeInfobar(bar: UI.Infobar.Infobar | null): void;
     private hideIgnoreListInfobar;
     willHide(): void;
+    editBreakpointLocation({ breakpoint, uiLocation }: Bindings.BreakpointManager.BreakpointLocation): void;
     populateLineGutterContextMenu(contextMenu: UI.ContextMenu.ContextMenu, editorLineNumber: number): void;
     populateTextAreaContextMenu(contextMenu: UI.ContextMenu.ContextMenu): void;
     private workingCopyChanged;
@@ -43,6 +47,7 @@ export declare class DebuggerPlugin extends Plugin {
     private didDivergeFromVM;
     private setMuted;
     private consistentScripts;
+    private isVariableIdentifier;
     private isIdentifier;
     private getPopoverRequest;
     private onEditorUpdate;
@@ -77,6 +82,7 @@ export declare class DebuggerPlugin extends Plugin {
     onInlineBreakpointMarkerContextMenu(event: MouseEvent, breakpoint: Bindings.BreakpointManager.Breakpoint | null): void;
     private updateScriptFiles;
     private updateScriptFile;
+    private updateMissingDebugInfoInfobar;
     private showSourceMapInfobar;
     private detectMinified;
     private handleGutterClick;
@@ -87,4 +93,10 @@ export declare class DebuggerPlugin extends Plugin {
     private callFrameChanged;
     private setExecutionLocation;
     dispose(): void;
+}
+export declare class BreakpointLocationRevealer implements Common.Revealer.Revealer {
+    static instance({ forceNew }?: {
+        forceNew: boolean;
+    }): BreakpointLocationRevealer;
+    reveal(breakpointLocation: Object, omitFocus?: boolean | undefined): Promise<void>;
 }

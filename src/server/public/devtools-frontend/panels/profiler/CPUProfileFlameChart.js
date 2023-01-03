@@ -140,7 +140,7 @@ export class CPUProfileFlameChart extends Common.ObjectWrapper.eventMixin(UI.Wid
         this.mainPane.addEventListener(PerfUI.FlameChart.Events.EntryInvoked, this.onEntryInvoked, this);
         this.entrySelected = false;
         this.mainPane.addEventListener(PerfUI.FlameChart.Events.CanvasFocused, this.onEntrySelected, this);
-        this.overviewPane.addEventListener("WindowChanged" /* WindowChanged */, this.onWindowChanged, this);
+        this.overviewPane.addEventListener("WindowChanged" /* OverviewPaneEvents.WindowChanged */, this.onWindowChanged, this);
         this.dataProvider = dataProvider;
         this.searchResults = [];
     }
@@ -294,7 +294,7 @@ export class OverviewPane extends Common.ObjectWrapper.eventMixin(UI.Widget.VBox
         const windowPosition = { windowTimeLeft: event.data.rawStartValue, windowTimeRight: event.data.rawEndValue };
         this.windowTimeLeft = windowPosition.windowTimeLeft;
         this.windowTimeRight = windowPosition.windowTimeRight;
-        this.dispatchEventToListeners("WindowChanged" /* WindowChanged */, windowPosition);
+        this.dispatchEventToListeners("WindowChanged" /* OverviewPaneEvents.WindowChanged */, windowPosition);
     }
     timelineData() {
         return this.dataProvider.timelineData();

@@ -15,6 +15,7 @@ export class EmulationModel extends SDKModel {
     #mediaConfiguration;
     #touchEnabled;
     #touchMobile;
+    #touchEmulationAllowed;
     #customTouchEnabled;
     #touchConfiguration;
     constructor(target) {
@@ -125,13 +126,13 @@ export class EmulationModel extends SDKModel {
         const updateDisabledImageFormats = () => {
             const types = [];
             if (avifFormatDisabledSetting.get()) {
-                types.push("avif" /* Avif */);
+                types.push("avif" /* Protocol.Emulation.DisabledImageType.Avif */);
             }
             if (jpegXlFormatDisabledSetting.get()) {
-                types.push("jxl" /* Jxl */);
+                types.push("jxl" /* Protocol.Emulation.DisabledImageType.Jxl */);
             }
             if (webpFormatDisabledSetting.get()) {
-                types.push("webp" /* Webp */);
+                types.push("webp" /* Protocol.Emulation.DisabledImageType.Webp */);
             }
             this.setDisabledImageTypes(types);
         };
@@ -141,13 +142,17 @@ export class EmulationModel extends SDKModel {
         if (avifFormatDisabledSetting.get() || jpegXlFormatDisabledSetting.get() || webpFormatDisabledSetting.get()) {
             updateDisabledImageFormats();
         }
+        this.#touchEmulationAllowed = true;
         this.#touchEnabled = false;
         this.#touchMobile = false;
         this.#customTouchEnabled = false;
         this.#touchConfiguration = {
             enabled: false,
-            configuration: "mobile" /* Mobile */,
+            configuration: "mobile" /* Protocol.Emulation.SetEmitTouchEventsForMouseRequestConfiguration.Mobile */,
         };
+    }
+    setTouchEmulationAllowed(touchEmulationAllowed) {
+        this.#touchEmulationAllowed = touchEmulationAllowed;
     }
     supportsDeviceEmulation() {
         return this.target().hasAllCapabilities(Capability.DeviceEmulation);
@@ -257,31 +262,37 @@ export class EmulationModel extends SDKModel {
     async setCPUThrottlingRate(rate) {
         await this.#emulationAgent.invoke_setCPUThrottlingRate({ rate });
     }
+    async setHardwareConcurrency(hardwareConcurrency) {
+        if (hardwareConcurrency < 1) {
+            throw new Error('hardwareConcurrency must be a positive value');
+        }
+        await this.#emulationAgent.invoke_setHardwareConcurrencyOverride({ hardwareConcurrency });
+    }
     async emulateTouch(enabled, mobile) {
-        this.#touchEnabled = enabled;
-        this.#touchMobile = mobile;
+        this.#touchEnabled = enabled && this.#touchEmulationAllowed;
+        this.#touchMobile = mobile && this.#touchEmulationAllowed;
         await this.updateTouch();
     }
     async overrideEmulateTouch(enabled) {
-        this.#customTouchEnabled = enabled;
+        this.#customTouchEnabled = enabled && this.#touchEmulationAllowed;
         await this.updateTouch();
     }
     async updateTouch() {
         let configuration = {
             enabled: this.#touchEnabled,
-            configuration: this.#touchMobile ? "mobile" /* Mobile */ :
-                "desktop" /* Desktop */,
+            configuration: this.#touchMobile ? "mobile" /* Protocol.Emulation.SetEmitTouchEventsForMouseRequestConfiguration.Mobile */ :
+                "desktop" /* Protocol.Emulation.SetEmitTouchEventsForMouseRequestConfiguration.Desktop */,
         };
         if (this.#customTouchEnabled) {
             configuration = {
                 enabled: true,
-                configuration: "mobile" /* Mobile */,
+                configuration: "mobile" /* Protocol.Emulation.SetEmitTouchEventsForMouseRequestConfiguration.Mobile */,
             };
         }
         if (this.#overlayModelInternal && this.#overlayModelInternal.inspectModeEnabled()) {
             configuration = {
                 enabled: false,
-                configuration: "mobile" /* Mobile */,
+                configuration: "mobile" /* Protocol.Emulation.SetEmitTouchEventsForMouseRequestConfiguration.Mobile */,
             };
         }
         if (!this.#touchConfiguration.enabled && !configuration.enabled) {

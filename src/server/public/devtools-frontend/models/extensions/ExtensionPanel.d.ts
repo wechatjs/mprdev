@@ -1,5 +1,6 @@
+import type * as Platform from '../../core/platform/platform.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { ExtensionServer } from './ExtensionServer.js';
+import { type ExtensionServer } from './ExtensionServer.js';
 export declare class ExtensionPanel extends UI.Panel.Panel implements UI.SearchableView.Searchable {
     private readonly server;
     private readonly id;
@@ -28,12 +29,12 @@ export declare class ExtensionSidebarPane extends UI.View.SimpleView {
     private idInternal;
     private extensionView?;
     private objectPropertiesView?;
-    constructor(server: ExtensionServer, panelName: string, title: string, id: string);
+    constructor(server: ExtensionServer, panelName: string, title: Platform.UIString.LocalizedString, id: string);
     id(): string;
     panelName(): string;
     setObject(object: Object, title: string | undefined, callback: (arg0?: (string | null) | undefined) => void): void;
     setExpression(expression: string, title: string | undefined, evaluateOptions: Object | undefined, securityOrigin: string, callback: (arg0?: (string | null) | undefined) => void): void;
-    setPage(url: string): void;
+    setPage(url: Platform.DevToolsPath.UrlString): void;
     setHeight(height: string): void;
     private onEvaluate;
     private createObjectPropertiesView;

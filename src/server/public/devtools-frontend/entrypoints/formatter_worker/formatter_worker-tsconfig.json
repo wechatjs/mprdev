@@ -38,6 +38,8 @@
     "../../../../../../front_end/entrypoints/formatter_worker/JSONFormatter.ts",
     "../../../../../../front_end/entrypoints/formatter_worker/JavaScriptFormatter.ts",
     "../../../../../../front_end/entrypoints/formatter_worker/JavaScriptOutline.ts",
+    "../../../../../../front_end/entrypoints/formatter_worker/ScopeParser.ts",
+    "../../../../../../front_end/entrypoints/formatter_worker/Substitute.ts",
     "../../../../../../front_end/legacy/legacy-defs.d.ts",
     "../../../../../../front_end/global_typings/global_defs.d.ts",
     "../../../../../../front_end/global_typings/request_idle_callback.d.ts",

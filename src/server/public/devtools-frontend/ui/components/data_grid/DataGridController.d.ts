@@ -1,6 +1,6 @@
 import type * as TextUtils from '../../../models/text_utils/text_utils.js';
-import type { SortState, Column, Row } from './DataGridUtils.js';
-import type { DataGridContextMenusConfiguration } from './DataGrid.js';
+import { type SortState, type Column, type Row } from './DataGridUtils.js';
+import { type DataGridContextMenusConfiguration } from './DataGrid.js';
 export interface DataGridControllerData {
     columns: Column[];
     rows: Row[];
@@ -12,6 +12,8 @@ export interface DataGridControllerData {
      */
     initialSort?: SortState;
     contextMenus?: DataGridContextMenusConfiguration;
+    label?: string;
+    paddingRowsCount?: number;
 }
 export declare class DataGridController extends HTMLElement {
     #private;

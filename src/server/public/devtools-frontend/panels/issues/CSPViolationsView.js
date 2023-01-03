@@ -47,8 +47,8 @@ export class CSPViolationsView extends UI.Widget.VBox {
         });
         topToolbar.appendToolbarItem(levelMenuButton);
         this.#listView.show(this.contentElement);
-        this.#issuesManager.addEventListener("IssueAdded" /* IssueAdded */, this.#onIssueAdded, this);
-        this.#issuesManager.addEventListener("FullUpdateRequired" /* FullUpdateRequired */, this.#onFullUpdateRequired, this);
+        this.#issuesManager.addEventListener("IssueAdded" /* IssuesManager.IssuesManager.Events.IssueAdded */, this.#onIssueAdded, this);
+        this.#issuesManager.addEventListener("FullUpdateRequired" /* IssuesManager.IssuesManager.Events.FullUpdateRequired */, this.#onFullUpdateRequired, this);
         this.#addAllIssues();
     }
     static instance(opts = { forceNew: null }) {

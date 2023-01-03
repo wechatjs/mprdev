@@ -1,11 +1,11 @@
 import * as Common from '../common/common.js';
+import * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
-import type { RemoteObject } from './RemoteObject.js';
-import type { EvaluationOptions, EvaluationResult, ExecutionContext } from './RuntimeModel.js';
-import { RuntimeModel } from './RuntimeModel.js';
+import { type RemoteObject } from './RemoteObject.js';
+import { RuntimeModel, type EvaluationOptions, type EvaluationResult, type ExecutionContext } from './RuntimeModel.js';
 import { Script } from './Script.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 import { SourceMapManager } from './SourceMapManager.js';
 export declare function sortAndMergeRanges(locationRanges: LocationRange[]): LocationRange[];
@@ -25,6 +25,7 @@ export declare class DebuggerModel extends SDKModel<EventTypes> {
     sourceMapManager(): SourceMapManager<Script>;
     runtimeModel(): RuntimeModel;
     debuggerEnabled(): boolean;
+    debuggerId(): string | null;
     private enableDebugger;
     syncDebuggerId(): Promise<Protocol.Debugger.EnableResponse>;
     private onFrameNavigated;
@@ -49,10 +50,8 @@ export declare class DebuggerModel extends SDKModel<EventTypes> {
     scheduleStepIntoAsync(): void;
     resume(): void;
     pause(): void;
-    private pauseOnAsyncCall;
-    setBreakpointByURL(url: string, lineNumber: number, columnNumber?: number, condition?: string): Promise<SetBreakpointResult>;
-    setBreakpointInAnonymousScript(scriptId: Protocol.Runtime.ScriptId, scriptHash: string, lineNumber: number, columnNumber?: number, condition?: string): Promise<SetBreakpointResult>;
-    private setBreakpointBySourceId;
+    setBreakpointByURL(url: Platform.DevToolsPath.UrlString, lineNumber: number, columnNumber?: number, condition?: string): Promise<SetBreakpointResult>;
+    setBreakpointInAnonymousScript(scriptHash: string, lineNumber: number, columnNumber?: number, condition?: string): Promise<SetBreakpointResult>;
     removeBreakpoint(breakpointId: Protocol.Debugger.BreakpointId): Promise<void>;
     getPossibleBreakpoints(startLocation: Location, endLocation: Location | null, restrictToFunction: boolean): Promise<BreakLocation[]>;
     fetchAsyncStackTrace(stackId: Protocol.Runtime.StackTraceId): Promise<Protocol.Runtime.StackTrace | null>;
@@ -67,18 +66,18 @@ export declare class DebuggerModel extends SDKModel<EventTypes> {
      */
     scriptsForSourceURL(sourceURL: string | null): Script[];
     scriptsForExecutionContext(executionContext: ExecutionContext): Script[];
-    setScriptSource(scriptId: string, newSource: string, callback: (error: string | null, arg1?: Protocol.Runtime.ExceptionDetails | undefined) => void): void;
-    private didEditScriptSource;
     get callFrames(): CallFrame[] | null;
     debuggerPausedDetails(): DebuggerPausedDetails | null;
     private setDebuggerPausedDetails;
     setBeforePausedCallback(callback: ((arg0: DebuggerPausedDetails) => boolean) | null): void;
     setExpandCallFramesCallback(callback: ((arg0: Array<CallFrame>) => Promise<Array<CallFrame>>) | null): void;
     setEvaluateOnCallFrameCallback(callback: ((arg0: CallFrame, arg1: EvaluationOptions) => Promise<EvaluationResult | null>) | null): void;
-    pausedScript(callFrames: Protocol.Debugger.CallFrame[], reason: Protocol.Debugger.PausedEventReason, auxData: Object | undefined, breakpointIds: string[], asyncStackTrace?: Protocol.Runtime.StackTrace, asyncStackTraceId?: Protocol.Runtime.StackTraceId, asyncCallStackTraceId?: Protocol.Runtime.StackTraceId): Promise<void>;
+    setSynchronizeBreakpointsCallback(callback: ((script: Script) => Promise<void>) | null): void;
+    pausedScript(callFrames: Protocol.Debugger.CallFrame[], reason: Protocol.Debugger.PausedEventReason, auxData: Object | undefined, breakpointIds: string[], asyncStackTrace?: Protocol.Runtime.StackTrace, asyncStackTraceId?: Protocol.Runtime.StackTraceId): Promise<void>;
     resumedScript(): void;
-    parsedScriptSource(scriptId: Protocol.Runtime.ScriptId, sourceURL: string, startLine: number, startColumn: number, endLine: number, endColumn: number, executionContextId: number, hash: string, executionContextAuxData: any, isLiveEdit: boolean, sourceMapURL: string | undefined, hasSourceURLComment: boolean, hasSyntaxError: boolean, length: number, isModule: boolean | null, originStackTrace: Protocol.Runtime.StackTrace | null, codeOffset: number | null, scriptLanguage: string | null, debugSymbols: Protocol.Debugger.DebugSymbols | null, embedderName: string | null): Script;
-    setSourceMapURL(script: Script, newSourceMapURL: string): void;
+    parsedScriptSource(scriptId: Protocol.Runtime.ScriptId, sourceURL: Platform.DevToolsPath.UrlString, startLine: number, startColumn: number, endLine: number, endColumn: number, executionContextId: number, hash: string, executionContextAuxData: any, isLiveEdit: boolean, sourceMapURL: string | undefined, hasSourceURLComment: boolean, hasSyntaxError: boolean, length: number, isModule: boolean | null, originStackTrace: Protocol.Runtime.StackTrace | null, codeOffset: number | null, scriptLanguage: string | null, debugSymbols: Protocol.Debugger.DebugSymbols | null, embedderName: Platform.DevToolsPath.UrlString | null): Script;
+    setSourceMapURL(script: Script, newSourceMapURL: Platform.DevToolsPath.UrlString): void;
+    setDebugInfoURL(script: Script, _externalURL: Platform.DevToolsPath.UrlString): Promise<void>;
     executionContextDestroyed(executionContext: ExecutionContext): void;
     private registerScript;
     private unregisterScript;
@@ -105,7 +104,6 @@ export declare class DebuggerModel extends SDKModel<EventTypes> {
     getEvaluateOnCallFrameCallback(): ((arg0: CallFrame, arg1: EvaluationOptions) => Promise<EvaluationResult | null>) | null;
 }
 export declare const _debuggerIdToModel: Map<string, DebuggerModel>;
-export declare let _scheduledPauseOnAsyncCall: Protocol.Runtime.StackTraceId | null;
 /**
  * Keep these in sync with WebCore::V8Debugger
  */
@@ -119,6 +117,7 @@ export declare enum Events {
     DebuggerWasDisabled = "DebuggerWasDisabled",
     DebuggerPaused = "DebuggerPaused",
     DebuggerResumed = "DebuggerResumed",
+    DebugInfoAttached = "DebugInfoAttached",
     ParsedScriptSource = "ParsedScriptSource",
     DiscardedAnonymousScriptSource = "DiscardedAnonymousScriptSource",
     GlobalObjectCleared = "GlobalObjectCleared",
@@ -127,7 +126,7 @@ export declare enum Events {
 }
 export declare type EventTypes = {
     [Events.DebuggerWasEnabled]: DebuggerModel;
-    [Events.DebuggerWasDisabled]: void;
+    [Events.DebuggerWasDisabled]: DebuggerModel;
     [Events.DebuggerPaused]: DebuggerModel;
     [Events.DebuggerResumed]: DebuggerModel;
     [Events.ParsedScriptSource]: Script;
@@ -135,6 +134,7 @@ export declare type EventTypes = {
     [Events.GlobalObjectCleared]: DebuggerModel;
     [Events.CallFrameSelected]: DebuggerModel;
     [Events.DebuggerIsReadyToPause]: DebuggerModel;
+    [Events.DebugInfoAttached]: Script;
 };
 export declare class Location {
     debuggerModel: DebuggerModel;
@@ -172,15 +172,20 @@ export declare class BreakLocation extends Location {
     constructor(debuggerModel: DebuggerModel, scriptId: Protocol.Runtime.ScriptId, lineNumber: number, columnNumber?: number, type?: Protocol.Debugger.BreakLocationType);
     static fromPayload(debuggerModel: DebuggerModel, payload: Protocol.Debugger.BreakLocation): BreakLocation;
 }
+export interface MissingDebugInfoDetails {
+    details: string;
+    resources: string[];
+}
 export declare class CallFrame {
     #private;
     debuggerModel: DebuggerModel;
     payload: Protocol.Debugger.CallFrame;
-    readonly warnings: string[];
+    readonly canBeRestarted: boolean;
     constructor(debuggerModel: DebuggerModel, script: Script, payload: Protocol.Debugger.CallFrame, inlineFrameIndex?: number, functionName?: string);
     static fromPayloadArray(debuggerModel: DebuggerModel, callFrames: Protocol.Debugger.CallFrame[]): CallFrame[];
     createVirtualCallFrame(inlineFrameIndex: number, name: string): CallFrame;
-    addWarning(warning: string): void;
+    setMissingDebugInfoDetails(details: MissingDebugInfoDetails): void;
+    get missingDebugInfoDetails(): MissingDebugInfoDetails | null;
     get script(): Script;
     get id(): Protocol.Debugger.CallFrameId;
     get inlineFrameIndex(): number;
@@ -193,6 +198,7 @@ export declare class CallFrame {
     location(): Location;
     functionLocation(): Location | null;
     evaluate(options: EvaluationOptions): Promise<EvaluationResult>;
+    restart(): Promise<void>;
     getPayload(): Protocol.Debugger.CallFrame;
 }
 export interface ScopeChainEntry {

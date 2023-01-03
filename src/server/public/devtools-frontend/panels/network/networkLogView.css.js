@@ -77,7 +77,7 @@ styles.replaceSync(
   flex: none;
 }
 
-.network-log-grid.data-grid table.data {
+.network-log-grid.data-grid tbody {
   background: transparent;
 }
 
@@ -95,33 +95,25 @@ styles.replaceSync(
   height: 21px;
 }
 
-.network-waterfall-header,
 .network-log-grid.data-grid th {
-  border-bottom: 1px solid var(--color-details-hairline);
-  border-left: 1px solid var(--color-details-hairline);
-}
-
-.network-log-grid.data-grid table.data th {
   border-bottom: none;
 }
 
 .network-waterfall-header,
-.network-log-grid.data-grid .header-container {
+.network-log-grid.data-grid thead th {
+  border-bottom: 1px solid var(--color-details-hairline);
+  border-left: 1px solid var(--color-details-hairline);
+}
+
+.network-waterfall-header,
+.network-log-grid.data-grid thead {
   height: 31px;
   background-color: var(--color-background-elevation-1);
 }
 
-.network-log-grid.data-grid .data-container {
-  top: 31px;
-}
-
 .network-waterfall-header.small,
-.network-log-grid.data-grid.small .header-container {
+.network-log-grid.data-grid.small thead {
   height: 27px;
-}
-
-.network-log-grid.data-grid.small .data-container {
-  top: 27px;
 }
 
 .network-log-grid.data-grid select {
@@ -412,8 +404,8 @@ styles.replaceSync(
   /* This is part of the large color block declared above, but should not be
    extracted out. */
   /* stylelint-disable no-descending-specificity */
-  .network-log-grid.data-grid table.data tr.revealed.selected,
-  .network-log-grid.data-grid:focus table.data tr.revealed.selected,
+  .network-log-grid.data-grid tbody tr.revealed.selected,
+  .network-log-grid.data-grid:focus tbody tr.revealed.selected,
   .network-log-grid.data-grid:focus tr.selected .network-dim-cell,
   .network-log-grid.data-grid tr.selected .network-dim-cell,
   .network-log-grid.data-grid:focus tr.selected .initiator-column .devtools-link,
@@ -444,8 +436,8 @@ styles.replaceSync(
   }
 
   .network-waterfall-header.small,
-  .network-log-grid.data-grid.small .header-container .network-waterfall-header,
-  .network-log-grid.data-grid .header-container {
+  .network-log-grid.data-grid.small thead .network-waterfall-header,
+  .network-log-grid.data-grid thead {
     background-color: canvas;
   }
 

@@ -5,11 +5,9 @@ import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import type * as Protocol from '../../generated/protocol.js';
 import { ProfileFlameChartDataProvider } from './CPUProfileFlameChart.js';
-import type { IdsRangeChangedEvent } from './HeapTimelineOverview.js';
-import { HeapTimelineOverview } from './HeapTimelineOverview.js';
-import type { Formatter, ProfileDataGridNode } from './ProfileDataGrid.js';
-import type { ProfileHeader } from './ProfileHeader.js';
-import { ProfileType } from './ProfileHeader.js';
+import { HeapTimelineOverview, type IdsRangeChangedEvent } from './HeapTimelineOverview.js';
+import { type Formatter, type ProfileDataGridNode } from './ProfileDataGrid.js';
+import { ProfileType, type ProfileHeader } from './ProfileHeader.js';
 import { ProfileView, WritableProfileHeader } from './ProfileView.js';
 export declare class HeapProfileView extends ProfileView implements UI.SearchableView.Searchable {
     profileHeader: SamplingHeapProfileHeader;
@@ -32,7 +30,9 @@ export declare class HeapProfileView extends ProfileView implements UI.Searchabl
     createFlameChartDataProvider(): ProfileFlameChartDataProvider;
 }
 declare const SamplingHeapProfileTypeBase_base: (new (...args: any[]) => {
-    "__#6@#events": Common.ObjectWrapper.ObjectWrapper<SamplingHeapProfileType.EventTypes>;
+    "__#6@#events": Common.ObjectWrapper.ObjectWrapper<SamplingHeapProfileType.EventTypes>; /**
+    *@description Name of column header that reports the size (in terms of bytes) used for a particular part of the heap, excluding the size of the children nodes of this part of the heap
+    */
     addEventListener<T extends keyof SamplingHeapProfileType.EventTypes>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<SamplingHeapProfileType.EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<SamplingHeapProfileType.EventTypes, T>;
     once<T_1 extends keyof SamplingHeapProfileType.EventTypes>(eventType: T_1): Promise<SamplingHeapProfileType.EventTypes[T_1]>;
     removeEventListener<T_2 extends keyof SamplingHeapProfileType.EventTypes>(eventType: T_2, listener: (arg0: Common.EventTarget.EventTargetEvent<SamplingHeapProfileType.EventTypes[T_2]>) => void, thisObject?: Object | undefined): void;

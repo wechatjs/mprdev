@@ -223,10 +223,10 @@ export class AnimationImpl {
     }
     updateNodeStyle(duration, delay, node) {
         let animationPrefix;
-        if (this.type() === "CSSTransition" /* CSSTransition */) {
+        if (this.type() === "CSSTransition" /* Protocol.Animation.AnimationType.CSSTransition */) {
             animationPrefix = 'transition-';
         }
-        else if (this.type() === "CSSAnimation" /* CSSAnimation */) {
+        else if (this.type() === "CSSAnimation" /* Protocol.Animation.AnimationType.CSSAnimation */) {
             animationPrefix = 'animation-';
         }
         else {
@@ -421,7 +421,7 @@ export class AnimationGroup {
     }
     matches(group) {
         function extractId(anim) {
-            if (anim.type() === "WebAnimation" /* WebAnimation */) {
+            if (anim.type() === "WebAnimation" /* Protocol.Animation.AnimationType.WebAnimation */) {
                 return anim.type() + anim.id();
             }
             return anim.cssId();
@@ -493,7 +493,7 @@ export class ScreenshotCapture {
             return;
         }
         this.#capturing = true;
-        this.#screenCaptureModel.startScreencast("jpeg" /* Jpeg */, 80, undefined, 300, 2, this.screencastFrame.bind(this), _visible => { });
+        this.#screenCaptureModel.startScreencast("jpeg" /* Protocol.Page.StartScreencastRequestFormat.Jpeg */, 80, undefined, 300, 2, this.screencastFrame.bind(this), _visible => { });
     }
     screencastFrame(base64Data, _metadata) {
         function isAnimating(request) {

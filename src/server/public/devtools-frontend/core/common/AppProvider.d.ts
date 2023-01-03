@@ -1,5 +1,5 @@
 import * as Root from '../root/root.js';
-import type { App } from './App.js';
+import { type App } from './App.js';
 export interface AppProvider {
     createApp(): App;
 }

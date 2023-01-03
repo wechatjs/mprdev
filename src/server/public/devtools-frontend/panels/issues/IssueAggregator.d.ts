@@ -38,6 +38,7 @@ export declare class AggregatedIssue extends IssuesManager.Issue.Issue {
     getTrustedWebActivityIssues(): Iterable<IssuesManager.TrustedWebActivityIssue.TrustedWebActivityIssue>;
     getCorsIssues(): Set<IssuesManager.CorsIssue.CorsIssue>;
     getCspIssues(): Iterable<IssuesManager.ContentSecurityPolicyIssue.ContentSecurityPolicyIssue>;
+    getDeprecationIssues(): Iterable<IssuesManager.DeprecationIssue.DeprecationIssue>;
     getLowContrastIssues(): Iterable<IssuesManager.LowTextContrastIssue.LowTextContrastIssue>;
     requests(): Iterable<Protocol.Audits.AffectedRequest>;
     getSharedArrayBufferIssues(): Iterable<IssuesManager.SharedArrayBufferIssue.SharedArrayBufferIssue>;

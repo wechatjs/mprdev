@@ -90,8 +90,8 @@ export class DevicesSettingsTab extends UI.Widget.VBox {
         this.list.show(this.containerElement);
         this.muteUpdate = false;
         this.emulatedDevicesList = EmulationModel.EmulatedDevices.EmulatedDevicesList.instance();
-        this.emulatedDevicesList.addEventListener("CustomDevicesUpdated" /* CustomDevicesUpdated */, this.devicesUpdated, this);
-        this.emulatedDevicesList.addEventListener("StandardDevicesUpdated" /* StandardDevicesUpdated */, this.devicesUpdated, this);
+        this.emulatedDevicesList.addEventListener("CustomDevicesUpdated" /* EmulationModel.EmulatedDevices.Events.CustomDevicesUpdated */, this.devicesUpdated, this);
+        this.emulatedDevicesList.addEventListener("StandardDevicesUpdated" /* EmulationModel.EmulatedDevices.Events.StandardDevicesUpdated */, this.devicesUpdated, this);
         this.setDefaultFocusedElement(this.addCustomButton);
     }
     static instance() {

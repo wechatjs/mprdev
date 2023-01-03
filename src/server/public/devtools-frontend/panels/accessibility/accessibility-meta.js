@@ -23,12 +23,12 @@ async function loadAccessibilityModule() {
     return loadedAccessibilityModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "elements-sidebar" /* ELEMENTS_SIDEBAR */,
+    location: "elements-sidebar" /* UI.ViewManager.ViewLocationValues.ELEMENTS_SIDEBAR */,
     id: 'accessibility.view',
     title: i18nLazyString(UIStrings.accessibility),
     commandPrompt: i18nLazyString(UIStrings.shoAccessibility),
     order: 10,
-    persistence: "permanent" /* PERMANENT */,
+    persistence: "permanent" /* UI.ViewManager.ViewPersistence.PERMANENT */,
     async loadView() {
         const Accessibility = await loadAccessibilityModule();
         return Accessibility.AccessibilitySidebarView.AccessibilitySidebarView.instance();

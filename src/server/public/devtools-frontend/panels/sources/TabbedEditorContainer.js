@@ -64,6 +64,7 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
     previouslyViewedFilesSetting;
     history;
     uriToUISourceCode;
+    idToUISourceCode;
     currentFileInternal;
     currentView;
     scrollTimer;
@@ -84,6 +85,7 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
         this.previouslyViewedFilesSetting = setting;
         this.history = History.fromObject(this.previouslyViewedFilesSetting.get());
         this.uriToUISourceCode = new Map();
+        this.idToUISourceCode = new Map();
     }
     onBindingCreated(event) {
         const binding = event.data;
@@ -178,15 +180,15 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
         if (!this.currentView || !(this.currentView instanceof SourceFrame.SourceFrame.SourceFrameImpl)) {
             return;
         }
-        this.currentView.addEventListener("EditorUpdate" /* EditorUpdate */, this.onEditorUpdate, this);
-        this.currentView.addEventListener("EditorScroll" /* EditorScroll */, this.onScrollChanged, this);
+        this.currentView.addEventListener("EditorUpdate" /* SourceFrame.SourceFrame.Events.EditorUpdate */, this.onEditorUpdate, this);
+        this.currentView.addEventListener("EditorScroll" /* SourceFrame.SourceFrame.Events.EditorScroll */, this.onScrollChanged, this);
     }
     removeViewListeners() {
         if (!this.currentView || !(this.currentView instanceof SourceFrame.SourceFrame.SourceFrameImpl)) {
             return;
         }
-        this.currentView.removeEventListener("EditorUpdate" /* EditorUpdate */, this.onEditorUpdate, this);
-        this.currentView.removeEventListener("EditorScroll" /* EditorScroll */, this.onScrollChanged, this);
+        this.currentView.removeEventListener("EditorUpdate" /* SourceFrame.SourceFrame.Events.EditorUpdate */, this.onEditorUpdate, this);
+        this.currentView.removeEventListener("EditorScroll" /* SourceFrame.SourceFrame.Events.EditorScroll */, this.onScrollChanged, this);
     }
     onScrollChanged() {
         if (this.currentView instanceof SourceFrame.SourceFrame.SourceFrameImpl) {
@@ -196,7 +198,7 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
             this.scrollTimer = window.setTimeout(() => this.history.save(this.previouslyViewedFilesSetting), 100);
             if (this.currentFileInternal) {
                 const { editor } = this.currentView.textEditor;
-                const topBlock = editor.blockAtHeight(editor.scrollDOM.getBoundingClientRect().top);
+                const topBlock = editor.lineBlockAtHeight(editor.scrollDOM.getBoundingClientRect().top - editor.documentTop);
                 const topLine = editor.state.doc.lineAt(topBlock.from).number - 1;
                 this.history.updateScrollLineNumber(this.currentFileInternal.url(), topLine);
             }
@@ -299,11 +301,12 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
     }
     canonicalUISourceCode(uiSourceCode) {
         // Check if we have already a UISourceCode for this url
-        const existingSourceCode = this.uriToUISourceCode.get(uiSourceCode.url());
+        const existingSourceCode = this.idToUISourceCode.get(uiSourceCode.canononicalScriptId());
         if (existingSourceCode) {
             // Ignore incoming uiSourceCode, we already have this file.
             return existingSourceCode;
         }
+        this.idToUISourceCode.set(uiSourceCode.canononicalScriptId(), uiSourceCode);
         this.uriToUISourceCode.set(uiSourceCode.url(), uiSourceCode);
         return uiSourceCode;
     }
@@ -353,6 +356,9 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
             if (this.uriToUISourceCode.get(uiSourceCode.url()) === uiSourceCode) {
                 this.uriToUISourceCode.delete(uiSourceCode.url());
             }
+            if (this.idToUISourceCode.get(uiSourceCode.canononicalScriptId()) === uiSourceCode) {
+                this.idToUISourceCode.delete(uiSourceCode.canononicalScriptId());
+            }
         }
         this.tabbedPane.closeTabs(tabIds);
     }
@@ -368,7 +374,7 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
         function tabIdToURI(tabId) {
             const tab = this.files.get(tabId);
             if (!tab) {
-                return '';
+                return Platform.DevToolsPath.EmptyUrlString;
             }
             return tab.url();
         }
@@ -495,7 +501,13 @@ export class TabbedEditorContainer extends Common.ObjectWrapper.ObjectWrapper {
                 this.uriToUISourceCode.delete(k);
             }
         }
-        // Ensure it is mapped under current url.
+        // Remove from map under old id if it has changed.
+        for (const [k, v] of this.idToUISourceCode) {
+            if (v === uiSourceCode && k !== v.canononicalScriptId()) {
+                this.idToUISourceCode.delete(k);
+            }
+        }
+        // Ensure it is mapped under current url and id.
         this.canonicalUISourceCode(uiSourceCode);
     }
     uiSourceCodeWorkingCopyChanged(event) {

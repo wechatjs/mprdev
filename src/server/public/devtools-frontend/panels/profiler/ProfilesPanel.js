@@ -27,6 +27,7 @@
  */
 import * as Common from '../../core/common/common.js';
 import * as i18n from '../../core/i18n/i18n.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
 // eslint-disable-next-line rulesdir/es_modules_import
 import objectValueStyles from '../../ui/legacy/components/object_ui/objectValue.css.js';
@@ -34,7 +35,7 @@ import * as UI from '../../ui/legacy/legacy.js';
 import heapProfilerStyles from './heapProfiler.css.js';
 import profilesPanelStyles from './profilesPanel.css.js';
 import profilesSidebarTreeStyles from './profilesSidebarTree.css.js';
-import { ProfileEvents as ProfileTypeEvents } from './ProfileHeader.js';
+import { ProfileEvents as ProfileTypeEvents, } from './ProfileHeader.js';
 import { Events as ProfileLauncherEvents, ProfileLauncherView } from './ProfileLauncherView.js';
 import { ProfileSidebarTreeElement, setSharedFileSelectorElement } from './ProfileSidebarTreeElement.js';
 import { instance } from './ProfileTypeRegistry.js';
@@ -194,7 +195,7 @@ export class ProfilesPanel extends UI.Panel.PanelWithSidebar {
         if (!this.toggleRecordAction.enabled()) {
             return true;
         }
-        const toggleButton = this.element.ownerDocument.deepActiveElement();
+        const toggleButton = Platform.DOMUtilities.deepActiveElement(this.element.ownerDocument);
         const type = this.selectedProfileType;
         if (!type) {
             return true;
@@ -561,6 +562,7 @@ export class JSProfilerPanel extends ProfilesPanel {
     constructor() {
         const registry = instance;
         super('js_profiler', [registry.cpuProfileType], 'profiler.js-toggle-recording');
+        this.splitWidget().mainWidget()?.setMinimumSize(350, 0);
     }
     static instance(opts = { forceNew: null }) {
         const { forceNew } = opts;

@@ -14,15 +14,15 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export class HeavyAdIssue extends Issue {
     #issueDetails;
     constructor(issueDetails, issuesModel) {
-        const umaCode = ["HeavyAdIssue" /* HeavyAdIssue */, issueDetails.reason].join('::');
-        super({ code: "HeavyAdIssue" /* HeavyAdIssue */, umaCode }, issuesModel);
+        const umaCode = ["HeavyAdIssue" /* Protocol.Audits.InspectorIssueCode.HeavyAdIssue */, issueDetails.reason].join('::');
+        super({ code: "HeavyAdIssue" /* Protocol.Audits.InspectorIssueCode.HeavyAdIssue */, umaCode }, issuesModel);
         this.#issueDetails = issueDetails;
     }
     details() {
         return this.#issueDetails;
     }
     primaryKey() {
-        return `${"HeavyAdIssue" /* HeavyAdIssue */}-${JSON.stringify(this.#issueDetails)}`;
+        return `${"HeavyAdIssue" /* Protocol.Audits.InspectorIssueCode.HeavyAdIssue */}-${JSON.stringify(this.#issueDetails)}`;
     }
     getDescription() {
         return {
@@ -40,9 +40,9 @@ export class HeavyAdIssue extends Issue {
     }
     getKind() {
         switch (this.#issueDetails.resolution) {
-            case "HeavyAdBlocked" /* HeavyAdBlocked */:
+            case "HeavyAdBlocked" /* Protocol.Audits.HeavyAdResolutionStatus.HeavyAdBlocked */:
                 return IssueKind.PageError;
-            case "HeavyAdWarning" /* HeavyAdWarning */:
+            case "HeavyAdWarning" /* Protocol.Audits.HeavyAdResolutionStatus.HeavyAdWarning */:
                 return IssueKind.BreakingChange;
         }
     }

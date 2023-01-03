@@ -86,6 +86,10 @@ const UIStrings = {
     *@description Text that is usually a hyperlink to more documentation
     */
     learnMore: 'Learn more',
+    /**
+    *@description Text that is usually a hyperlink to a feedback form
+    */
+    sendFeedback: 'Send feedback',
 };
 const str_ = i18n.i18n.registerUIStrings('panels/settings/SettingsScreen.ts', UIStrings);
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
@@ -138,11 +142,11 @@ export class SettingsScreen extends UI.Widget.VBox {
         dialog.contentElement.tabIndex = -1;
         dialog.addCloseButton();
         dialog.setOutsideClickCallback(() => { });
-        dialog.setPointerEventsBehavior("PierceGlassPane" /* PierceGlassPane */);
+        dialog.setPointerEventsBehavior("PierceGlassPane" /* UI.GlassPane.PointerEventsBehavior.PierceGlassPane */);
         dialog.setOutsideTabIndexBehavior(UI.Dialog.OutsideTabIndexBehavior.PreserveMainViewTabIndex);
         settingsScreen.show(dialog.contentElement);
         dialog.setEscapeKeyCallback(settingsScreen.onEscapeKeyPressed.bind(settingsScreen));
-        dialog.setMarginBehavior("NoMargin" /* NoMargin */);
+        dialog.setMarginBehavior("NoMargin" /* UI.GlassPane.MarginBehavior.NoMargin */);
         // UI.Dialog extends GlassPane and overrides the `show` method with a wider
         // accepted type. However, TypeScript uses the supertype declaration to
         // determine the full type, which requires a `!Document`.
@@ -243,10 +247,8 @@ export class GenericSettingsTab extends SettingsTab {
             Common.Settings.SettingCategory.PERSISTENCE,
             Common.Settings.SettingCategory.DEBUGGER,
             Common.Settings.SettingCategory.GLOBAL,
+            Common.Settings.SettingCategory.SYNC,
         ];
-        if (Root.Runtime.experiments.isEnabled(Root.Runtime.ExperimentName.SYNC_SETTINGS)) {
-            explicitSectionOrder.push(Common.Settings.SettingCategory.SYNC);
-        }
         // Some settings define their initial ordering.
         const preRegisteredSettings = Common.Settings.getRegisteredSettings().sort((firstSetting, secondSetting) => {
             if (firstSetting.order && secondSetting.order) {
@@ -419,6 +421,12 @@ export class ExperimentsSettingsTab extends SettingsTab {
             link.prepend(linkIcon);
             p.appendChild(link);
         }
+        if (experiment.feedbackLink) {
+            const link = UI.XLink.XLink.create(experiment.feedbackLink);
+            link.textContent = i18nString(UIStrings.sendFeedback);
+            link.classList.add('feedback-link');
+            p.appendChild(link);
+        }
         return p;
     }
 }
@@ -473,7 +481,7 @@ export class Revealer {
         for (const view of UI.ViewManager.getRegisteredViewExtensions()) {
             const id = view.viewId();
             const location = view.location();
-            if (location !== "settings-view" /* SETTINGS_VIEW */) {
+            if (location !== "settings-view" /* UI.ViewManager.ViewLocationValues.SETTINGS_VIEW */) {
                 continue;
             }
             const settings = view.settings();

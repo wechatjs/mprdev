@@ -63,16 +63,17 @@ styles.replaceSync(
   display: inline-flex;
 }
 
-.object-value-arraybuffer devtools-icon,
-.object-value-dataview devtools-icon,
-.object-value-typedarray devtools-icon,
-.object-value-webassemblymemory devtools-icon {
+.object-value-with-memory-icon > devtools-icon {
   cursor: pointer;
 }
 
 .object-value-null,
 .object-value-undefined {
   color: var(--color-text-disabled);
+}
+
+.object-value-unavailable {
+  color: var(--color-syntax-2);
 }
 
 .object-value-calculate-value-button:hover {

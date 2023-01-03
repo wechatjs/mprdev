@@ -100,6 +100,7 @@ export function registerSettingsForTest(settings, forceReset = false) {
 }
 export function resetSettings() {
     registeredSettings = [];
+    settingNameSet.clear();
 }
 export function maybeRemoveSettingExtension(settingName) {
     const settingIndex = registeredSettings.findIndex(setting => setting.settingName === settingName);

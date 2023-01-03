@@ -1,27 +1,29 @@
+import * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
-import type { DeferredDOMNode, DOMNode } from './DOMModel.js';
-import { DOMModel } from './DOMModel.js';
-import type { NetworkRequest } from './NetworkRequest.js';
+import { DOMModel, type DeferredDOMNode, type DOMNode } from './DOMModel.js';
+import { type NetworkRequest } from './NetworkRequest.js';
 import { Resource } from './Resource.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class ResourceTreeModel extends SDKModel<EventTypes> {
     #private;
     readonly agent: ProtocolProxyApi.PageApi;
+    readonly storageAgent: ProtocolProxyApi.StorageApi;
     readonly framesInternal: Map<string, ResourceTreeFrame>;
     isInterstitialShowing: boolean;
     mainFrame: ResourceTreeFrame | null;
     constructor(target: Target);
     static frameForRequest(request: NetworkRequest): ResourceTreeFrame | null;
     static frames(): ResourceTreeFrame[];
-    static resourceForURL(url: string): Resource | null;
+    static resourceForURL(url: Platform.DevToolsPath.UrlString): Resource | null;
     static reloadAllPages(bypassCache?: boolean, scriptToEvaluateOnLoad?: string): void;
+    storageKeyForFrame(frameId: Protocol.Page.FrameId): Promise<string | null>;
     domModel(): DOMModel;
     private processCachedResources;
     cachedResourcesLoaded(): boolean;
     private addFrame;
-    frameAttached(frameId: Protocol.Page.FrameId, parentFrameId: Protocol.Page.FrameId | null, stackTrace?: Protocol.Runtime.StackTrace): ResourceTreeFrame | null;
+    frameAttached(frameId: Protocol.Page.FrameId, parentFrameId: Protocol.Page.FrameId | null, stackTrace?: Protocol.Runtime.StackTrace, adScriptId?: Protocol.Page.AdScriptId): ResourceTreeFrame | null;
     frameNavigated(framePayload: Protocol.Page.Frame, type: Protocol.Page.NavigationType | undefined): void;
     documentOpened(framePayload: Protocol.Page.Frame): void;
     frameDetached(frameId: Protocol.Page.FrameId, isSwap: boolean): void;
@@ -30,13 +32,13 @@ export declare class ResourceTreeModel extends SDKModel<EventTypes> {
     frameForId(frameId: Protocol.Page.FrameId): ResourceTreeFrame | null;
     forAllResources(callback: (arg0: Resource) => boolean): boolean;
     frames(): ResourceTreeFrame[];
-    resourceForURL(url: string): Resource | null;
+    resourceForURL(url: Platform.DevToolsPath.UrlString): Resource | null;
     private addFramesRecursively;
     private createResourceFromFramePayload;
     suspendReload(): void;
     resumeReload(): void;
     reloadPage(ignoreCache?: boolean, scriptToEvaluateOnLoad?: string): void;
-    navigate(url: string): Promise<any>;
+    navigate(url: Platform.DevToolsPath.UrlString): Promise<any>;
     navigationHistory(): Promise<{
         currentIndex: number;
         entries: Array<Protocol.Page.NavigationEntry>;
@@ -44,7 +46,7 @@ export declare class ResourceTreeModel extends SDKModel<EventTypes> {
     navigateToHistoryEntry(entry: Protocol.Page.NavigationEntry): void;
     setLifecycleEventsEnabled(enabled: boolean): Promise<Protocol.ProtocolResponseWithError>;
     fetchAppManifest(): Promise<{
-        url: string;
+        url: Platform.DevToolsPath.UrlString;
         data: string | null;
         errors: Array<Protocol.Page.AppManifestError>;
     }>;
@@ -55,10 +57,14 @@ export declare class ResourceTreeModel extends SDKModel<EventTypes> {
     getAppId(): Promise<Protocol.Page.GetAppIdResponse>;
     private executionContextComparator;
     private getSecurityOriginData;
+    private getStorageKeyData;
     private updateSecurityOrigins;
+    private updateStorageKeys;
+    getMainStorageKey(): Promise<string | null>;
     getMainSecurityOrigin(): string | null;
     onBackForwardCacheNotUsed(event: Protocol.Page.BackForwardCacheNotUsedEvent): void;
-    processPendingBackForwardCacheNotUsedEvents(frame: ResourceTreeFrame): void;
+    onPrerenderAttemptCompleted(event: Protocol.Page.PrerenderAttemptCompletedEvent): void;
+    processPendingEvents(frame: ResourceTreeFrame): void;
 }
 export declare enum Events {
     FrameAdded = "FrameAdded",
@@ -77,7 +83,8 @@ export declare enum Events {
     WillReloadPage = "WillReloadPage",
     InterstitialShown = "InterstitialShown",
     InterstitialHidden = "InterstitialHidden",
-    BackForwardCacheDetailsUpdated = "BackForwardCacheDetailsUpdated"
+    BackForwardCacheDetailsUpdated = "BackForwardCacheDetailsUpdated",
+    PrerenderingStatusUpdated = "PrerenderingStatusUpdated"
 }
 export declare type EventTypes = {
     [Events.FrameAdded]: ResourceTreeFrame;
@@ -106,17 +113,20 @@ export declare type EventTypes = {
     [Events.InterstitialShown]: void;
     [Events.InterstitialHidden]: void;
     [Events.BackForwardCacheDetailsUpdated]: ResourceTreeFrame;
+    [Events.PrerenderingStatusUpdated]: ResourceTreeFrame;
 };
 export declare class ResourceTreeFrame {
     #private;
     crossTargetParentFrameId: string | null;
-    resourcesMap: Map<string, Resource>;
+    resourcesMap: Map<Platform.DevToolsPath.UrlString, Resource>;
     backForwardCacheDetails: {
         restoredFromCache: boolean | undefined;
         explanations: Protocol.Page.BackForwardCacheNotRestoredExplanation[];
         explanationsTree: Protocol.Page.BackForwardCacheNotRestoredExplanationTree | undefined;
     };
-    constructor(model: ResourceTreeModel, parentFrame: ResourceTreeFrame | null, frameId: Protocol.Page.FrameId, payload: Protocol.Page.Frame | null, creationStackTrace: Protocol.Runtime.StackTrace | null);
+    prerenderFinalStatus: Protocol.Page.PrerenderFinalStatus | null;
+    prerenderDisallowedApiMethod: string | null;
+    constructor(model: ResourceTreeModel, parentFrame: ResourceTreeFrame | null, frameId: Protocol.Page.FrameId, payload: Protocol.Page.Frame | null, creationStackTrace: Protocol.Runtime.StackTrace | null, adScriptId: Protocol.Page.AdScriptId | null);
     isSecureContext(): boolean;
     getSecureContextType(): Protocol.Page.SecureContextType | null;
     isCrossOriginIsolated(): boolean;
@@ -130,10 +140,15 @@ export declare class ResourceTreeFrame {
     resourceTreeModel(): ResourceTreeModel;
     get id(): Protocol.Page.FrameId;
     get name(): string;
-    get url(): string;
+    get url(): Platform.DevToolsPath.UrlString;
     domainAndRegistry(): string;
+    getAdScriptId(): Protocol.Runtime.ScriptId | null;
+    setAdScriptId(adScriptId: Protocol.Runtime.ScriptId | null): void;
+    getDebuggerId(): Protocol.Runtime.UniqueDebuggerId | null;
+    setDebuggerId(debuggerId: Protocol.Runtime.UniqueDebuggerId | null): void;
     get securityOrigin(): string | null;
-    unreachableUrl(): string;
+    getStorageKey(forceFetch: boolean): Promise<string | null>;
+    unreachableUrl(): Platform.DevToolsPath.UrlString;
     get loaderId(): string;
     adFrameType(): Protocol.Page.AdFrameType;
     adFrameStatus(): Protocol.Page.AdFrameStatus | undefined;
@@ -167,7 +182,7 @@ export declare class ResourceTreeFrame {
     addResource(resource: Resource): void;
     addRequest(request: NetworkRequest): void;
     resources(): Resource[];
-    resourceForURL(url: string): Resource | null;
+    resourceForURL(url: Platform.DevToolsPath.UrlString): Resource | null;
     callForFrameResources(callback: (arg0: Resource) => boolean): boolean;
     displayName(): string;
     getOwnerDeferredDOMNode(): Promise<DeferredDOMNode | null>;
@@ -181,6 +196,8 @@ export declare class ResourceTreeFrame {
     }): void;
     setBackForwardCacheDetails(event: Protocol.Page.BackForwardCacheNotUsedEvent): void;
     getResourcesMap(): Map<string, Resource>;
+    setPrerenderFinalStatus(status: Protocol.Page.PrerenderFinalStatus): void;
+    setPrerenderDisallowedApiMethod(disallowedApiMethod: string): void;
 }
 export declare class PageDispatcher implements ProtocolProxyApi.PageDispatcher {
     #private;
@@ -189,7 +206,7 @@ export declare class PageDispatcher implements ProtocolProxyApi.PageDispatcher {
     domContentEventFired({ timestamp }: Protocol.Page.DomContentEventFiredEvent): void;
     loadEventFired({ timestamp }: Protocol.Page.LoadEventFiredEvent): void;
     lifecycleEvent({ frameId, name }: Protocol.Page.LifecycleEventEvent): void;
-    frameAttached({ frameId, parentFrameId, stack }: Protocol.Page.FrameAttachedEvent): void;
+    frameAttached({ frameId, parentFrameId, stack, adScriptId }: Protocol.Page.FrameAttachedEvent): void;
     frameNavigated({ frame, type }: Protocol.Page.FrameNavigatedEvent): void;
     documentOpened({ frame }: Protocol.Page.DocumentOpenedEvent): void;
     frameDetached({ frameId, reason }: Protocol.Page.FrameDetachedEvent): void;
@@ -211,9 +228,14 @@ export declare class PageDispatcher implements ProtocolProxyApi.PageDispatcher {
     fileChooserOpened({}: Protocol.Page.FileChooserOpenedEvent): void;
     downloadWillBegin({}: Protocol.Page.DownloadWillBeginEvent): void;
     downloadProgress(): void;
+    prerenderAttemptCompleted(params: Protocol.Page.PrerenderAttemptCompletedEvent): void;
 }
 export interface SecurityOriginData {
     securityOrigins: Set<string>;
     mainSecurityOrigin: string | null;
     unreachableMainSecurityOrigin: string | null;
+}
+export interface StorageKeyData {
+    storageKeys: Set<string>;
+    mainStorageKey: string | null;
 }

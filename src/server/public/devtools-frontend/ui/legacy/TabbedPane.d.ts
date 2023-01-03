@@ -4,8 +4,7 @@ import { ContextMenu } from './ContextMenu.js';
 import { Constraints } from './Geometry.js';
 import { Icon } from './Icon.js';
 import { Toolbar } from './Toolbar.js';
-import type { Widget } from './Widget.js';
-import { VBox } from './Widget.js';
+import { VBox, type Widget } from './Widget.js';
 declare const TabbedPane_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends keyof EventTypes>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;

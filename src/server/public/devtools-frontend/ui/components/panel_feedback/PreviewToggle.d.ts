@@ -4,6 +4,7 @@ export interface PreviewToggleData {
     helperText: string | null;
     feedbackURL: string | null;
     experiment: Root.Runtime.ExperimentName;
+    learnMoreURL?: string;
     onChangeCallback?: (checked: boolean) => void;
 }
 export declare class PreviewToggle extends HTMLElement {

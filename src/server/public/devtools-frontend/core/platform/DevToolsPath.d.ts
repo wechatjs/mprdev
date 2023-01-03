@@ -7,6 +7,7 @@ declare class UrlStringTag {
  * “file:///Hello%20World/file/js”
  */
 export declare type UrlString = string & UrlStringTag;
+export declare const EmptyUrlString: UrlString;
 declare class RawPathStringTag {
     private rawPathTag;
 }
@@ -17,6 +18,7 @@ declare class RawPathStringTag {
  * “/Hello World/file.js”
  */
 export declare type RawPathString = string & RawPathStringTag;
+export declare const EmptyRawPathString: RawPathString;
 declare class EncodedPathStringTag {
     private encodedPathTag;
 }
@@ -26,4 +28,5 @@ declare class EncodedPathStringTag {
  * “/Hello%20World/file.js”
  */
 export declare type EncodedPathString = string & EncodedPathStringTag;
+export declare const EmptyEncodedPathString: EncodedPathString;
 export {};

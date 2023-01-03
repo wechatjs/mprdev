@@ -6,7 +6,7 @@ import * as Host from '../host/host.js';
 import * as i18n from '../i18n/i18n.js';
 import * as Platform from '../platform/platform.js';
 import { Cookie } from './Cookie.js';
-import { Events as NetworkRequestEvents, NetworkRequest } from './NetworkRequest.js';
+import { Events as NetworkRequestEvents, NetworkRequest, } from './NetworkRequest.js';
 import { Capability } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 import { TargetManager } from './TargetManager.js';
@@ -70,12 +70,12 @@ const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 const i18nLazyString = i18n.i18n.getLazilyComputedLocalizedString.bind(undefined, str_);
 const requestToManagerMap = new WeakMap();
 const CONNECTION_TYPES = new Map([
-    ['2g', "cellular2g" /* Cellular2g */],
-    ['3g', "cellular3g" /* Cellular3g */],
-    ['4g', "cellular4g" /* Cellular4g */],
-    ['bluetooth', "bluetooth" /* Bluetooth */],
-    ['wifi', "wifi" /* Wifi */],
-    ['wimax', "wimax" /* Wimax */],
+    ['2g', "cellular2g" /* Protocol.Network.ConnectionType.Cellular2g */],
+    ['3g', "cellular3g" /* Protocol.Network.ConnectionType.Cellular3g */],
+    ['4g', "cellular4g" /* Protocol.Network.ConnectionType.Cellular4g */],
+    ['bluetooth', "bluetooth" /* Protocol.Network.ConnectionType.Bluetooth */],
+    ['wifi', "wifi" /* Protocol.Network.ConnectionType.Wifi */],
+    ['wimax', "wimax" /* Protocol.Network.ConnectionType.Wimax */],
 ]);
 export class NetworkManager extends SDKModel {
     dispatcher;
@@ -85,7 +85,7 @@ export class NetworkManager extends SDKModel {
     constructor(target) {
         super(target);
         this.dispatcher = new NetworkDispatcher(this);
-        this.fetchDispatcher = new FetchDispatcher(target.fetchAgent());
+        this.fetchDispatcher = new FetchDispatcher(target.fetchAgent(), this);
         this.#networkAgent = target.networkAgent();
         target.registerNetworkDispatcher(this.dispatcher);
         target.registerFetchDispatcher(this.fetchDispatcher);
@@ -173,7 +173,7 @@ export class NetworkManager extends SDKModel {
     }
     static connectionType(conditions) {
         if (!conditions.download && !conditions.upload) {
-            return "none" /* None */;
+            return "none" /* Protocol.Network.ConnectionType.None */;
         }
         const title = typeof conditions.title === 'function' ? conditions.title().toLowerCase() : conditions.title.toLowerCase();
         for (const [name, protocolType] of CONNECTION_TYPES) {
@@ -181,7 +181,7 @@ export class NetworkManager extends SDKModel {
                 return protocolType;
             }
         }
-        return "other" /* Other */;
+        return "other" /* Protocol.Network.ConnectionType.Other */;
     }
     static lowercaseHeaders(headers) {
         const newHeaders = {};
@@ -192,6 +192,9 @@ export class NetworkManager extends SDKModel {
     }
     requestForURL(url) {
         return this.dispatcher.requestForURL(url);
+    }
+    requestForId(id) {
+        return this.dispatcher.requestForId(id);
     }
     cacheDisabledSettingChanged({ data: enabled }) {
         void this.#networkAgent.invoke_setCacheDisabled({ cacheDisabled: enabled });
@@ -272,11 +275,14 @@ export const Fast3GConditions = {
 const MAX_EAGER_POST_REQUEST_BODY_LENGTH = 64 * 1024; // bytes
 export class FetchDispatcher {
     #fetchAgent;
-    constructor(agent) {
+    #manager;
+    constructor(agent, manager) {
         this.#fetchAgent = agent;
+        this.#manager = manager;
     }
-    requestPaused({ requestId, request, resourceType, responseStatusCode, responseHeaders }) {
-        void MultitargetNetworkManager.instance().requestIntercepted(new InterceptedRequest(this.#fetchAgent, request, resourceType, requestId, responseStatusCode, responseHeaders));
+    requestPaused({ requestId, request, resourceType, responseStatusCode, responseHeaders, networkId }) {
+        const networkRequest = networkId ? this.#manager.requestForId(networkId) : null;
+        void MultitargetNetworkManager.instance().requestIntercepted(new InterceptedRequest(this.#fetchAgent, request, resourceType, requestId, networkRequest, responseStatusCode, responseHeaders));
     }
     authRequired({}) {
     }
@@ -324,7 +330,7 @@ export class NetworkDispatcher {
         networkRequest.setRequestHeaders(this.headersMapToHeadersArray(request.headers));
         networkRequest.setRequestFormData(Boolean(request.hasPostData), request.postData || null);
         networkRequest.setInitialPriority(request.initialPriority);
-        networkRequest.mixedContentType = request.mixedContentType || "none" /* None */;
+        networkRequest.mixedContentType = request.mixedContentType || "none" /* Protocol.Security.MixedContentType.None */;
         networkRequest.setReferrerPolicy(request.referrerPolicy);
         networkRequest.setIsSameSite(request.isSameSite || false);
     }
@@ -333,10 +339,10 @@ export class NetworkDispatcher {
             networkRequest.setUrl(response.url);
         }
         networkRequest.mimeType = response.mimeType;
-        if (!networkRequest.statusCode) {
+        if (!networkRequest.statusCode || networkRequest.wasIntercepted()) {
             networkRequest.statusCode = response.status;
         }
-        if (!networkRequest.statusText) {
+        if (!networkRequest.statusText || networkRequest.wasIntercepted()) {
             networkRequest.statusText = response.statusText;
         }
         if (!networkRequest.hasExtraResponseInfo() || networkRequest.wasIntercepted()) {
@@ -386,8 +392,8 @@ export class NetworkDispatcher {
             networkRequest.setResourceType(newResourceType);
         }
     }
-    requestForId(url) {
-        return this.#requestsById.get(url) || null;
+    requestForId(id) {
+        return this.#requestsById.get(id) || null;
     }
     requestForURL(url) {
         return this.#requestsByURL.get(url) || null;
@@ -442,7 +448,7 @@ export class NetworkDispatcher {
                     requestId,
                     loaderId,
                     timestamp,
-                    type: type || "Other" /* Other */,
+                    type: type || "Other" /* Protocol.Network.ResourceType.Other */,
                     response: redirectResponse,
                     hasExtraInfo: false,
                     frameId,
@@ -537,7 +543,7 @@ export class NetworkDispatcher {
         networkRequest.canceled = Boolean(canceled);
         if (blockedReason) {
             networkRequest.setBlockedReason(blockedReason);
-            if (blockedReason === "inspector" /* Inspector */) {
+            if (blockedReason === "inspector" /* Protocol.Network.BlockedReason.Inspector */) {
                 const message = i18nString(UIStrings.requestWasBlockedByDevtoolsS, { PH1: networkRequest.url() });
                 this.#manager.dispatchEventToListeners(Events.MessageGenerated, { message: message, requestId: requestId, warning: true });
             }
@@ -699,8 +705,13 @@ export class NetworkDispatcher {
         const oldDispatcher = NetworkManager.forRequest(request).dispatcher;
         oldDispatcher.#requestsById.delete(requestId);
         oldDispatcher.#requestsByURL.delete(request.url());
+        const builder = oldDispatcher.#requestIdToExtraInfoBuilder.get(requestId);
+        oldDispatcher.#requestIdToExtraInfoBuilder.delete(requestId);
         this.#requestsById.set(requestId, request);
         this.#requestsByURL.set(request.url(), request);
+        if (builder) {
+            this.#requestIdToExtraInfoBuilder.set(requestId, builder);
+        }
         requestToManagerMap.set(request, this.#manager);
         return request;
     }
@@ -751,9 +762,21 @@ export class NetworkDispatcher {
         }
     }
     clearRequests() {
-        this.#requestsById.clear();
-        this.#requestsByURL.clear();
-        this.#requestIdToExtraInfoBuilder.clear();
+        for (const [requestId, request] of this.#requestsById) {
+            if (request.finished) {
+                this.#requestsById.delete(requestId);
+            }
+        }
+        for (const [requestURL, request] of this.#requestsByURL) {
+            if (request.finished) {
+                this.#requestsByURL.delete(requestURL);
+            }
+        }
+        for (const [requestId, builder] of this.#requestIdToExtraInfoBuilder) {
+            if (builder.isFinished()) {
+                this.#requestIdToExtraInfoBuilder.delete(requestId);
+            }
+        }
     }
     webTransportCreated({ transportId, url: requestURL, timestamp: time, initiator }) {
         const networkRequest = NetworkRequest.createForWebSocket(transportId, requestURL, initiator);
@@ -884,6 +907,9 @@ export class MultitargetNetworkManager extends Common.ObjectWrapper.ObjectWrappe
             multiTargetNetworkManagerInstance = new MultitargetNetworkManager();
         }
         return multiTargetNetworkManagerInstance;
+    }
+    static dispose() {
+        multiTargetNetworkManagerInstance = null;
     }
     static getChromeVersion() {
         const chromeRegex = /(?:^|\W)(?:Chrome|HeadlessChrome)\/(\S+)/;
@@ -1150,7 +1176,7 @@ export class MultitargetNetworkManager extends Common.ObjectWrapper.ObjectWrappe
         }
     }
     async getCertificate(origin) {
-        const target = TargetManager.instance().mainTarget();
+        const target = TargetManager.instance().mainFrameTarget();
         if (!target) {
             return [];
         }
@@ -1169,9 +1195,10 @@ export class MultitargetNetworkManager extends Common.ObjectWrapper.ObjectWrappe
         if (Common.Settings.Settings.instance().moduleSetting('cacheDisabled').get()) {
             headers['Cache-Control'] = 'no-cache';
         }
+        const allowRemoteFilePaths = Common.Settings.Settings.instance().moduleSetting('network.enable-remote-file-loading').get();
         return new Promise(resolve => Host.ResourceLoader.load(url, headers, (success, _responseHeaders, content, errorDescription) => {
             resolve({ success, content, errorDescription });
-        }));
+        }, allowRemoteFilePaths));
     }
 }
 (function (MultitargetNetworkManager) {
@@ -1185,6 +1212,7 @@ export class MultitargetNetworkManager extends Common.ObjectWrapper.ObjectWrappe
         Events["InterceptorsChanged"] = "InterceptorsChanged";
         Events["AcceptedEncodingsChanged"] = "AcceptedEncodingsChanged";
         Events["RequestIntercepted"] = "RequestIntercepted";
+        Events["RequestFulfilled"] = "RequestFulfilled";
     })(Events = MultitargetNetworkManager.Events || (MultitargetNetworkManager.Events = {}));
 })(MultitargetNetworkManager || (MultitargetNetworkManager = {}));
 export class InterceptedRequest {
@@ -1195,7 +1223,8 @@ export class InterceptedRequest {
     responseStatusCode;
     responseHeaders;
     requestId;
-    constructor(fetchAgent, request, resourceType, requestId, responseStatusCode, responseHeaders) {
+    networkRequest;
+    constructor(fetchAgent, request, resourceType, requestId, networkRequest, responseStatusCode, responseHeaders) {
         this.#fetchAgent = fetchAgent;
         this.#hasRespondedInternal = false;
         this.request = request;
@@ -1203,14 +1232,27 @@ export class InterceptedRequest {
         this.responseStatusCode = responseStatusCode;
         this.responseHeaders = responseHeaders;
         this.requestId = requestId;
+        this.networkRequest = networkRequest;
+        if (this.networkRequest && this.responseHeaders) {
+            // This populates 'NetworkRequest.originalResponseHeaders' with the
+            // response headers from CDP's 'Fetch.requestPaused'. Populating this
+            // field together with 'NetworkRequest.responseHeaders' with the info
+            // from 'Network.responseReceivedExtraInfo' would have been easier, but we
+            // are not sure whether the response headers from the 2 CDP events are
+            // always exactly the same.
+            // Creates a deep copy.
+            this.networkRequest.originalResponseHeaders = this.responseHeaders.map(headerEntry => ({ ...headerEntry }));
+        }
     }
     hasResponded() {
         return this.#hasRespondedInternal;
     }
-    async continueRequestWithContent(contentBlob, encoded, responseHeaders) {
+    async continueRequestWithContent(contentBlob, encoded, responseHeaders, isBodyOverridden) {
         this.#hasRespondedInternal = true;
         const body = encoded ? await contentBlob.text() : await blobToBase64(contentBlob);
-        void this.#fetchAgent.invoke_fulfillRequest({ requestId: this.requestId, responseCode: this.responseStatusCode || 200, body, responseHeaders });
+        const responseCode = isBodyOverridden ? 200 : (this.responseStatusCode || 200);
+        void this.#fetchAgent.invoke_fulfillRequest({ requestId: this.requestId, responseCode, body, responseHeaders });
+        MultitargetNetworkManager.instance().dispatchEventToListeners(MultitargetNetworkManager.Events.RequestFulfilled, this.request.url);
         async function blobToBase64(blob) {
             const reader = new FileReader();
             const fileContentsLoadedPromise = new Promise(resolve => {
@@ -1244,6 +1286,9 @@ export class InterceptedRequest {
         const response = await this.#fetchAgent.invoke_getResponseBody({ requestId: this.requestId });
         const error = response.getError() || null;
         return { error: error, content: error ? null : response.body, encoded: response.base64Encoded };
+    }
+    isRedirect() {
+        return this.responseStatusCode !== undefined && this.responseStatusCode >= 300 && this.responseStatusCode < 400;
     }
 }
 /**
@@ -1289,6 +1334,9 @@ class ExtraInfoBuilder {
     finished() {
         this.#finishedInternal = true;
         this.updateFinalRequest();
+    }
+    isFinished() {
+        return this.#finishedInternal;
     }
     sync(index) {
         const req = this.#requests[index];

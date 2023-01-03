@@ -1,6 +1,7 @@
 import * as Common from '../../core/common/common.js';
+import * as Platform from '../../core/platform/platform.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import type { ProtocolService } from './LighthouseProtocolService.js';
+import { type ProtocolService } from './LighthouseProtocolService.js';
 export declare class LighthouseController extends Common.ObjectWrapper.ObjectWrapper<EventTypes> implements SDK.TargetManager.SDKModelObserver<SDK.ServiceWorkerManager.ServiceWorkerManager> {
     private manager?;
     private serviceWorkerListeners?;
@@ -11,17 +12,19 @@ export declare class LighthouseController extends Common.ObjectWrapper.ObjectWra
     private hasActiveServiceWorker;
     private hasAtLeastOneCategory;
     private unauditablePageMessage;
+    private javaScriptDisabled;
     private hasImportantResourcesNotCleared;
     private evaluateInspectedURL;
     getFlags(): {
         internalDisableDeviceScreenEmulation: boolean;
         emulatedFormFactor: (string | undefined);
         legacyNavigation: boolean;
+        mode: string;
     };
     getCategoryIDs(): string[];
     getInspectedURL(options?: {
         force: boolean;
-    }): Promise<string>;
+    }): Promise<Platform.DevToolsPath.UrlString>;
     recomputePageAuditability(): void;
 }
 export declare const Presets: Preset[];
@@ -33,6 +36,8 @@ export declare enum Events {
     PageAuditabilityChanged = "PageAuditabilityChanged",
     PageWarningsChanged = "PageWarningsChanged",
     AuditProgressChanged = "AuditProgressChanged",
+    RequestLighthouseTimespanStart = "RequestLighthouseTimespanStart",
+    RequestLighthouseTimespanEnd = "RequestLighthouseTimespanEnd",
     RequestLighthouseStart = "RequestLighthouseStart",
     RequestLighthouseCancel = "RequestLighthouseCancel"
 }
@@ -49,6 +54,8 @@ export declare type EventTypes = {
     [Events.PageAuditabilityChanged]: PageAuditabilityChangedEvent;
     [Events.PageWarningsChanged]: PageWarningsChangedEvent;
     [Events.AuditProgressChanged]: AuditProgressChangedEvent;
+    [Events.RequestLighthouseTimespanStart]: boolean;
+    [Events.RequestLighthouseTimespanEnd]: boolean;
     [Events.RequestLighthouseStart]: boolean;
     [Events.RequestLighthouseCancel]: void;
 };
@@ -58,6 +65,7 @@ export interface Preset {
     title: () => Common.UIString.LocalizedString;
     description: () => Common.UIString.LocalizedString;
     plugin: boolean;
+    supportedModes: string[];
 }
 export interface RuntimeSetting {
     setting: Common.Settings.Setting<string | boolean>;
@@ -66,7 +74,8 @@ export interface RuntimeSetting {
     options?: {
         label: () => Common.UIString.LocalizedString;
         value: string;
+        tooltip?: () => Common.UIString.LocalizedString;
     }[];
     title?: () => Common.UIString.LocalizedString;
-    learnMore?: string;
+    learnMore?: Platform.DevToolsPath.UrlString;
 }

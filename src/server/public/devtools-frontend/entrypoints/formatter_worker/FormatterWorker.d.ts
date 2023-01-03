@@ -1,4 +1,5 @@
-import type { FormatResult } from './FormatterActions.js';
+import { type FormatResult } from './FormatterActions.js';
+import { substituteExpression } from './Substitute.js';
 export interface Chunk {
     chunk: any[];
     isLastChunk: boolean;
@@ -13,3 +14,4 @@ export declare function javaScriptIdentifiers(content: string): {
 }[];
 export declare function format(mimeType: string, text: string, indentString?: string): FormatResult;
 export declare function argumentsList(content: string): string[];
+export { substituteExpression };

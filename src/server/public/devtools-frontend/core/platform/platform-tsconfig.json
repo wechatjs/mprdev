@@ -31,6 +31,7 @@
     "../../../../../../front_end/core/platform/UserVisibleError.ts",
     "../../../../../../front_end/core/platform/array-utilities.ts",
     "../../../../../../front_end/core/platform/date-utilities.ts",
+    "../../../../../../front_end/core/platform/dom-utilities.ts",
     "../../../../../../front_end/core/platform/keyboard-utilities.ts",
     "../../../../../../front_end/core/platform/map-utilities.ts",
     "../../../../../../front_end/core/platform/number-utilities.ts",

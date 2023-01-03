@@ -7,15 +7,11 @@ import * as DataGrid from '../../ui/legacy/components/data_grid/data_grid.js';
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { HeapSnapshotSortableDataGrid } from './HeapSnapshotDataGrids.js';
-import { AllocationDataGrid, HeapSnapshotConstructorsDataGrid, HeapSnapshotDiffDataGrid, HeapSnapshotRetainmentDataGrid, HeapSnapshotContainmentDataGrid } from './HeapSnapshotDataGrids.js';
-import type { HeapSnapshotGridNode } from './HeapSnapshotGridNodes.js';
-import type { HeapSnapshotProxy } from './HeapSnapshotProxy.js';
-import { HeapSnapshotWorkerProxy } from './HeapSnapshotProxy.js';
-import type { IdsRangeChangedEvent } from './HeapTimelineOverview.js';
-import { HeapTimelineOverview, Samples } from './HeapTimelineOverview.js';
-import type { DataDisplayDelegate } from './ProfileHeader.js';
-import { ProfileHeader, ProfileType } from './ProfileHeader.js';
+import { AllocationDataGrid, HeapSnapshotConstructorsDataGrid, HeapSnapshotDiffDataGrid, HeapSnapshotRetainmentDataGrid, HeapSnapshotContainmentDataGrid, type HeapSnapshotSortableDataGrid } from './HeapSnapshotDataGrids.js';
+import { type HeapSnapshotGridNode } from './HeapSnapshotGridNodes.js';
+import { HeapSnapshotWorkerProxy, type HeapSnapshotProxy } from './HeapSnapshotProxy.js';
+import { HeapTimelineOverview, Samples, type IdsRangeChangedEvent } from './HeapTimelineOverview.js';
+import { ProfileHeader, ProfileType, type DataDisplayDelegate } from './ProfileHeader.js';
 import { ProfileSidebarTreeElement } from './ProfileSidebarTreeElement.js';
 export declare class HeapSnapshotView extends UI.View.SimpleView implements DataDisplayDelegate, UI.SearchableView.Searchable {
     searchResults: number[];
@@ -145,7 +141,7 @@ declare const HeapSnapshotProfileType_base: (new (...args: any[]) => {
     dispatchEventToListeners<T_3 extends HeapSnapshotProfileTypeEvents.SnapshotReceived>(eventType: Platform.TypeScriptUtilities.NoUnion<T_3>, ...eventData: Common.EventTarget.EventPayloadToRestParameters<HeapSnapshotProfileTypeEventTypes, T_3>): void;
 }) & typeof ProfileType;
 export declare class HeapSnapshotProfileType extends HeapSnapshotProfileType_base implements SDK.TargetManager.SDKModelObserver<SDK.HeapProfilerModel.HeapProfilerModel> {
-    readonly treatGlobalObjectsAsRoots: Common.Settings.Setting<boolean>;
+    readonly exposeInternals: Common.Settings.Setting<boolean>;
     readonly captureNumericValue: Common.Settings.Setting<boolean>;
     customContentInternal: HTMLElement | null;
     constructor(id?: string, title?: string);
@@ -237,7 +233,7 @@ export declare class HeapProfileHeader extends ProfileHeader {
     onTempFileReady: (() => void) | null;
     failedToCreateTempFile?: boolean;
     wasDisposed?: boolean;
-    fileName?: string;
+    fileName?: Platform.DevToolsPath.RawPathString;
     constructor(heapProfilerModel: SDK.HeapProfilerModel.HeapProfilerModel | null, type: HeapSnapshotProfileType, title?: string);
     heapProfilerModel(): SDK.HeapProfilerModel.HeapProfilerModel | null;
     getLocation(nodeIndex: number): Promise<HeapSnapshotModel.HeapSnapshotModel.Location | null>;

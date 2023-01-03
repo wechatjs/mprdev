@@ -550,6 +550,15 @@ span[is="dt-icon-label"] {
   background: var(--override-force-white-icons-background) !important; /* stylelint-disable-line declaration-no-important */
 }
 
+.mediumicon-file-sync.purple-dot {
+  filter: hue-rotate(160deg);
+}
+
+.-theme-with-dark-background [is="ui-icon"].icon-invert.mediumicon-file-sync.purple-dot,
+:host-context(.-theme-with-dark-background) [is="ui-icon"].icon-invert.mediumicon-file-sync.purple-dot {
+  filter: invert(80%) hue-rotate(350deg);
+}
+
 .expandable-inline-button {
   background-color: var(--color-background-elevation-2);
   color: var(--color-text-primary);
@@ -618,15 +627,6 @@ button.link:focus-visible {
 .-theme-with-dark-background button.link:focus-visible,
 :host-context(.-theme-with-dark-background) button.link:focus-visible {
   --override-link-focus-background-color: rgb(230 230 230 / 8%);
-}
-
-/* See ARIAUtils.js */
-[data-aria-utils-animation-hack] {
-  animation: ANIMATION-HACK 0s;
-}
-
-@keyframes ANIMATION-HACK {
-  /* empty keyframe to trigger the animation hack above */
 }
 
 @media (forced-colors: active) {

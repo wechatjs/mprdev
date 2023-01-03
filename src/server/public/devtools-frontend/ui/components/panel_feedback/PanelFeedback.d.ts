@@ -1,6 +1,7 @@
+import * as Platform from '../../../core/platform/platform.js';
 export interface PanelFeedbackData {
-    feedbackUrl: string;
-    quickStartUrl: string;
+    feedbackUrl: Platform.DevToolsPath.UrlString;
+    quickStartUrl: Platform.DevToolsPath.UrlString;
     quickStartLinkText: string;
 }
 export declare class PanelFeedback extends HTMLElement {

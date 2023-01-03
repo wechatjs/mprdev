@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
 import type * as HeapSnapshotModel from '../../models/heap_snapshot_model/heap_snapshot_model.js';
-import type { ChildrenProvider } from './ChildrenProvider.js';
+import { type ChildrenProvider } from './ChildrenProvider.js';
 export declare class HeapSnapshotWorkerProxy extends Common.ObjectWrapper.ObjectWrapper<HeapSnapshotWorkerProxy.EventTypes> {
     readonly eventHandler: (arg0: string, arg1: any) => void;
     nextObjectId: number;

@@ -1,7 +1,8 @@
 import * as ColorPicker from '../../ui/legacy/components/color_picker/color_picker.js';
 import * as InlineEditor from '../../ui/legacy/components/inline_editor/inline_editor.js';
-import type { StylePropertyTreeElement } from './StylePropertyTreeElement.js';
-import type { StylePropertiesSection, StylesSidebarPane } from './StylesSidebarPane.js';
+import { type StylePropertiesSection } from './StylePropertiesSection.js';
+import { type StylePropertyTreeElement } from './StylePropertyTreeElement.js';
+import { type StylesSidebarPane } from './StylesSidebarPane.js';
 export declare class BezierPopoverIcon {
     private treeElement;
     private readonly swatchPopoverHelper;

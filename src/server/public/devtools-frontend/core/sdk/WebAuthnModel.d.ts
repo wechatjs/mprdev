@@ -1,5 +1,5 @@
 import type * as Protocol from '../../generated/protocol.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export declare class WebAuthnModel extends SDKModel {
     #private;

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 import * as i18n from '../../core/i18n/i18n.js';
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
-import { resolveLazyDescription } from './MarkdownIssueDescription.js';
+import { resolveLazyDescription, } from './MarkdownIssueDescription.js';
 const UIStrings = {
     /**
     *@description Label for the link for Trusted Web Activity issue
@@ -15,7 +15,7 @@ const i18nLazyString = i18n.i18n.getLazilyComputedLocalizedString.bind(undefined
 export class TrustedWebActivityIssue extends Issue {
     #issueDetails;
     constructor(issueDetails) {
-        const issueCode = ["TrustedWebActivityIssue" /* TrustedWebActivityIssue */, issueDetails.violationType].join('::');
+        const issueCode = ["TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */, issueDetails.violationType].join('::');
         super(issueCode);
         this.#issueDetails = issueDetails;
     }
@@ -33,7 +33,7 @@ export class TrustedWebActivityIssue extends Issue {
         return IssueCategory.TrustedWebActivity;
     }
     primaryKey() {
-        return `${"TrustedWebActivityIssue" /* TrustedWebActivityIssue */}-${JSON.stringify(this.#issueDetails)}`;
+        return `${"TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */}-${JSON.stringify(this.#issueDetails)}`;
     }
     getKind() {
         return IssueKind.PageError;
@@ -69,20 +69,20 @@ const twaPageUnavailableOffline = {
         }],
 };
 export const httpViolationCode = [
-    "TrustedWebActivityIssue" /* TrustedWebActivityIssue */,
-    "kHttpError" /* KHttpError */,
+    "TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */,
+    "kHttpError" /* Protocol.Audits.TwaQualityEnforcementViolationType.KHttpError */,
 ].join('::');
 export const offlineViolationCode = [
-    "TrustedWebActivityIssue" /* TrustedWebActivityIssue */,
-    "kUnavailableOffline" /* KUnavailableOffline */,
+    "TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */,
+    "kUnavailableOffline" /* Protocol.Audits.TwaQualityEnforcementViolationType.KUnavailableOffline */,
 ].join('::');
 export const assetlinkViolationCode = [
-    "TrustedWebActivityIssue" /* TrustedWebActivityIssue */,
-    "kDigitalAssetLinks" /* KDigitalAssetLinks */,
+    "TrustedWebActivityIssue" /* Protocol.Audits.InspectorIssueCode.TrustedWebActivityIssue */,
+    "kDigitalAssetLinks" /* Protocol.Audits.TwaQualityEnforcementViolationType.KDigitalAssetLinks */,
 ].join('::');
 const issueDescriptions = new Map([
-    ["kHttpError" /* KHttpError */, twaHttpError],
-    ["kUnavailableOffline" /* KUnavailableOffline */, twaPageUnavailableOffline],
-    ["kDigitalAssetLinks" /* KDigitalAssetLinks */, twaDigitalAssetLinksFailed],
+    ["kHttpError" /* Protocol.Audits.TwaQualityEnforcementViolationType.KHttpError */, twaHttpError],
+    ["kUnavailableOffline" /* Protocol.Audits.TwaQualityEnforcementViolationType.KUnavailableOffline */, twaPageUnavailableOffline],
+    ["kDigitalAssetLinks" /* Protocol.Audits.TwaQualityEnforcementViolationType.KDigitalAssetLinks */, twaDigitalAssetLinksFailed],
 ]);
 //# sourceMappingURL=TrustedWebActivityIssue.js.map

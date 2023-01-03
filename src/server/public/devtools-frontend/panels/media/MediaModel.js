@@ -22,19 +22,19 @@ export class MediaModel extends SDK.SDKModel.SDKModel {
         this.enabled = true;
     }
     playerPropertiesChanged(event) {
-        this.dispatchEventToListeners("PlayerPropertiesChanged" /* PlayerPropertiesChanged */, event);
+        this.dispatchEventToListeners("PlayerPropertiesChanged" /* Events.PlayerPropertiesChanged */, event);
     }
     playerEventsAdded(event) {
-        this.dispatchEventToListeners("PlayerEventsAdded" /* PlayerEventsAdded */, event);
+        this.dispatchEventToListeners("PlayerEventsAdded" /* Events.PlayerEventsAdded */, event);
     }
     playerMessagesLogged(event) {
-        this.dispatchEventToListeners("PlayerMessagesLogged" /* PlayerMessagesLogged */, event);
+        this.dispatchEventToListeners("PlayerMessagesLogged" /* Events.PlayerMessagesLogged */, event);
     }
     playerErrorsRaised(event) {
-        this.dispatchEventToListeners("PlayerErrorsRaised" /* PlayerErrorsRaised */, event);
+        this.dispatchEventToListeners("PlayerErrorsRaised" /* Events.PlayerErrorsRaised */, event);
     }
     playersCreated({ players }) {
-        this.dispatchEventToListeners("PlayersCreated" /* PlayersCreated */, players);
+        this.dispatchEventToListeners("PlayersCreated" /* Events.PlayersCreated */, players);
     }
 }
 SDK.SDKModel.SDKModel.register(MediaModel, { capabilities: SDK.Target.Capability.Media, autostart: false });

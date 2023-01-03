@@ -19,7 +19,7 @@ async function loadLighthouseModule() {
     return loadedLighthouseModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'lighthouse',
     title: i18n.i18n.lockedLazyString('Lighthouse'),
     commandPrompt: i18nLazyString(UIStrings.showLighthouse),

@@ -128,7 +128,7 @@ export class TabbedPane extends Common.ObjectWrapper.eventMixin(VBox) {
         this.triggerDropDownTimeout = null;
         this.dropDownButton = this.createDropDownButton();
         this.currentDevicePixelRatio = window.devicePixelRatio;
-        ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomChanged */, this.zoomChanged, this);
+        ZoomManager.instance().addEventListener("ZoomChanged" /* ZoomManagerEvents.ZoomChanged */, this.zoomChanged, this);
         this.makeTabSlider();
     }
     setAccessibleName(name) {
@@ -524,14 +524,16 @@ export class TabbedPane extends Common.ObjectWrapper.eventMixin(VBox) {
         const dropDownContainer = document.createElement('div');
         dropDownContainer.classList.add('tabbed-pane-header-tabs-drop-down-container');
         const chevronIcon = Icon.create('largeicon-chevron', 'chevron-icon');
+        const moreTabsString = i18nString(UIStrings.moreTabs);
+        dropDownContainer.title = moreTabsString;
         ARIAUtils.markAsMenuButton(dropDownContainer);
-        ARIAUtils.setAccessibleName(dropDownContainer, i18nString(UIStrings.moreTabs));
+        ARIAUtils.setAccessibleName(dropDownContainer, moreTabsString);
         dropDownContainer.tabIndex = 0;
         dropDownContainer.appendChild(chevronIcon);
         dropDownContainer.addEventListener('click', this.dropDownClicked.bind(this));
         dropDownContainer.addEventListener('keydown', this.dropDownKeydown.bind(this));
         dropDownContainer.addEventListener('mousedown', event => {
-            if (event.which !== 1 || this.triggerDropDownTimeout) {
+            if (event.button !== 0 || this.triggerDropDownTimeout) {
                 return;
             }
             this.triggerDropDownTimeout = window.setTimeout(this.dropDownClicked.bind(this, event), 200);
@@ -540,7 +542,7 @@ export class TabbedPane extends Common.ObjectWrapper.eventMixin(VBox) {
     }
     dropDownClicked(ev) {
         const event = ev;
-        if (event.which !== 1) {
+        if (event.button !== 0) {
             return;
         }
         if (this.triggerDropDownTimeout) {
@@ -888,6 +890,9 @@ export class TabbedPaneTab {
         this.titleInternal = title;
         if (this.titleElement) {
             this.titleElement.textContent = title;
+            const closeIconContainer = this.tabElementInternal?.querySelector('.close-button');
+            closeIconContainer?.setAttribute('title', i18nString(UIStrings.closeS, { PH1: title }));
+            closeIconContainer?.setAttribute('aria-label', i18nString(UIStrings.closeS, { PH1: title }));
         }
         delete this.measuredWidth;
     }

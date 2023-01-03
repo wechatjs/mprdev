@@ -1,5 +1,5 @@
 import * as LitHtml from '../../lit-html/lit-html.js';
-import type { TreeNodeId, TreeNode } from './TreeOutlineUtils.js';
+import { type TreeNodeId, type TreeNode } from './TreeOutlineUtils.js';
 export interface TreeOutlineData<TreeNodeDataType> {
     defaultRenderer: (node: TreeNode<TreeNodeDataType>, state: {
         isExpanded: boolean;
@@ -12,6 +12,7 @@ export interface TreeOutlineData<TreeNodeDataType> {
      */
     tree: readonly TreeNode<TreeNodeDataType>[];
     filter?: (node: TreeNodeDataType) => FilterOption;
+    compact?: boolean;
 }
 export declare function defaultRenderer(node: TreeNode<string>): LitHtml.TemplateResult;
 export declare class ItemSelectedEvent<TreeNodeDataType> extends Event {

@@ -34,24 +34,24 @@ async function loadIssuesModule() {
     return loadedIssuesModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'issues-pane',
     title: i18nLazyString(UIStrings.issues),
     commandPrompt: i18nLazyString(UIStrings.showIssues),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const Issues = await loadIssuesModule();
         return Issues.IssuesPane.IssuesPane.instance();
     },
 });
 UI.ViewManager.registerViewExtension({
-    location: "drawer-view" /* DRAWER_VIEW */,
+    location: "drawer-view" /* UI.ViewManager.ViewLocationValues.DRAWER_VIEW */,
     id: 'csp-violations-pane',
     title: i18nLazyString(UIStrings.cspViolations),
     commandPrompt: i18nLazyString(UIStrings.showCspViolations),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const Issues = await loadIssuesModule();
         return Issues.CSPViolationsView.CSPViolationsView.instance();

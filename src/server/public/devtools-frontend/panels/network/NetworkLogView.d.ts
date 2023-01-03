@@ -5,9 +5,9 @@ import * as Protocol from '../../generated/protocol.js';
 import * as NetworkForward from '../../panels/network/forward/forward.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { NetworkLogViewInterface, NetworkNode, EventTypes } from './NetworkDataGridNode.js';
-import { NetworkGroupNode, NetworkRequestNode } from './NetworkDataGridNode.js';
-import type { NetworkTimeCalculator } from './NetworkTimeCalculator.js';
+import { NetworkGroupNode, NetworkRequestNode, type NetworkLogViewInterface, type NetworkNode, type EventTypes } from './NetworkDataGridNode.js';
+import { NetworkLogViewColumns } from './NetworkLogViewColumns.js';
+import { type NetworkTimeCalculator } from './NetworkTimeCalculator.js';
 declare const NetworkLogView_base: (new (...args: any[]) => {
     "__#6@#events": Common.ObjectWrapper.ObjectWrapper<EventTypes>;
     addEventListener<T extends keyof EventTypes>(eventType: T, listener: (arg0: Common.EventTarget.EventTargetEvent<EventTypes[T]>) => void, thisObject?: Object | undefined): Common.EventTarget.EventDescriptor<EventTypes, T>;
@@ -17,6 +17,7 @@ declare const NetworkLogView_base: (new (...args: any[]) => {
     dispatchEventToListeners<T_3 extends keyof EventTypes>(eventType: Platform.TypeScriptUtilities.NoUnion<T_3>, ...eventData: Common.EventTarget.EventPayloadToRestParameters<EventTypes, T_3>): void;
 }) & typeof UI.Widget.VBox;
 export declare class NetworkLogView extends NetworkLogView_base implements SDK.TargetManager.SDKModelObserver<SDK.NetworkManager.NetworkManager>, NetworkLogViewInterface {
+    #private;
     private readonly networkInvertFilterSetting;
     private readonly networkHideDataURLSetting;
     private readonly networkShowIssuesOnlySetting;
@@ -30,7 +31,7 @@ export declare class NetworkLogView extends NetworkLogView_base implements SDK.T
     private readonly timeCalculatorInternal;
     private readonly durationCalculator;
     private calculatorInternal;
-    private readonly columns;
+    private readonly columnsInternal;
     private staleRequests;
     private mainRequestLoadTime;
     private mainRequestDOMContentLoadedTime;
@@ -102,6 +103,7 @@ export declare class NetworkLogView extends NetworkLogView_base implements SDK.T
     nodeForRequest(request: SDK.NetworkRequest.NetworkRequest): NetworkRequestNode | null;
     headerHeight(): number;
     setRecording(recording: boolean): void;
+    columns(): NetworkLogViewColumns;
     modelAdded(networkManager: SDK.NetworkManager.NetworkManager): void;
     modelRemoved(networkManager: SDK.NetworkManager.NetworkManager): void;
     linkifier(): Components.Linkifier.Linkifier;
@@ -179,7 +181,7 @@ export declare class NetworkLogView extends NetworkLogView_base implements SDK.T
     private filterOutBlobRequests;
     private generateFetchCall;
     private generateAllFetchCall;
-    private generateCurlCommand;
+    static generateCurlCommand(request: SDK.NetworkRequest.NetworkRequest, platform: string): Promise<string>;
     private generateAllCurlCommand;
     private generatePowerShellCommand;
     private generateAllPowerShellCommand;

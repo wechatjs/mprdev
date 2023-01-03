@@ -1,15 +1,31 @@
+import * as Common from '../../core/common/common.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as Adorners from '../../ui/components/adorners/adorners.js';
 import * as TextEditor from '../../ui/components/text_editor/text_editor.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { ElementsTreeOutline, UpdateRecord } from './ElementsTreeOutline.js';
+import { type ElementsTreeOutline, type UpdateRecord } from './ElementsTreeOutline.js';
+declare const enum TagType {
+    OPENING = "OPENING_TAG",
+    CLOSING = "CLOSING_TAG"
+}
+declare type OpeningTagContext = {
+    tagType: TagType.OPENING;
+    readonly adornerContainer: HTMLElement;
+    adorners: Adorners.Adorner.Adorner[];
+    styleAdorners: Adorners.Adorner.Adorner[];
+    readonly adornersThrottler: Common.Throttler.Throttler;
+    slot?: Adorners.Adorner.Adorner;
+    canAddAttributes: boolean;
+};
+declare type ClosingTagContext = {
+    tagType: TagType.CLOSING;
+};
+export declare type TagTypeContext = OpeningTagContext | ClosingTagContext;
 export declare class ElementsTreeElement extends UI.TreeOutline.TreeElement {
     nodeInternal: SDK.DOMModel.DOMNode;
     treeOutline: ElementsTreeOutline | null;
     private gutterContainer;
     private readonly decorationsElement;
-    private isClosingTagInternal;
-    private readonly canAddAttributes;
     private searchQuery;
     private expandedChildrenLimitInternal;
     private readonly decorationsThrottler;
@@ -17,16 +33,13 @@ export declare class ElementsTreeElement extends UI.TreeOutline.TreeElement {
     private hoveredInternal;
     private editing;
     private highlightResult;
-    private readonly adornerContainer;
-    private adorners;
-    private styleAdorners;
-    private readonly adornersThrottler;
-    private htmlEditElement;
+    private htmlEditElement?;
     expandAllButtonElement: UI.TreeOutline.TreeElement | null;
     private searchHighlightsVisible?;
     selectionElement?: HTMLDivElement;
     private hintElement?;
     private contentElement;
+    readonly tagTypeContext: TagTypeContext;
     constructor(node: SDK.DOMModel.DOMNode, isClosingTag?: boolean);
     static animateOnDOMUpdate(treeElement: ElementsTreeElement): void;
     static visibleShadowRoots(node: SDK.DOMModel.DOMNode): SDK.DOMModel.DOMNode[];
@@ -43,6 +56,7 @@ export declare class ElementsTreeElement extends UI.TreeOutline.TreeElement {
     set hovered(isHovered: boolean);
     expandedChildrenLimit(): number;
     setExpandedChildrenLimit(expandedChildrenLimit: number): void;
+    createSlotLink(nodeShortcut: SDK.DOMModel.DOMNodeShortcut | null): void;
     private createSelection;
     private createHint;
     onbind(): void;
@@ -99,16 +113,19 @@ export declare class ElementsTreeElement extends UI.TreeOutline.TreeElement {
     private editAsHTML;
     adorn({ name }: {
         name: string;
-    }): Adorners.Adorner.Adorner;
-    removeAdorner(adornerToRemove: Adorners.Adorner.Adorner): void;
+    }, content?: HTMLElement): Adorners.Adorner.Adorner;
+    adornSlot({ name }: {
+        name: string;
+    }, context: OpeningTagContext): Adorners.Adorner.Adorner;
+    removeAdorner(adornerToRemove: Adorners.Adorner.Adorner, context: OpeningTagContext): void;
     removeAllAdorners(): void;
     private updateAdorners;
     private updateAdornersInternal;
     updateStyleAdorners(): Promise<void>;
-    createGridAdorner(): Adorners.Adorner.Adorner | null;
-    createScrollSnapAdorner(): Adorners.Adorner.Adorner | null;
-    createFlexAdorner(): Adorners.Adorner.Adorner | null;
-    createContainerAdorner(): Adorners.Adorner.Adorner | null;
+    pushGridAdorner(context: OpeningTagContext): void;
+    pushScrollSnapAdorner(context: OpeningTagContext): void;
+    pushFlexAdorner(context: OpeningTagContext): void;
+    pushContainerAdorner(context: OpeningTagContext): void;
 }
 export declare const InitialChildrenLimit = 500;
 export declare const ForbiddenClosingTagElements: Set<string>;
@@ -120,3 +137,4 @@ export interface EditorHandles {
     editor?: TextEditor.TextEditor.TextEditor;
     resize: () => void;
 }
+export {};

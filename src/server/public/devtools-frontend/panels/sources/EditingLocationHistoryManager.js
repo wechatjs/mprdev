@@ -39,7 +39,7 @@ export class EditingLocationHistoryManager {
         this.sourcesView = sourcesView;
     }
     trackSourceFrameCursorJumps(sourceFrame) {
-        sourceFrame.addEventListener("EditorUpdate" /* EditorUpdate */, event => this.onEditorUpdate(event.data, sourceFrame));
+        sourceFrame.addEventListener("EditorUpdate" /* SourceFrame.SourceFrame.Events.EditorUpdate */, event => this.onEditorUpdate(event.data, sourceFrame));
     }
     onEditorUpdate(update, sourceFrame) {
         if (update.docChanged) {

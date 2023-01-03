@@ -74,22 +74,36 @@ export class TimelineLoader {
     static loadFromEvents(events, client) {
         const loader = new TimelineLoader(client);
         window.setTimeout(async () => {
-            const eventsPerChunk = 5000;
-            client.loadingStarted();
-            for (let i = 0; i < events.length; i += eventsPerChunk) {
-                const chunk = events.slice(i, i + eventsPerChunk);
-                loader.tracingModel.addEvents(chunk);
-                client.loadingProgress((i + chunk.length) / events.length);
-                await new Promise(r => window.setTimeout(r)); // Yield event loop to paint.
-            }
-            void loader.close();
+            void loader.addEvents(events);
         });
         return loader;
     }
     static loadFromURL(url, client) {
         const loader = new TimelineLoader(client);
-        Host.ResourceLoader.loadAsStream(url, null, loader);
+        const stream = new Common.StringOutputStream.StringOutputStream();
+        client.loadingStarted();
+        const allowRemoteFilePaths = Common.Settings.Settings.instance().moduleSetting('network.enable-remote-file-loading').get();
+        Host.ResourceLoader.loadAsStream(url, null, stream, finishedCallback, allowRemoteFilePaths);
+        function finishedCallback(success, _headers, errorDescription) {
+            if (!success) {
+                return loader.reportErrorAndCancelLoading(errorDescription.message);
+            }
+            const txt = stream.data();
+            const events = JSON.parse(txt);
+            void loader.addEvents(events);
+        }
         return loader;
+    }
+    async addEvents(events) {
+        this.client?.loadingStarted();
+        const eventsPerChunk = 5000;
+        for (let i = 0; i < events.length; i += eventsPerChunk) {
+            const chunk = events.slice(i, i + eventsPerChunk);
+            this.tracingModel.addEvents(chunk);
+            this.client?.loadingProgress((i + chunk.length) / events.length);
+            await new Promise(r => window.setTimeout(r)); // Yield event loop to paint.
+        }
+        void this.close();
     }
     cancel() {
         this.tracingModel = null;
@@ -123,7 +137,7 @@ export class TimelineLoader {
         }
         this.firstRawChunk = false;
         if (this.state === State.Initial) {
-            if (chunk.startsWith('{"nodes":[')) {
+            if (chunk.match(/^{(\s)*"nodes":(\s)*\[/)) {
                 this.state = State.LoadingCPUProfileFormat;
             }
             else if (chunk[0] === '{') {

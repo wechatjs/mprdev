@@ -7,7 +7,7 @@ import * as CodeHighlighter from '../code_highlighter/code_highlighter.js';
 import * as ComponentHelpers from '../helpers/helpers.js';
 import * as Coordinator from '../render_coordinator/render_coordinator.js';
 import treeOutlineStyles from './treeOutline.css.js';
-import { findNextNodeForTreeOutlineKeyboardNavigation, getNodeChildren, getPathToTreeNode, isExpandableNode, trackDOMNodeToTreeNode } from './TreeOutlineUtils.js';
+import { findNextNodeForTreeOutlineKeyboardNavigation, getNodeChildren, getPathToTreeNode, isExpandableNode, trackDOMNodeToTreeNode, } from './TreeOutlineUtils.js';
 const coordinator = Coordinator.RenderCoordinator.RenderCoordinator.instance();
 export function defaultRenderer(node) {
     return LitHtml.html `${node.treeNodeData}`;
@@ -58,6 +58,7 @@ export class TreeOutline extends HTMLElement {
         return LitHtml.html `${String(node.treeNodeData)}`;
     };
     #nodeFilter;
+    #compact = false;
     /**
      * scheduledRender = render() has been called and scheduled a render.
      */
@@ -96,6 +97,7 @@ export class TreeOutline extends HTMLElement {
         this.#defaultRenderer = data.defaultRenderer;
         this.#treeData = data.tree;
         this.#nodeFilter = data.filter;
+        this.#compact = data.compact || false;
         if (!this.#hasRenderedAtLeastOnce) {
             this.#selectedTreeNode = this.#treeData[0];
         }
@@ -178,30 +180,33 @@ export class TreeOutline extends HTMLElement {
         await childRecursions;
         this.#setNodeExpandedState(treeNode, false);
     }
-    #getSelectedTreeNode() {
-        if (!this.#selectedTreeNode) {
-            throw new Error('getSelectedNode was called but selectedTreeNode is null');
-        }
-        return this.#selectedTreeNode;
-    }
-    async #fetchNodeChildren(node) {
+    async #flattenSubtree(node, filter) {
         const children = await getNodeChildren(node);
-        if (!this.#nodeFilter) {
-            return children;
-        }
         const filteredChildren = [];
         for (const child of children) {
-            const filtering = this.#nodeFilter(child.treeNodeData);
+            const filtering = filter(child.treeNodeData);
             // We always include the selected node in the tree, regardless of its filtering status.
-            if (filtering === "SHOW" /* SHOW */ || this.#isSelectedNode(child) || child.id === this.#nodeIdPendingFocus) {
+            const toBeSelected = this.#isSelectedNode(child) || child.id === this.#nodeIdPendingFocus;
+            // If a node is already expanded we should not flatten it away.
+            const expanded = this.#nodeExpandedMap.get(child.id);
+            if (filtering === "SHOW" /* FilterOption.SHOW */ || toBeSelected || expanded) {
                 filteredChildren.push(child);
             }
-            else if (filtering === "FLATTEN" /* FLATTEN */ && isExpandableNode(child)) {
-                const grandChildren = await this.#fetchNodeChildren(child);
+            else if (filtering === "FLATTEN" /* FilterOption.FLATTEN */ && isExpandableNode(child)) {
+                const grandChildren = await this.#flattenSubtree(child, filter);
                 filteredChildren.push(...grandChildren);
             }
         }
         return filteredChildren;
+    }
+    async #fetchNodeChildren(node) {
+        const children = await getNodeChildren(node);
+        const filter = this.#nodeFilter;
+        if (!filter) {
+            return children;
+        }
+        const filteredDescendants = await this.#flattenSubtree(node, filter);
+        return filteredDescendants.length ? filteredDescendants : children;
     }
     #setNodeExpandedState(node, newExpandedState) {
         this.#nodeExpandedMap.set(node.id, newExpandedState);
@@ -344,13 +349,14 @@ export class TreeOutline extends HTMLElement {
             childrenToRender = LitHtml.html `<ul role="group">${LitHtml.Directives.until(childNodes)}</ul>`;
             // clang-format on
         }
-        const nodeIsFocusable = this.#getSelectedTreeNode() === node;
+        const nodeIsFocusable = this.#isSelectedNode(node);
         const tabIndex = nodeIsFocusable ? 0 : -1;
         const listItemClasses = LitHtml.Directives.classMap({
             expanded: isExpandableNode(node) && nodeIsExpanded,
             parent: isExpandableNode(node),
             selected: this.#isSelectedNode(node),
             'is-top-level': depth === 0,
+            compact: this.#compact,
         });
         const ariaExpandedAttribute = LitHtml.Directives.ifDefined(isExpandableNode(node) ? String(nodeIsExpanded) : undefined);
         let renderedNodeKey;
@@ -418,15 +424,15 @@ export class TreeOutline extends HTMLElement {
             // clang-format off
             LitHtml.render(LitHtml.html `
       <div class="wrapping-container">
-      <ul role="tree" @keydown=${this.#onTreeKeyDown}>
-        ${this.#treeData.map((topLevelNode, index) => {
+        <ul role="tree" @keydown=${this.#onTreeKeyDown}>
+          ${this.#treeData.map((topLevelNode, index) => {
                 return this.#renderNode(topLevelNode, {
                     depth: 0,
                     setSize: this.#treeData.length,
                     positionInSet: index,
                 });
             })}
-      </ul>
+        </ul>
       </div>
       `, this.#shadow, {
                 host: this,

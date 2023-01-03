@@ -137,7 +137,7 @@ export class AffectedResourcesView extends UI.TreeOutline.TreeElement {
             icon.data = { iconName: 'elements_panel_icon', color: 'var(--color-link)', width: '16px', height: '16px' };
             icon.classList.add('link', 'elements-panel');
             icon.onclick = async () => {
-                Host.userMetrics.issuesPanelResourceOpened(issueCategory, "Element" /* Element */);
+                Host.userMetrics.issuesPanelResourceOpened(issueCategory, "Element" /* AffectedItem.Element */);
                 const frame = SDK.FrameManager.FrameManager.instance().getFrame(frameId);
                 if (frame) {
                     const ownerNode = await frame.getOwnerDOMNodeOrDocument();
@@ -174,7 +174,7 @@ export class AffectedResourcesView extends UI.TreeOutline.TreeElement {
             return cellElement;
         }
         function sendTelemetry() {
-            Host.userMetrics.issuesPanelResourceOpened(issueCategory, "Element" /* Element */);
+            Host.userMetrics.issuesPanelResourceOpened(issueCategory, "Element" /* AffectedItem.Element */);
         }
         const deferredDOMNode = new SDK.DOMModel.DeferredDOMNode(target, backendNodeId);
         const anchorElement = (await Common.Linkifier.Linkifier.linkify(deferredDOMNode));
@@ -197,7 +197,7 @@ export class AffectedResourcesView extends UI.TreeOutline.TreeElement {
             const maxLengthForDisplayedURLs = 40; // Same as console messages.
             // TODO(crbug.com/1108503): Add some mechanism to be able to add telemetry to this element.
             const linkifier = new Components.Linkifier.Linkifier(maxLengthForDisplayedURLs);
-            const sourceAnchor = linkifier.linkifyScriptLocation(target || null, sourceLocation.scriptId || null, sourceLocation.url, sourceLocation.lineNumber, { columnNumber: sourceLocation.columnNumber, inlineFrameIndex: 0, className: undefined, tabStop: undefined });
+            const sourceAnchor = linkifier.linkifyScriptLocation(target || null, sourceLocation.scriptId || null, sourceLocation.url, sourceLocation.lineNumber, { columnNumber: sourceLocation.columnNumber, inlineFrameIndex: 0 });
             sourceCodeLocation.appendChild(sourceAnchor);
         }
         element.appendChild(sourceCodeLocation);

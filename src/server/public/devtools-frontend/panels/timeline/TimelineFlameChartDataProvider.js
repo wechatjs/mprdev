@@ -48,13 +48,13 @@ const UIStrings = {
     */
     onIgnoreList: 'On ignore list',
     /**
-    *@description Text in Timeline Flame Chart Data Provider of the Performance panel
-    */
-    input: 'Input',
-    /**
     *@description Text that refers to the animation of the web page
     */
     animation: 'Animation',
+    /**
+    *@description Text that refers to the interactions on the page shown in the timeline
+    */
+    userInteractions: 'Interactions',
     /**
     *@description Text in Timeline Flame Chart Data Provider of the Performance panel
     */
@@ -103,10 +103,6 @@ const UIStrings = {
     */
     experience: 'Experience',
     /**
-    *@description Text in Timeline Flame Chart Data Provider of the Performance panel
-    */
-    interactions: 'Interactions',
-    /**
     *@description Text for rendering frames
     */
     frames: 'Frames',
@@ -123,12 +119,6 @@ const UIStrings = {
     *@example {4} PH1
     */
     occurrencesS: 'Occurrences: {PH1}',
-    /**
-    *@description Text in Timeline Flame Chart Data Provider of the Performance panel
-    *@example {10ms} PH1
-    *@example {100.0} PH2
-    */
-    sFfps: '{PH1} ~ {PH2} fps',
     /**
     *@description Text in Timeline Flame Chart Data Provider of the Performance panel
     */
@@ -179,8 +169,8 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
     collapsibleTimingsHeader;
     timingsHeader;
     screenshotsHeader;
-    interactionsHeaderLevel1;
-    interactionsHeaderLevel2;
+    animationsHeader;
+    userInteractionsHeader;
     experienceHeader;
     flowEventIndexById;
     entryData;
@@ -230,8 +220,9 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
             this.buildGroupStyle({ shareHeaderLine: true, useFirstLineForOverview: true, collapsible: false });
         this.screenshotsHeader =
             this.buildGroupStyle({ useFirstLineForOverview: true, nestingLevel: 1, collapsible: false, itemsHeight: 150 });
-        this.interactionsHeaderLevel1 = this.buildGroupStyle({ useFirstLineForOverview: true });
-        this.interactionsHeaderLevel2 = this.buildGroupStyle({ padding: 2, nestingLevel: 1 });
+        this.animationsHeader = this.buildGroupStyle({ useFirstLineForOverview: false });
+        this.userInteractionsHeader =
+            this.buildGroupStyle({ shareHeaderLine: false, useFirstLineForOverview: true, collapsible: false });
         this.experienceHeader = this.buildGroupStyle({ collapsible: false });
         ThemeSupport.ThemeSupport.instance().addEventListener(ThemeSupport.ThemeChangeEvent.eventName, () => {
             const headers = [
@@ -242,8 +233,8 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
                 this.collapsibleTimingsHeader,
                 this.timingsHeader,
                 this.screenshotsHeader,
-                this.interactionsHeaderLevel1,
-                this.interactionsHeaderLevel2,
+                this.animationsHeader,
+                this.userInteractionsHeader,
                 this.experienceHeader,
             ];
             for (const header of headers) {
@@ -396,11 +387,11 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         const eventEntryType = EntryType.Event;
         const weight = (track) => {
             switch (track.type) {
-                case TimelineModel.TimelineModel.TrackType.Input:
-                    return 0;
                 case TimelineModel.TimelineModel.TrackType.Animation:
-                    return 1;
+                    return 0;
                 case TimelineModel.TimelineModel.TrackType.Timings:
+                    return 1;
+                case TimelineModel.TimelineModel.TrackType.UserInteractions:
                     return 2;
                 case TimelineModel.TimelineModel.TrackType.Console:
                     return 3;
@@ -428,12 +419,12 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         let rasterCount = 0;
         for (const track of tracks) {
             switch (track.type) {
-                case TimelineModel.TimelineModel.TrackType.Input: {
-                    this.appendAsyncEventsGroup(track, i18nString(UIStrings.input), track.asyncEvents, this.interactionsHeaderLevel2, eventEntryType, false /* selectable */);
+                case TimelineModel.TimelineModel.TrackType.UserInteractions: {
+                    this.appendAsyncEventsGroup(track, i18nString(UIStrings.userInteractions), track.asyncEvents, this.userInteractionsHeader, eventEntryType, false);
                     break;
                 }
                 case TimelineModel.TimelineModel.TrackType.Animation: {
-                    this.appendAsyncEventsGroup(track, i18nString(UIStrings.animation), track.asyncEvents, this.interactionsHeaderLevel2, eventEntryType, false /* selectable */);
+                    this.appendAsyncEventsGroup(track, i18nString(UIStrings.animation), track.asyncEvents, this.animationsHeader, eventEntryType, false /* selectable */);
                     break;
                 }
                 case TimelineModel.TimelineModel.TrackType.Timings: {
@@ -634,7 +625,7 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         return url && this.isIgnoreListedURL(url);
     }
     isIgnoreListedURL(url) {
-        return Bindings.IgnoreListManager.IgnoreListManager.instance().isIgnoreListedURL(url);
+        return Bindings.IgnoreListManager.IgnoreListManager.instance().isUserIgnoreListedURL(url);
     }
     appendAsyncEventsGroup(track, title, events, style, entryType, selectable) {
         if (!events.length) {
@@ -673,7 +664,6 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         if (!interactionRecords.length) {
             return;
         }
-        this.appendHeader(i18nString(UIStrings.interactions), this.interactionsHeaderLevel1, false /* selectable */);
         for (const segment of interactionRecords) {
             const index = this.entryData.length;
             this.entryData.push(segment.data);
@@ -816,10 +806,8 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         this.framesHeader.collapsible = hasFilmStrip;
         this.appendHeader(i18nString(UIStrings.frames), this.framesHeader, false /* selectable */);
         this.frameGroup = this.timelineDataInternal.groups[this.timelineDataInternal.groups.length - 1];
-        const style = TimelineUIUtils.markerStyleForFrame();
         this.entryTypeByLevel[this.currentLevel] = EntryType.Frame;
         for (const frame of this.performanceModel.frames()) {
-            this.markers.push(new TimelineFlameChartMarker(frame.startTime, frame.startTime - this.model.minimumRecordTime(), style));
             this.appendFrame(frame);
         }
         ++this.currentLevel;
@@ -887,7 +875,7 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         }
         else if (type === EntryType.Frame) {
             const frame = this.entryData[entryIndex];
-            time = i18nString(UIStrings.sFfps, { PH1: i18n.TimeUtilities.preciseMillisToString(frame.duration, 1), PH2: (1000 / frame.duration).toFixed(0) });
+            time = i18n.TimeUtilities.preciseMillisToString(frame.duration, 1);
             if (frame.idle) {
                 title = i18nString(UIStrings.idleFrame);
             }
@@ -954,6 +942,9 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
             }
             if (!SDK.TracingModel.TracingModel.isAsyncPhase(event.phase) && this.colorForEvent) {
                 return this.colorForEvent(event);
+            }
+            if (this.model.isEventTimingInteractionEvent(event)) {
+                return this.consoleColorGenerator.colorForID(event.args.data.type + ':' + event.args.data.interactionId);
             }
             if (event.hasCategory(TimelineModel.TimelineModel.TimelineModelImpl.Category.Console) ||
                 event.hasCategory(TimelineModel.TimelineModel.TimelineModelImpl.Category.UserTiming)) {
@@ -1188,11 +1179,6 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         return index;
     }
     appendAsyncEvent(asyncEvent, level) {
-        if (SDK.TracingModel.TracingModel.isNestableAsyncPhase(asyncEvent.phase)) {
-            // FIXME: also add steps once we support event nesting in the FlameChart.
-            this.appendEvent(asyncEvent, level);
-            return;
-        }
         const steps = asyncEvent.steps;
         // If we have past steps, put the end event for each range rather than start one.
         const eventOffset = steps.length > 1 && steps[1].phase === SDK.TracingModel.Phase.AsyncStepPast ? 1 : 0;
@@ -1298,6 +1284,9 @@ export class TimelineFlameChartDataProvider extends Common.ObjectWrapper.ObjectW
         return entryIndex >= 0 && this.entryType(entryIndex) === EntryType.Event ?
             this.entryData[entryIndex] :
             null;
+    }
+    entryDataByIndex(entryIndex) {
+        return this.entryData[entryIndex];
     }
     setEventColorMapping(colorForEvent) {
         this.colorForEvent = colorForEvent;

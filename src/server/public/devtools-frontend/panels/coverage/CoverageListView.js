@@ -104,13 +104,13 @@ const str_ = i18n.i18n.registerUIStrings('panels/coverage/CoverageListView.ts', 
 const i18nString = i18n.i18n.getLocalizedString.bind(undefined, str_);
 export function coverageTypeToString(type) {
     const types = [];
-    if (type & 1 /* CSS */) {
+    if (type & 1 /* CoverageType.CSS */) {
         types.push(i18nString(UIStrings.css));
     }
-    if (type & 4 /* JavaScriptPerFunction */) {
+    if (type & 4 /* CoverageType.JavaScriptPerFunction */) {
         types.push(i18nString(UIStrings.jsPerFunction));
     }
-    else if (type & 2 /* JavaScript */) {
+    else if (type & 2 /* CoverageType.JavaScript */) {
         types.push(i18nString(UIStrings.jsPerBlock));
     }
     return types.join('+');
@@ -332,10 +332,10 @@ export class GridNode extends DataGrid.SortableDataGrid.SortableDataGridNode {
             }
             case 'type': {
                 cell.textContent = coverageTypeToString(this.coverageInfo.type());
-                if (this.coverageInfo.type() & 4 /* JavaScriptPerFunction */) {
+                if (this.coverageInfo.type() & 4 /* CoverageType.JavaScriptPerFunction */) {
                     UI.Tooltip.Tooltip.install(cell, i18nString(UIStrings.jsCoverageWithPerFunction));
                 }
-                else if (this.coverageInfo.type() & 2 /* JavaScript */) {
+                else if (this.coverageInfo.type() & 2 /* CoverageType.JavaScript */) {
                     UI.Tooltip.Tooltip.install(cell, i18nString(UIStrings.jsCoverageWithPerBlock));
                 }
                 break;
@@ -365,20 +365,20 @@ export class GridNode extends DataGrid.SortableDataGrid.SortableDataGridNode {
                 if (this.coverageInfo.unusedSize() > 0) {
                     const unusedSizeBar = barContainer.createChild('div', 'bar bar-unused-size');
                     unusedSizeBar.style.width = ((this.coverageInfo.unusedSize() / this.maxSize) * 100 || 0) + '%';
-                    if (this.coverageInfo.type() & 4 /* JavaScriptPerFunction */) {
+                    if (this.coverageInfo.type() & 4 /* CoverageType.JavaScriptPerFunction */) {
                         UI.Tooltip.Tooltip.install(unusedSizeBar, i18nString(UIStrings.sBytesSBelongToFunctionsThatHave, { PH1: this.coverageInfo.unusedSize(), PH2: unusedPercent }));
                     }
-                    else if (this.coverageInfo.type() & 2 /* JavaScript */) {
+                    else if (this.coverageInfo.type() & 2 /* CoverageType.JavaScript */) {
                         UI.Tooltip.Tooltip.install(unusedSizeBar, i18nString(UIStrings.sBytesSBelongToBlocksOf, { PH1: this.coverageInfo.unusedSize(), PH2: unusedPercent }));
                     }
                 }
                 if (this.coverageInfo.usedSize() > 0) {
                     const usedSizeBar = barContainer.createChild('div', 'bar bar-used-size');
                     usedSizeBar.style.width = ((this.coverageInfo.usedSize() / this.maxSize) * 100 || 0) + '%';
-                    if (this.coverageInfo.type() & 4 /* JavaScriptPerFunction */) {
+                    if (this.coverageInfo.type() & 4 /* CoverageType.JavaScriptPerFunction */) {
                         UI.Tooltip.Tooltip.install(usedSizeBar, i18nString(UIStrings.sBytesSBelongToFunctionsThatHaveExecuted, { PH1: this.coverageInfo.usedSize(), PH2: usedPercent }));
                     }
-                    else if (this.coverageInfo.type() & 2 /* JavaScript */) {
+                    else if (this.coverageInfo.type() & 2 /* CoverageType.JavaScript */) {
                         UI.Tooltip.Tooltip.install(usedSizeBar, i18nString(UIStrings.sBytesSBelongToBlocksOfJavascript, { PH1: this.coverageInfo.usedSize(), PH2: usedPercent }));
                     }
                 }

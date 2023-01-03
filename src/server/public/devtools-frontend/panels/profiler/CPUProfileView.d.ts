@@ -4,9 +4,8 @@ import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import type * as Protocol from '../../generated/protocol.js';
 import { ProfileFlameChartDataProvider } from './CPUProfileFlameChart.js';
-import type { Formatter, ProfileDataGridNode } from './ProfileDataGrid.js';
-import type { ProfileHeader } from './ProfileHeader.js';
-import { ProfileType } from './ProfileHeader.js';
+import { type Formatter, type ProfileDataGridNode } from './ProfileDataGrid.js';
+import { ProfileType, type ProfileHeader } from './ProfileHeader.js';
 import { ProfileView, WritableProfileHeader } from './ProfileView.js';
 export declare class CPUProfileView extends ProfileView implements UI.SearchableView.Searchable {
     profileHeader: CPUProfileHeader;

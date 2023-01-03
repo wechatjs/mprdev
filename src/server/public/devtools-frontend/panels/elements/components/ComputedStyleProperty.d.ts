@@ -1,4 +1,6 @@
 export interface ComputedStylePropertyData {
+    propertyNameRenderer: () => Element;
+    propertyValueRenderer: () => Element;
     inherited: boolean;
     traceable: boolean;
     onNavigateToSource: (event?: Event) => void;

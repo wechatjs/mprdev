@@ -162,13 +162,14 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
         this.initiatorData.set(request, initiatorInfo);
         return initiatorInfo;
     }
-    initiatorInfoForRequest(request) {
-        const initiatorInfo = this.initializeInitiatorSymbolIfNeeded(request);
-        if (initiatorInfo.info) {
-            return initiatorInfo.info;
-        }
+    static initiatorInfoForRequest(request, existingInitiatorData) {
+        const initiatorInfo = existingInitiatorData || {
+            info: null,
+            chain: null,
+            request: undefined,
+        };
         let type = SDK.NetworkRequest.InitiatorType.Other;
-        let url = '';
+        let url = Platform.DevToolsPath.EmptyUrlString;
         let lineNumber = -Infinity;
         let columnNumber = -Infinity;
         let scriptId = null;
@@ -181,13 +182,13 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
             url = redirectSource.url();
         }
         else if (initiator) {
-            if (initiator.type === "parser" /* Parser */) {
+            if (initiator.type === "parser" /* Protocol.Network.InitiatorType.Parser */) {
                 type = SDK.NetworkRequest.InitiatorType.Parser;
                 url = initiator.url ? initiator.url : url;
                 lineNumber = typeof initiator.lineNumber === 'number' ? initiator.lineNumber : lineNumber;
                 columnNumber = typeof initiator.columnNumber === 'number' ? initiator.columnNumber : columnNumber;
             }
-            else if (initiator.type === "script" /* Script */) {
+            else if (initiator.type === "script" /* Protocol.Network.InitiatorType.Script */) {
                 for (let stack = initiator.stack; stack;) {
                     const topFrame = stack.callFrames.length ? stack.callFrames[0] : null;
                     if (!topFrame) {
@@ -195,7 +196,7 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
                         continue;
                     }
                     type = SDK.NetworkRequest.InitiatorType.Script;
-                    url = topFrame.url || i18nString(UIStrings.anonymous);
+                    url = (topFrame.url || i18nString(UIStrings.anonymous));
                     lineNumber = topFrame.lineNumber;
                     columnNumber = topFrame.columnNumber;
                     scriptId = topFrame.scriptId;
@@ -210,20 +211,27 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
                     initiatorStack = initiator.stack || null;
                 }
             }
-            else if (initiator.type === "preload" /* Preload */) {
+            else if (initiator.type === "preload" /* Protocol.Network.InitiatorType.Preload */) {
                 type = SDK.NetworkRequest.InitiatorType.Preload;
             }
-            else if (initiator.type === "preflight" /* Preflight */) {
+            else if (initiator.type === "preflight" /* Protocol.Network.InitiatorType.Preflight */) {
                 type = SDK.NetworkRequest.InitiatorType.Preflight;
                 initiatorRequest = request.preflightInitiatorRequest();
             }
-            else if (initiator.type === "SignedExchange" /* SignedExchange */) {
+            else if (initiator.type === "SignedExchange" /* Protocol.Network.InitiatorType.SignedExchange */) {
                 type = SDK.NetworkRequest.InitiatorType.SignedExchange;
-                url = initiator.url || '';
+                url = initiator.url || Platform.DevToolsPath.EmptyUrlString;
             }
         }
         initiatorInfo.info = { type, url, lineNumber, columnNumber, scriptId, stack: initiatorStack, initiatorRequest };
         return initiatorInfo.info;
+    }
+    initiatorInfoForRequest(request) {
+        const initiatorInfo = this.initializeInitiatorSymbolIfNeeded(request);
+        if (initiatorInfo.info) {
+            return initiatorInfo.info;
+        }
+        return NetworkLog.initiatorInfoForRequest(request, initiatorInfo);
     }
     initiatorGraphForRequest(request) {
         const initiated = new Map();
@@ -281,7 +289,7 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
     onMainFrameNavigated(event) {
         const mainFrame = event.data;
         const manager = mainFrame.resourceTreeModel().target().model(SDK.NetworkManager.NetworkManager);
-        if (!manager || mainFrame.resourceTreeModel().target().parentTarget()) {
+        if (!manager || mainFrame.resourceTreeModel().target().parentTarget()?.type() === SDK.Target.Type.Frame) {
             return;
         }
         // If a page resulted in an error, the browser will navigate to an internal error page
@@ -458,7 +466,7 @@ export class NetworkLog extends Common.ObjectWrapper.ObjectWrapper {
     }
     networkMessageGenerated(networkManager, event) {
         const { message, warning, requestId } = event.data;
-        const consoleMessage = new SDK.ConsoleModel.ConsoleMessage(networkManager.target().model(SDK.RuntimeModel.RuntimeModel), "network" /* Network */, warning ? "warning" /* Warning */ : "info" /* Info */, message);
+        const consoleMessage = new SDK.ConsoleModel.ConsoleMessage(networkManager.target().model(SDK.RuntimeModel.RuntimeModel), "network" /* Protocol.Log.LogEntrySource.Network */, warning ? "warning" /* Protocol.Log.LogEntryLevel.Warning */ : "info" /* Protocol.Log.LogEntryLevel.Info */, message);
         this.associateConsoleMessageWithRequest(consoleMessage, requestId);
         SDK.ConsoleModel.ConsoleModel.instance().addMessage(consoleMessage);
     }

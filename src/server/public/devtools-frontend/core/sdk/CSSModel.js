@@ -126,6 +126,9 @@ export class CSSModel extends SDKModel {
     sourceMapManager() {
         return this.#sourceMapManager;
     }
+    static readableLayerName(text) {
+        return text || '<anonymous>';
+    }
     static trimSourceURL(text) {
         let sourceURLIndex = text.lastIndexOf('/*# sourceURL=');
         if (sourceURLIndex === -1) {
@@ -217,9 +220,13 @@ export class CSSModel extends SDKModel {
         this.#isRuleUsageTrackingEnabled = false;
         await this.agent.invoke_stopRuleUsageTracking();
     }
-    async mediaQueriesPromise() {
+    async getMediaQueries() {
         const { medias } = await this.agent.invoke_getMediaQueries();
         return medias ? CSSMedia.parseMediaArrayPayload(this, medias) : [];
+    }
+    async getRootLayer(nodeId) {
+        const { rootLayer } = await this.agent.invoke_getLayersForNode({ nodeId });
+        return rootLayer;
     }
     isEnabled() {
         return this.#isEnabled;
@@ -232,7 +239,7 @@ export class CSSModel extends SDKModel {
         }
         this.dispatchEventToListeners(Events.ModelWasEnabled);
     }
-    async matchedStylesPromise(nodeId) {
+    async getMatchedStyles(nodeId) {
         const response = await this.agent.invoke_getMatchedStylesForNode({ nodeId });
         if (response.getError()) {
             return null;
@@ -241,16 +248,19 @@ export class CSSModel extends SDKModel {
         if (!node) {
             return null;
         }
-        return new CSSMatchedStyles(this, node, response.inlineStyle || null, response.attributesStyle || null, response.matchedCSSRules || [], response.pseudoElements || [], response.inherited || [], response.cssKeyframesRules || []);
+        return new CSSMatchedStyles(this, node, response.inlineStyle || null, response.attributesStyle || null, response.matchedCSSRules || [], response.pseudoElements || [], response.inherited || [], response.inheritedPseudoElements || [], response.cssKeyframesRules || [], response.parentLayoutNodeId);
     }
-    async classNamesPromise(styleSheetId) {
+    async getClassNames(styleSheetId) {
         const { classNames } = await this.agent.invoke_collectClassNames({ styleSheetId });
         return classNames || [];
     }
-    computedStylePromise(nodeId) {
+    async getComputedStyle(nodeId) {
+        if (!this.isEnabled()) {
+            await this.enable();
+        }
         return this.#styleLoader.computedStylePromise(nodeId);
     }
-    async backgroundColorsPromise(nodeId) {
+    async getBackgroundColors(nodeId) {
         const response = await this.agent.invoke_getBackgroundColors({ nodeId });
         if (response.getError()) {
             return null;
@@ -261,7 +271,7 @@ export class CSSModel extends SDKModel {
             computedFontWeight: response.computedFontWeight || '',
         };
     }
-    async platformFontsPromise(nodeId) {
+    async getPlatformFonts(nodeId) {
         const { fonts } = await this.agent.invoke_getPlatformFontsForNode({ nodeId });
         return fonts;
     }
@@ -279,7 +289,7 @@ export class CSSModel extends SDKModel {
         values.sort(styleSheetComparator);
         return values;
     }
-    async inlineStylesPromise(nodeId) {
+    async getInlineStyles(nodeId) {
         const response = await this.agent.invoke_getInlineStylesForNode({ nodeId });
         if (response.getError() || !response.inlineStyle) {
             return null;
@@ -356,6 +366,41 @@ export class CSSModel extends SDKModel {
             return false;
         }
     }
+    async setSupportsText(styleSheetId, range, newSupportsText) {
+        Host.userMetrics.actionTaken(Host.UserMetrics.Action.StyleRuleEdited);
+        try {
+            await this.ensureOriginalStyleSheetText(styleSheetId);
+            const { supports } = await this.agent.invoke_setSupportsText({ styleSheetId, range, text: newSupportsText });
+            if (!supports) {
+                return false;
+            }
+            this.#domModel.markUndoableState();
+            const edit = new Edit(styleSheetId, range, newSupportsText, supports);
+            this.fireStyleSheetChanged(styleSheetId, edit);
+            return true;
+        }
+        catch (e) {
+            return false;
+        }
+    }
+    async setScopeText(styleSheetId, range, newScopeText) {
+        Host.userMetrics.actionTaken(Host.UserMetrics.Action.StyleRuleEdited);
+        try {
+            await this.ensureOriginalStyleSheetText(styleSheetId);
+            const { scope } = await this.agent.invoke_setScopeText({ styleSheetId, range, text: newScopeText });
+            if (!scope) {
+                return false;
+            }
+            this.#domModel.markUndoableState();
+            const edit = new Edit(styleSheetId, range, newScopeText, scope);
+            this.fireStyleSheetChanged(styleSheetId, edit);
+            return true;
+        }
+        catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
     async addRule(styleSheetId, ruleText, ruleLocation) {
         try {
             await this.ensureOriginalStyleSheetText(styleSheetId);
@@ -405,6 +450,9 @@ export class CSSModel extends SDKModel {
     }
     fontFaces() {
         return [...this.#fontFaces.values()];
+    }
+    fontFaceForSource(src) {
+        return this.#fontFaces.get(src);
     }
     styleSheetHeaderForId(id) {
         return this.#styleSheetIdToHeader.get(id) || null;
@@ -530,7 +578,7 @@ export class CSSModel extends SDKModel {
         // is different from the regular navigations. In this case, events about CSS
         // stylesheet has already been received and they are mixed with the previous page
         // stylesheets. Therefore, we re-enable the CSS agent to get fresh events.
-        // For the regular navigatons, we can just clear the local data because events about
+        // For the regular navigations, we can just clear the local data because events about
         // stylesheets will arrive later.
         if (event.data.backForwardCacheDetails.restoredFromCache) {
             await this.suspendModel();
@@ -572,7 +620,7 @@ export class CSSModel extends SDKModel {
         this.#cachedMatchedCascadeNode = node;
         if (!this.#cachedMatchedCascadePromise) {
             if (node.id) {
-                this.#cachedMatchedCascadePromise = this.matchedStylesPromise(node.id);
+                this.#cachedMatchedCascadePromise = this.getMatchedStyles(node.id);
             }
             else {
                 return Promise.resolve(null);

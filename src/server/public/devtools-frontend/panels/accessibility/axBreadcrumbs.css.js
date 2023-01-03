@@ -103,11 +103,11 @@ styles.replaceSync(
 }
 
 .ax-breadcrumbs .ax-node:not(.inspected):hover {
-  background-color: var(--color-background-elevation-0);
+  background-color: var(--color-background-elevation-1);
 }
 
 .ax-breadcrumbs .ax-node:not(.inspected):focus {
-  background-color: var(--color-background-elevation-1);
+  background-color: var(--color-background-elevation-2);
 }
 
 .ax-breadcrumbs .ax-node.inspected:focus * {

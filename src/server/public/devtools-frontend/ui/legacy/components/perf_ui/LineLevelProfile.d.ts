@@ -1,4 +1,5 @@
 import * as SDK from '../../../../core/sdk/sdk.js';
+import type * as Platform from '../../../../core/platform/platform.js';
 import type * as Protocol from '../../../../generated/protocol.js';
 export declare class Performance {
     private readonly helper;
@@ -26,7 +27,7 @@ export declare class Helper {
     private lineData;
     constructor(type: string);
     reset(): void;
-    addLineData(target: SDK.Target.Target | null, scriptIdOrUrl: string | number, line: number, data: number): void;
+    addLineData(target: SDK.Target.Target | null, scriptIdOrUrl: Platform.DevToolsPath.UrlString | number, line: number, data: number): void;
     scheduleUpdate(): void;
     private doUpdate;
 }

@@ -1,8 +1,11 @@
+import { type HighlightInfo } from './LinearMemoryViewerUtils.js';
 export interface LinearMemoryViewerData {
     memory: Uint8Array;
     address: number;
     memoryOffset: number;
     focus: boolean;
+    highlightInfo?: HighlightInfo;
+    focusedMemoryHighlight?: HighlightInfo;
 }
 export declare class ByteSelectedEvent extends Event {
     static readonly eventName = "byteselected";

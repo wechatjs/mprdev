@@ -6,11 +6,12 @@ import * as LitHtml from '../../lit-html/lit-html.js';
 import * as ComponentHelpers from '../helpers/helpers.js';
 import linearMemoryInspectorStyles from './linearMemoryInspector.css.js';
 const { render, html } = LitHtml;
-import { LinearMemoryNavigator } from './LinearMemoryNavigator.js';
-import { LinearMemoryValueInterpreter } from './LinearMemoryValueInterpreter.js';
-import { VALUE_INTEPRETER_MAX_NUM_BYTES, getDefaultValueTypeMapping } from './ValueInterpreterDisplayUtils.js';
+import { LinearMemoryNavigator, } from './LinearMemoryNavigator.js';
+import { LinearMemoryValueInterpreter, } from './LinearMemoryValueInterpreter.js';
+import { VALUE_INTEPRETER_MAX_NUM_BYTES, getDefaultValueTypeMapping, } from './ValueInterpreterDisplayUtils.js';
 import { formatAddress, parseAddress } from './LinearMemoryInspectorUtils.js';
-import { LinearMemoryViewer } from './LinearMemoryViewer.js';
+import { LinearMemoryViewer, } from './LinearMemoryViewer.js';
+import { LinearMemoryHighlightChipList, } from './LinearMemoryHighlightChipList.js';
 import * as i18n from '../../../core/i18n/i18n.js';
 const UIStrings = {
     /**
@@ -71,12 +72,13 @@ export class LinearMemoryInspector extends HTMLElement {
     #memoryOffset = 0;
     #outerMemoryLength = 0;
     #address = -1;
-    #currentNavigatorMode = "Submitted" /* Submitted */;
+    #highlightInfo;
+    #currentNavigatorMode = "Submitted" /* Mode.Submitted */;
     #currentNavigatorAddressLine = `${this.#address}`;
     #numBytesPerPage = 4;
     #valueTypeModes = getDefaultValueTypeMapping();
     #valueTypes = new Set(this.#valueTypeModes.keys());
-    #endianness = "Little Endian" /* Little */;
+    #endianness = "Little Endian" /* Endianness.Little */;
     connectedCallback() {
         this.#shadow.adoptedStyleSheets = [linearMemoryInspectorStyles];
     }
@@ -87,24 +89,35 @@ export class LinearMemoryInspector extends HTMLElement {
         if (data.memoryOffset < 0) {
             throw new Error('Memory offset has to be greater or equal to zero.');
         }
+        if (data.highlightInfo) {
+            if (data.highlightInfo.size < 0) {
+                throw new Error('Object size has to be greater than or equal to zero');
+            }
+            if (data.highlightInfo.startAddress < 0 || data.highlightInfo.startAddress >= data.outerMemoryLength) {
+                throw new Error('Object start address is out of bounds.');
+            }
+        }
         this.#memory = data.memory;
         this.#memoryOffset = data.memoryOffset;
         this.#outerMemoryLength = data.outerMemoryLength;
         this.#valueTypeModes = data.valueTypeModes || this.#valueTypeModes;
         this.#valueTypes = data.valueTypes || this.#valueTypes;
         this.#endianness = data.endianness || this.#endianness;
+        this.#highlightInfo = data.highlightInfo;
         this.#setAddress(data.address);
         this.#render();
     }
     #render() {
         const { start, end } = this.#getPageRangeForAddress(this.#address, this.#numBytesPerPage);
-        const navigatorAddressToShow = this.#currentNavigatorMode === "Submitted" /* Submitted */ ? formatAddress(this.#address) :
+        const navigatorAddressToShow = this.#currentNavigatorMode === "Submitted" /* Mode.Submitted */ ? formatAddress(this.#address) :
             this.#currentNavigatorAddressLine;
         const navigatorAddressIsValid = this.#isValidAddress(navigatorAddressToShow);
         const invalidAddressMsg = i18nString(UIStrings.addressHasToBeANumberBetweenSAnd, { PH1: formatAddress(0), PH2: formatAddress(this.#outerMemoryLength) });
         const errorMsg = navigatorAddressIsValid ? undefined : invalidAddressMsg;
         const canGoBackInHistory = this.#history.canRollback();
         const canGoForwardInHistory = this.#history.canRollover();
+        const highlightedMemoryAreas = this.#highlightInfo ? [this.#highlightInfo] : [];
+        const focusedMemoryHighlight = this.#getSmallestEnclosingMemoryHighlight(highlightedMemoryAreas, this.#address);
         // Disabled until https://crbug.com/1079231 is fixed.
         // clang-format off
         render(html `
@@ -115,8 +128,18 @@ export class LinearMemoryInspector extends HTMLElement {
           @addressinputchanged=${this.#onAddressChange}
           @pagenavigation=${this.#navigatePage}
           @historynavigation=${this.#navigateHistory}></${LinearMemoryNavigator.litTagName}>
+          <${LinearMemoryHighlightChipList.litTagName}
+          .data=${{ highlightInfos: highlightedMemoryAreas, focusedMemoryHighlight: focusedMemoryHighlight }}
+          @jumptohighlightedmemory=${this.#onJumpToAddress}>
+          </${LinearMemoryHighlightChipList.litTagName}>
         <${LinearMemoryViewer.litTagName}
-          .data=${{ memory: this.#memory.slice(start - this.#memoryOffset, end - this.#memoryOffset), address: this.#address, memoryOffset: start, focus: this.#currentNavigatorMode === "Submitted" /* Submitted */ }}
+          .data=${{
+            memory: this.#memory.slice(start - this.#memoryOffset, end - this.#memoryOffset),
+            address: this.#address, memoryOffset: start,
+            focus: this.#currentNavigatorMode === "Submitted" /* Mode.Submitted */,
+            highlightInfo: this.#highlightInfo,
+            focusedMemoryHighlight: focusedMemoryHighlight
+        }}
           @byteselected=${this.#onByteSelected}
           @resize=${this.#resize}>
         </${LinearMemoryViewer.litTagName}>
@@ -133,7 +156,7 @@ export class LinearMemoryInspector extends HTMLElement {
           @valuetypetoggled=${this.#onValueTypeToggled}
           @valuetypemodechanged=${this.#onValueTypeModeChanged}
           @endiannesschanged=${this.#onEndiannessChanged}
-          @jumptopointeraddress=${this.#onJumpToPointerAddress}
+          @jumptopointeraddress=${this.#onJumpToAddress}
           >
         </${LinearMemoryValueInterpreter.litTagName}/>
       </div>
@@ -142,10 +165,10 @@ export class LinearMemoryInspector extends HTMLElement {
         });
         // clang-format on
     }
-    #onJumpToPointerAddress(e) {
+    #onJumpToAddress(e) {
         // Stop event from bubbling up, since no element further up needs the event.
         e.stopPropagation();
-        this.#currentNavigatorMode = "Submitted" /* Submitted */;
+        this.#currentNavigatorMode = "Submitted" /* Mode.Submitted */;
         const addressInRange = Math.max(0, Math.min(e.data, this.#outerMemoryLength - 1));
         this.#jumpToAddress(addressInRange);
     }
@@ -154,7 +177,7 @@ export class LinearMemoryInspector extends HTMLElement {
         this.dispatchEvent(new MemoryRequestEvent(start, end, this.#address));
     }
     #onByteSelected(e) {
-        this.#currentNavigatorMode = "Submitted" /* Submitted */;
+        this.#currentNavigatorMode = "Submitted" /* Mode.Submitted */;
         const addressInRange = Math.max(0, Math.min(e.data, this.#outerMemoryLength - 1));
         this.#jumpToAddress(addressInRange);
     }
@@ -180,11 +203,11 @@ export class LinearMemoryInspector extends HTMLElement {
             this.#jumpToAddress(newAddress);
             return;
         }
-        if (mode === "Submitted" /* Submitted */ && !isValid) {
-            this.#currentNavigatorMode = "InvalidSubmit" /* InvalidSubmit */;
+        if (mode === "Submitted" /* Mode.Submitted */ && !isValid) {
+            this.#currentNavigatorMode = "InvalidSubmit" /* Mode.InvalidSubmit */;
         }
         else {
-            this.#currentNavigatorMode = "Edit" /* Edit */;
+            this.#currentNavigatorMode = "Edit" /* Mode.Edit */;
         }
         this.#render();
     }
@@ -207,10 +230,10 @@ export class LinearMemoryInspector extends HTMLElement {
         this.#render();
     }
     #navigateHistory(e) {
-        return e.data === "Forward" /* Forward */ ? this.#history.rollover() : this.#history.rollback();
+        return e.data === "Forward" /* Navigation.Forward */ ? this.#history.rollover() : this.#history.rollback();
     }
     #navigatePage(e) {
-        const newAddress = e.data === "Forward" /* Forward */ ? this.#address + this.#numBytesPerPage : this.#address - this.#numBytesPerPage;
+        const newAddress = e.data === "Forward" /* Navigation.Forward */ ? this.#address + this.#numBytesPerPage : this.#address - this.#numBytesPerPage;
         const addressInRange = Math.max(0, Math.min(newAddress, this.#outerMemoryLength - 1));
         this.#jumpToAddress(addressInRange);
     }
@@ -250,6 +273,28 @@ export class LinearMemoryInspector extends HTMLElement {
         this.#history.push(historyEntry);
         this.#address = address;
         this.dispatchEvent(new AddressChangedEvent(this.#address));
+    }
+    // Returns the highlightInfo with the smallest size property that encloses the provided address.
+    // If there are multiple smallest enclosing highlights, we pick the one appearing the earliest in highlightedMemoryAreas.
+    // If no such highlightInfo exists, it returns undefined.
+    //
+    // Selecting the smallest enclosing memory highlight is a heuristic that aims to pick the
+    // most specific highlight given a provided address. This way, objects contained in other objects are
+    // potentially still accessible.
+    #getSmallestEnclosingMemoryHighlight(highlightedMemoryAreas, address) {
+        let smallestEnclosingHighlight;
+        for (const highlightedMemory of highlightedMemoryAreas) {
+            if (highlightedMemory.startAddress <= address &&
+                address < highlightedMemory.startAddress + highlightedMemory.size) {
+                if (!smallestEnclosingHighlight) {
+                    smallestEnclosingHighlight = highlightedMemory;
+                }
+                else if (highlightedMemory.size < smallestEnclosingHighlight.size) {
+                    smallestEnclosingHighlight = highlightedMemory;
+                }
+            }
+        }
+        return smallestEnclosingHighlight;
     }
 }
 ComponentHelpers.CustomElements.defineComponent('devtools-linear-memory-inspector-inspector', LinearMemoryInspector);

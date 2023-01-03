@@ -43,12 +43,13 @@ export class ContextMenuProvider {
             if (contentProvider instanceof Workspace.UISourceCode.UISourceCode) {
                 contentProvider.commitWorkingCopy();
             }
-            let content = (await contentProvider.requestContent()).content || '';
-            if (await contentProvider.contentEncoded()) {
-                content = window.atob(content);
+            const content = await contentProvider.requestContent();
+            let decodedContent = content.content || '';
+            if (content.isEncoded) {
+                decodedContent = window.atob(decodedContent);
             }
             const url = contentProvider.contentURL();
-            void Workspace.FileManager.FileManager.instance().save(url, content, true);
+            void Workspace.FileManager.FileManager.instance().save(url, decodedContent, true);
             Workspace.FileManager.FileManager.instance().close(url);
         }
         async function saveImage() {
@@ -77,7 +78,6 @@ export class ContextMenuProvider {
         const binding = uiSourceCode && PersistenceImpl.instance().binding(uiSourceCode);
         const fileURL = binding ? binding.fileSystem.contentURL() : contentProvider.contentURL();
         if (fileURL.startsWith('file://')) {
-            // TODO(crbug.com/1253323): Cast to UrlString will be removed when migration to branded types is complete.
             const path = Common.ParsedURL.ParsedURL.urlToRawPathString(fileURL, Host.Platform.isWin());
             contextMenu.revealSection().appendItem(i18nString(UIStrings.openInContainingFolder), () => Host.InspectorFrontendHost.InspectorFrontendHostInstance.showItemInFolder(path));
         }

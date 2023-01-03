@@ -142,6 +142,7 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
     reportView;
     target;
     securityOrigin;
+    storageKey;
     settings;
     includeThirdPartyCookiesSetting;
     quotaRow;
@@ -157,13 +158,13 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         super(true, 1000);
         this.contentElement.classList.add('clear-storage-container');
         this.pieColors = new Map([
-            ["appcache" /* Appcache */, 'rgb(110, 161, 226)'],
-            ["cache_storage" /* Cache_storage */, 'rgb(229, 113, 113)'],
-            ["cookies" /* Cookies */, 'rgb(239, 196, 87)'],
-            ["indexeddb" /* Indexeddb */, 'rgb(155, 127, 230)'],
-            ["local_storage" /* Local_storage */, 'rgb(116, 178, 102)'],
-            ["service_workers" /* Service_workers */, 'rgb(255, 167, 36)'],
-            ["websql" /* Websql */, 'rgb(203, 220, 56)'], // lime
+            ["appcache" /* Protocol.Storage.StorageType.Appcache */, 'rgb(110, 161, 226)'],
+            ["cache_storage" /* Protocol.Storage.StorageType.Cache_storage */, 'rgb(229, 113, 113)'],
+            ["cookies" /* Protocol.Storage.StorageType.Cookies */, 'rgb(239, 196, 87)'],
+            ["indexeddb" /* Protocol.Storage.StorageType.Indexeddb */, 'rgb(155, 127, 230)'],
+            ["local_storage" /* Protocol.Storage.StorageType.Local_storage */, 'rgb(116, 178, 102)'],
+            ["service_workers" /* Protocol.Storage.StorageType.Service_workers */, 'rgb(255, 167, 36)'],
+            ["websql" /* Protocol.Storage.StorageType.Websql */, 'rgb(203, 220, 56)'], // lime
         ]);
         // TODO(crbug.com/1156978): Replace UI.ReportView.ReportView with ReportView.ts web component.
         this.reportView = new UI.ReportView.ReportView(i18nString(UIStrings.storageTitle));
@@ -171,6 +172,7 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         this.reportView.show(this.contentElement);
         this.target = null;
         this.securityOrigin = null;
+        this.storageKey = null;
         this.settings = new Map();
         for (const type of AllStorageTypes) {
             this.settings.set(type, Common.Settings.Settings.instance().createSetting('clear-storage-' + type, true));
@@ -220,16 +222,16 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         includeThirdPartyCookiesCheckbox.classList.add('include-third-party-cookies');
         clearButtonSection.appendChild(includeThirdPartyCookiesCheckbox);
         const application = this.reportView.appendSection(i18nString(UIStrings.application));
-        this.appendItem(application, i18nString(UIStrings.unregisterServiceWorker), "service_workers" /* Service_workers */);
+        this.appendItem(application, i18nString(UIStrings.unregisterServiceWorker), "service_workers" /* Protocol.Storage.StorageType.Service_workers */);
         application.markFieldListAsGroup();
         const storage = this.reportView.appendSection(i18nString(UIStrings.storageTitle));
-        this.appendItem(storage, i18nString(UIStrings.localAndSessionStorage), "local_storage" /* Local_storage */);
-        this.appendItem(storage, i18nString(UIStrings.indexDB), "indexeddb" /* Indexeddb */);
-        this.appendItem(storage, i18nString(UIStrings.webSql), "websql" /* Websql */);
-        this.appendItem(storage, i18nString(UIStrings.cookies), "cookies" /* Cookies */);
+        this.appendItem(storage, i18nString(UIStrings.localAndSessionStorage), "local_storage" /* Protocol.Storage.StorageType.Local_storage */);
+        this.appendItem(storage, i18nString(UIStrings.indexDB), "indexeddb" /* Protocol.Storage.StorageType.Indexeddb */);
+        this.appendItem(storage, i18nString(UIStrings.webSql), "websql" /* Protocol.Storage.StorageType.Websql */);
+        this.appendItem(storage, i18nString(UIStrings.cookies), "cookies" /* Protocol.Storage.StorageType.Cookies */);
         storage.markFieldListAsGroup();
         const caches = this.reportView.appendSection(i18nString(UIStrings.cache));
-        this.appendItem(caches, i18nString(UIStrings.cacheStorage), "cache_storage" /* Cache_storage */);
+        this.appendItem(caches, i18nString(UIStrings.cacheStorage), "cache_storage" /* Protocol.Storage.StorageType.Cache_storage */);
         caches.markFieldListAsGroup();
         SDK.TargetManager.TargetManager.instance().observeTargets(this);
     }
@@ -248,6 +250,9 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         const securityOriginManager = target.model(SDK.SecurityOriginManager.SecurityOriginManager);
         this.updateOrigin(securityOriginManager.mainSecurityOrigin(), securityOriginManager.unreachableMainSecurityOrigin());
         securityOriginManager.addEventListener(SDK.SecurityOriginManager.Events.MainSecurityOriginChanged, this.originChanged, this);
+        const storageKeyManager = target.model(SDK.StorageKeyManager.StorageKeyManager);
+        this.updateStorageKey(storageKeyManager.mainStorageKey());
+        storageKeyManager.addEventListener(SDK.StorageKeyManager.Events.MainStorageKeyChanged, this.storageKeyChanged, this);
     }
     targetRemoved(target) {
         if (this.target !== target) {
@@ -255,10 +260,16 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         }
         const securityOriginManager = target.model(SDK.SecurityOriginManager.SecurityOriginManager);
         securityOriginManager.removeEventListener(SDK.SecurityOriginManager.Events.MainSecurityOriginChanged, this.originChanged, this);
+        const storageKeyManager = target.model(SDK.StorageKeyManager.StorageKeyManager);
+        storageKeyManager.removeEventListener(SDK.StorageKeyManager.Events.MainStorageKeyChanged, this.storageKeyChanged, this);
     }
     originChanged(event) {
         const { mainSecurityOrigin, unreachableMainSecurityOrigin } = event.data;
         this.updateOrigin(mainSecurityOrigin, unreachableMainSecurityOrigin);
+    }
+    storageKeyChanged(event) {
+        const { mainStorageKey } = event.data;
+        this.updateStorageKey(mainStorageKey);
     }
     updateOrigin(mainOrigin, unreachableMainOrigin) {
         const oldOrigin = this.securityOrigin;
@@ -271,6 +282,17 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
             this.reportView.setSubtitle(mainOrigin);
         }
         if (oldOrigin !== this.securityOrigin) {
+            this.quotaOverrideControlRow.classList.add('hidden');
+            this.quotaOverrideCheckbox.checkboxElement.checked = false;
+            this.quotaOverrideErrorMessage.textContent = '';
+        }
+        void this.doUpdate();
+    }
+    updateStorageKey(mainStorageKey) {
+        const oldStorageKey = this.storageKey;
+        this.storageKey = mainStorageKey;
+        this.reportView.setSubtitle(mainStorageKey);
+        if (oldStorageKey !== this.storageKey) {
             this.quotaOverrideControlRow.classList.add('hidden');
             this.quotaOverrideCheckbox.checkboxElement.checked = false;
             this.quotaOverrideErrorMessage.textContent = '';
@@ -335,7 +357,13 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
         }
         if (this.target) {
             const includeThirdPartyCookies = this.includeThirdPartyCookiesSetting.get();
-            StorageView.clear(this.target, this.securityOrigin, selectedStorageTypes, includeThirdPartyCookies);
+            // TODO(crbug.com/1313434) Prioritize storageKey once everything is ready
+            if (this.securityOrigin) {
+                StorageView.clear(this.target, this.securityOrigin, selectedStorageTypes, includeThirdPartyCookies);
+            }
+            else if (this.storageKey) {
+                StorageView.clearByStorageKey(this.target, this.storageKey, selectedStorageTypes);
+            }
         }
         this.clearButton.disabled = true;
         const label = this.clearButton.textContent;
@@ -349,14 +377,14 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
     static clear(target, securityOrigin, selectedStorageTypes, includeThirdPartyCookies) {
         void target.storageAgent().invoke_clearDataForOrigin({ origin: securityOrigin, storageTypes: selectedStorageTypes.join(',') });
         const set = new Set(selectedStorageTypes);
-        const hasAll = set.has("all" /* All */);
-        if (set.has("cookies" /* Cookies */) || hasAll) {
+        const hasAll = set.has("all" /* Protocol.Storage.StorageType.All */);
+        if (set.has("cookies" /* Protocol.Storage.StorageType.Cookies */) || hasAll) {
             const cookieModel = target.model(SDK.CookieModel.CookieModel);
             if (cookieModel) {
                 void cookieModel.clear(undefined, includeThirdPartyCookies ? undefined : securityOrigin);
             }
         }
-        if (set.has("indexeddb" /* Indexeddb */) || hasAll) {
+        if (set.has("indexeddb" /* Protocol.Storage.StorageType.Indexeddb */) || hasAll) {
             for (const target of SDK.TargetManager.TargetManager.instance().targets()) {
                 const indexedDBModel = target.model(IndexedDBModel);
                 if (indexedDBModel) {
@@ -364,24 +392,43 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
                 }
             }
         }
-        if (set.has("local_storage" /* Local_storage */) || hasAll) {
+        if (set.has("local_storage" /* Protocol.Storage.StorageType.Local_storage */) || hasAll) {
             const storageModel = target.model(DOMStorageModel);
             if (storageModel) {
                 storageModel.clearForOrigin(securityOrigin);
             }
         }
-        if (set.has("websql" /* Websql */) || hasAll) {
+        if (set.has("websql" /* Protocol.Storage.StorageType.Websql */) || hasAll) {
             const databaseModel = target.model(DatabaseModel);
             if (databaseModel) {
                 databaseModel.disable();
                 databaseModel.enable();
             }
         }
-        if (set.has("cache_storage" /* Cache_storage */) || hasAll) {
+        if (set.has("cache_storage" /* Protocol.Storage.StorageType.Cache_storage */) || hasAll) {
             const target = SDK.TargetManager.TargetManager.instance().mainTarget();
             const model = target && target.model(SDK.ServiceWorkerCacheModel.ServiceWorkerCacheModel);
             if (model) {
                 model.clearForOrigin(securityOrigin);
+            }
+        }
+    }
+    static clearByStorageKey(target, storageKey, selectedStorageTypes) {
+        void target.storageAgent().invoke_clearDataForStorageKey({ storageKey, storageTypes: selectedStorageTypes.join(',') });
+        const set = new Set(selectedStorageTypes);
+        const hasAll = set.has("all" /* Protocol.Storage.StorageType.All */);
+        if (set.has("local_storage" /* Protocol.Storage.StorageType.Local_storage */) || hasAll) {
+            const storageModel = target.model(DOMStorageModel);
+            if (storageModel) {
+                storageModel.clearForStorageKey(storageKey);
+            }
+        }
+        if (set.has("indexeddb" /* Protocol.Storage.StorageType.Indexeddb */) || hasAll) {
+            for (const target of SDK.TargetManager.TargetManager.instance().targets()) {
+                const indexedDBModel = target.model(IndexedDBModel);
+                if (indexedDBModel) {
+                    indexedDBModel.clearForStorageKey(storageKey);
+                }
             }
         }
     }
@@ -438,17 +485,17 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
     }
     getStorageTypeName(type) {
         switch (type) {
-            case "file_systems" /* File_systems */:
+            case "file_systems" /* Protocol.Storage.StorageType.File_systems */:
                 return i18nString(UIStrings.fileSystem);
-            case "websql" /* Websql */:
+            case "websql" /* Protocol.Storage.StorageType.Websql */:
                 return i18nString(UIStrings.webSql);
-            case "appcache" /* Appcache */:
+            case "appcache" /* Protocol.Storage.StorageType.Appcache */:
                 return i18nString(UIStrings.application);
-            case "indexeddb" /* Indexeddb */:
+            case "indexeddb" /* Protocol.Storage.StorageType.Indexeddb */:
                 return i18nString(UIStrings.indexDB);
-            case "cache_storage" /* Cache_storage */:
+            case "cache_storage" /* Protocol.Storage.StorageType.Cache_storage */:
                 return i18nString(UIStrings.cacheStorage);
-            case "service_workers" /* Service_workers */:
+            case "service_workers" /* Protocol.Storage.StorageType.Service_workers */:
                 return i18nString(UIStrings.serviceWorkers);
             default:
                 return i18nString(UIStrings.other);
@@ -461,13 +508,13 @@ export class StorageView extends UI.ThrottledWidget.ThrottledWidget {
     }
 }
 export const AllStorageTypes = [
-    "appcache" /* Appcache */,
-    "cache_storage" /* Cache_storage */,
-    "cookies" /* Cookies */,
-    "indexeddb" /* Indexeddb */,
-    "local_storage" /* Local_storage */,
-    "service_workers" /* Service_workers */,
-    "websql" /* Websql */,
+    "appcache" /* Protocol.Storage.StorageType.Appcache */,
+    "cache_storage" /* Protocol.Storage.StorageType.Cache_storage */,
+    "cookies" /* Protocol.Storage.StorageType.Cookies */,
+    "indexeddb" /* Protocol.Storage.StorageType.Indexeddb */,
+    "local_storage" /* Protocol.Storage.StorageType.Local_storage */,
+    "service_workers" /* Protocol.Storage.StorageType.Service_workers */,
+    "websql" /* Protocol.Storage.StorageType.Websql */,
 ];
 let actionDelegateInstance;
 export class ActionDelegate {
@@ -487,6 +534,12 @@ export class ActionDelegate {
         }
         return false;
     }
+    async clear(target, resourceTreeModel) {
+        const storageKey = await resourceTreeModel.getMainStorageKey();
+        if (storageKey) {
+            StorageView.clearByStorageKey(target, storageKey, AllStorageTypes);
+        }
+    }
     handleClear(includeThirdPartyCookies) {
         const target = SDK.TargetManager.TargetManager.instance().mainTarget();
         if (!target) {
@@ -497,10 +550,12 @@ export class ActionDelegate {
             return false;
         }
         const securityOrigin = resourceTreeModel.getMainSecurityOrigin();
-        if (!securityOrigin) {
-            return false;
+        // TODO(crbug.com/1313434) Prioritize storageKey functionality once everything is ready
+        if (securityOrigin) {
+            StorageView.clear(target, securityOrigin, AllStorageTypes, includeThirdPartyCookies);
+            return true;
         }
-        StorageView.clear(target, securityOrigin, AllStorageTypes, includeThirdPartyCookies);
+        void this.clear(target, resourceTreeModel);
         return true;
     }
 }

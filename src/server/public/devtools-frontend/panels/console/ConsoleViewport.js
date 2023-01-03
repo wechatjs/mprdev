@@ -209,7 +209,7 @@ export class ConsoleViewport {
     updateFocusedItem(focusLastChild) {
         const selectedElement = this.renderedElementAt(this.virtualSelectedIndex);
         const changed = this.lastSelectedElement !== selectedElement;
-        const containerHasFocus = this.contentElementInternal === this.element.ownerDocument.deepActiveElement();
+        const containerHasFocus = this.contentElementInternal === Platform.DOMUtilities.deepActiveElement(this.element.ownerDocument);
         if (this.lastSelectedElement && changed) {
             this.lastSelectedElement.classList.remove('console-selected');
         }

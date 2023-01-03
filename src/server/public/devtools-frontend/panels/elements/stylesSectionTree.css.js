@@ -129,14 +129,20 @@ ol.expanded {
 }
 
 .implicit,
-.inherited {
+.inherited,
+.inactive-property {
   opacity: 50%;
+}
+
+.changed {
+  background-color: var(--color-accent-green-background);
 }
 
 .changed::after {
   content: "";
   position: absolute;
   left: -4px;
+  top: 0;
   width: 2px;
   height: 100%;
   background-color: var(--color-accent-green);
@@ -146,16 +152,22 @@ ol.expanded {
   display: none;
 }
 
-.changed:hover {
-  background-color: var(--color-accent-green-background);
-}
-
 .changed:hover .copy {
   position: absolute;
   right: -4px;
   top: 0;
   bottom: 0;
   margin: auto;
+  display: inline-block;
+  cursor: pointer;
+  transform: scale(0.9);
+}
+
+.hint {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto auto auto 3px;
   display: inline-block;
   cursor: pointer;
   transform: scale(0.9);

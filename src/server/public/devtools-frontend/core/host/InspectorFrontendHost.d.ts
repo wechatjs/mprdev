@@ -1,5 +1,6 @@
 import * as Common from '../common/common.js';
-import type { CanShowSurveyResult, ContextMenuDescriptor, EnumeratedHistogram, EventTypes, ExtensionDescriptor, InspectorFrontendHostAPI, LoadNetworkResourceResult, ShowSurveyResult, SyncInformation } from './InspectorFrontendHostAPI.js';
+import * as Platform from '../platform/platform.js';
+import { type CanShowSurveyResult, type ContextMenuDescriptor, type EnumeratedHistogram, type EventTypes, type ExtensionDescriptor, type InspectorFrontendHostAPI, type LoadNetworkResourceResult, type ShowSurveyResult, type SyncInformation } from './InspectorFrontendHostAPI.js';
 export declare class InspectorFrontendHostStub implements InspectorFrontendHostAPI {
     #private;
     events: Common.EventTarget.EventTarget<EventTypes>;
@@ -30,20 +31,20 @@ export declare class InspectorFrontendHostStub implements InspectorFrontendHostA
     }): void;
     inspectElementCompleted(): void;
     setInjectedScriptForOrigin(origin: string, script: string): void;
-    inspectedURLChanged(url: string): void;
+    inspectedURLChanged(url: Platform.DevToolsPath.UrlString): void;
     copyText(text: string | null | undefined): void;
-    openInNewTab(url: string): void;
-    showItemInFolder(fileSystemPath: string): void;
-    save(url: string, content: string, forceSaveAs: boolean): void;
-    append(url: string, content: string): void;
-    close(url: string): void;
+    openInNewTab(url: Platform.DevToolsPath.UrlString): void;
+    showItemInFolder(fileSystemPath: Platform.DevToolsPath.RawPathString): void;
+    save(url: Platform.DevToolsPath.RawPathString | Platform.DevToolsPath.UrlString, content: string, forceSaveAs: boolean): void;
+    append(url: Platform.DevToolsPath.RawPathString | Platform.DevToolsPath.UrlString, content: string): void;
+    close(url: Platform.DevToolsPath.RawPathString | Platform.DevToolsPath.UrlString): void;
     sendMessageToBackend(message: string): void;
     recordEnumeratedHistogram(actionName: EnumeratedHistogram, actionCode: number, bucketSize: number): void;
     recordPerformanceHistogram(histogramName: string, duration: number): void;
     recordUserMetricsAction(umaName: string): void;
     requestFileSystems(): void;
     addFileSystem(type?: string): void;
-    removeFileSystem(fileSystemPath: string): void;
+    removeFileSystem(fileSystemPath: Platform.DevToolsPath.RawPathString): void;
     isolatedFileSystem(fileSystemId: string, registeredName: string): FileSystem | null;
     loadNetworkResource(url: string, headers: string, streamId: number, callback: (arg0: LoadNetworkResourceResult) => void): void;
     registerPreference(name: string, options: {
@@ -58,9 +59,9 @@ export declare class InspectorFrontendHostStub implements InspectorFrontendHostA
     clearPreferences(): void;
     getSyncInformation(callback: (arg0: SyncInformation) => void): void;
     upgradeDraggedFileSystemPermissions(fileSystem: FileSystem): void;
-    indexPath(requestId: number, fileSystemPath: string, excludedFolders: string): void;
+    indexPath(requestId: number, fileSystemPath: Platform.DevToolsPath.RawPathString, excludedFolders: string): void;
     stopIndexing(requestId: number): void;
-    searchInPath(requestId: number, fileSystemPath: string, query: string): void;
+    searchInPath(requestId: number, fileSystemPath: Platform.DevToolsPath.RawPathString, query: string): void;
     zoomFactor(): number;
     zoomIn(): void;
     zoomOut(): void;

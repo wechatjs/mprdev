@@ -4,6 +4,7 @@
 import * as Common from '../common/common.js';
 import * as i18n from '../i18n/i18n.js';
 import * as Platform from '../platform/platform.js';
+import { Type } from './Target.js';
 import { Events as TargetManagerEvents, TargetManager } from './TargetManager.js';
 import { TextSourceMap } from './SourceMap.js';
 const UIStrings = {
@@ -19,6 +20,8 @@ export class SourceMapManager extends Common.ObjectWrapper.ObjectWrapper {
     #target;
     #isEnabled;
     #relativeSourceURL;
+    // Stores the raw sourceMappingURL as provided by V8. These are not guaranteed to
+    // be valid URLs and will be checked and resolved once `attachSourceMap` is called.
     #relativeSourceMapURL;
     #resolvedSourceMapId;
     #sourceMapById;
@@ -52,6 +55,13 @@ export class SourceMapManager extends Common.ObjectWrapper.ObjectWrapper {
             this.attachSourceMap(client, relativeSourceURL, relativeSourceMapURL);
         }
     }
+    getBaseUrl() {
+        let target = this.#target;
+        while (target && target.type() !== Type.Frame) {
+            target = target.parentTarget();
+        }
+        return target?.inspectedURL() ?? Platform.DevToolsPath.EmptyUrlString;
+    }
     inspectedURLChanged(event) {
         if (event.data !== this.#target) {
             return;
@@ -80,6 +90,40 @@ export class SourceMapManager extends Common.ObjectWrapper.ObjectWrapper {
         }
         return this.#sourceMapById.get(sourceMapId) || null;
     }
+    // This method actively awaits the source map, if still loading.
+    sourceMapForClientPromise(client) {
+        const sourceMapId = this.#resolvedSourceMapId.get(client);
+        if (!sourceMapId) {
+            // The source map has detached or none exists for this client.
+            return Promise.resolve(null);
+        }
+        const sourceMap = this.sourceMapForClient(client);
+        if (sourceMap) {
+            return Promise.resolve(sourceMap);
+        }
+        if (!this.#sourceMapIdToLoadingClients.has(sourceMapId)) {
+            // The source map failed to attach.
+            return Promise.resolve(null);
+        }
+        return new Promise(resolve => {
+            const sourceMapAddedDescriptor = this.addEventListener(Events.SourceMapAttached, event => {
+                if (event.data.client !== client) {
+                    return;
+                }
+                this.removeEventListener(Events.SourceMapAttached, sourceMapAddedDescriptor.listener);
+                this.removeEventListener(Events.SourceMapFailedToAttach, sourceMapFailedDescriptor.listener);
+                resolve(event.data.sourceMap);
+            });
+            const sourceMapFailedDescriptor = this.addEventListener(Events.SourceMapFailedToAttach, event => {
+                if (event.data.client !== client) {
+                    return;
+                }
+                this.removeEventListener(Events.SourceMapAttached, sourceMapAddedDescriptor.listener);
+                this.removeEventListener(Events.SourceMapFailedToAttach, sourceMapFailedDescriptor.listener);
+                resolve(null);
+            });
+        });
+    }
     clientsForSourceMap(sourceMap) {
         const sourceMapId = this.getSourceMapId(sourceMap.compiledURL(), sourceMap.url());
         if (this.#sourceMapIdToClients.has(sourceMapId)) {
@@ -93,7 +137,7 @@ export class SourceMapManager extends Common.ObjectWrapper.ObjectWrapper {
     resolveRelativeURLs(sourceURL, sourceMapURL) {
         // |#sourceURL| can be a random string, but is generally an absolute path.
         // Complete it to inspected page url for relative links.
-        const resolvedSourceURL = Common.ParsedURL.ParsedURL.completeURL(this.#target.inspectedURL(), sourceURL);
+        const resolvedSourceURL = Common.ParsedURL.ParsedURL.completeURL(this.getBaseUrl(), sourceURL);
         if (!resolvedSourceURL) {
             return null;
         }

@@ -1,6 +1,7 @@
 // Copyright 2020 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+import * as Platform from '../../../core/platform/platform.js';
 import * as LitHtml from '../../lit-html/lit-html.js';
 import * as ComponentHelpers from '../helpers/helpers.js';
 import * as Coordinator from '../render_coordinator/render_coordinator.js';
@@ -22,7 +23,7 @@ export class LinkifierClick extends Event {
 export class Linkifier extends HTMLElement {
     static litTagName = LitHtml.literal `devtools-linkifier`;
     #shadow = this.attachShadow({ mode: 'open' });
-    #url = '';
+    #url = Platform.DevToolsPath.EmptyUrlString;
     #lineNumber;
     #columnNumber;
     set data(data) {

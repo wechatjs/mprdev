@@ -23,12 +23,12 @@ async function loadLayersModule() {
     return loadedLayersModule;
 }
 UI.ViewManager.registerViewExtension({
-    location: "panel" /* PANEL */,
+    location: "panel" /* UI.ViewManager.ViewLocationValues.PANEL */,
     id: 'layers',
     title: i18nLazyString(UIStrings.layers),
     commandPrompt: i18nLazyString(UIStrings.showLayers),
     order: 100,
-    persistence: "closeable" /* CLOSEABLE */,
+    persistence: "closeable" /* UI.ViewManager.ViewPersistence.CLOSEABLE */,
     async loadView() {
         const Layers = await loadLayersModule();
         return Layers.LayersPanel.LayersPanel.instance();

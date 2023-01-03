@@ -37,7 +37,8 @@ import { Events as DebuggerModelEvents } from './DebuggerModel.js';
 import { LogModel } from './LogModel.js';
 import { RemoteObject } from './RemoteObject.js';
 import { Events as ResourceTreeModelEvents, ResourceTreeModel } from './ResourceTreeModel.js';
-import { Events as RuntimeModelEvents, RuntimeModel } from './RuntimeModel.js';
+import { Events as RuntimeModelEvents, RuntimeModel, } from './RuntimeModel.js';
+import { Type } from './Target.js';
 import { TargetManager } from './TargetManager.js';
 const UIStrings = {
     /**
@@ -108,7 +109,7 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
             eventListeners.push(cpuProfilerModel.addEventListener(CPUProfilerModelEvents.ConsoleProfileFinished, this.consoleProfileFinished.bind(this, cpuProfilerModel)));
         }
         const resourceTreeModel = target.model(ResourceTreeModel);
-        if (resourceTreeModel && !target.parentTarget()) {
+        if (resourceTreeModel && target.parentTarget()?.type() !== Type.Frame) {
             eventListeners.push(resourceTreeModel.addEventListener(ResourceTreeModelEvents.MainFrameNavigated, this.mainFrameNavigated, this));
         }
         const runtimeModel = target.model(RuntimeModel);
@@ -116,7 +117,7 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
             eventListeners.push(runtimeModel.addEventListener(RuntimeModelEvents.ExceptionThrown, this.exceptionThrown.bind(this, runtimeModel)));
             eventListeners.push(runtimeModel.addEventListener(RuntimeModelEvents.ExceptionRevoked, this.exceptionRevoked.bind(this, runtimeModel)));
             eventListeners.push(runtimeModel.addEventListener(RuntimeModelEvents.ConsoleAPICalled, this.consoleAPICalled.bind(this, runtimeModel)));
-            if (!target.parentTarget()) {
+            if (target.parentTarget()?.type() !== Type.Frame) {
                 eventListeners.push(runtimeModel.debuggerModel().addEventListener(DebuggerModelEvents.GlobalObjectCleared, this.clearIfNecessary, this));
             }
             eventListeners.push(runtimeModel.addEventListener(RuntimeModelEvents.QueryObjectRequested, this.queryObjectRequested.bind(this, runtimeModel)));
@@ -152,7 +153,7 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
         this.dispatchEventToListeners(Events.CommandEvaluated, { result: result.object, commandMessage: originatingMessage, exceptionDetails: result.exceptionDetails });
     }
     addCommandMessage(executionContext, text) {
-        const commandMessage = new ConsoleMessage(executionContext.runtimeModel, "javascript" /* Javascript */, null, text, { type: FrontendMessageType.Command });
+        const commandMessage = new ConsoleMessage(executionContext.runtimeModel, "javascript" /* Protocol.Log.LogEntrySource.Javascript */, null, text, { type: FrontendMessageType.Command });
         commandMessage.setExecutionContextId(executionContext.id);
         this.addMessage(commandMessage);
         return commandMessage;
@@ -160,7 +161,7 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
     addMessage(msg) {
         msg.setPageLoadSequenceNumber(this.#pageLoadSequenceNumber);
         if (msg.source === FrontendMessageSource.ConsoleAPI &&
-            msg.type === "clear" /* Clear */) {
+            msg.type === "clear" /* Protocol.Runtime.ConsoleAPICalledEventType.Clear */) {
             this.clearIfNecessary();
         }
         this.#messagesInternal.push(msg);
@@ -192,25 +193,25 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
             return;
         }
         this.#errorsInternal--;
-        exceptionMessage.level = "verbose" /* Verbose */;
+        exceptionMessage.level = "verbose" /* Protocol.Log.LogEntryLevel.Verbose */;
         this.dispatchEventToListeners(Events.MessageUpdated, exceptionMessage);
     }
     consoleAPICalled(runtimeModel, event) {
         const call = event.data;
-        let level = "info" /* Info */;
-        if (call.type === "debug" /* Debug */) {
-            level = "verbose" /* Verbose */;
+        let level = "info" /* Protocol.Log.LogEntryLevel.Info */;
+        if (call.type === "debug" /* Protocol.Runtime.ConsoleAPICalledEventType.Debug */) {
+            level = "verbose" /* Protocol.Log.LogEntryLevel.Verbose */;
         }
-        else if (call.type === "error" /* Error */ ||
-            call.type === "assert" /* Assert */) {
-            level = "error" /* Error */;
+        else if (call.type === "error" /* Protocol.Runtime.ConsoleAPICalledEventType.Error */ ||
+            call.type === "assert" /* Protocol.Runtime.ConsoleAPICalledEventType.Assert */) {
+            level = "error" /* Protocol.Log.LogEntryLevel.Error */;
         }
-        else if (call.type === "warning" /* Warning */) {
-            level = "warning" /* Warning */;
+        else if (call.type === "warning" /* Protocol.Runtime.ConsoleAPICalledEventType.Warning */) {
+            level = "warning" /* Protocol.Log.LogEntryLevel.Warning */;
         }
-        else if (call.type === "info" /* Info */ ||
-            call.type === "log" /* Log */) {
-            level = "info" /* Info */;
+        else if (call.type === "info" /* Protocol.Runtime.ConsoleAPICalledEventType.Info */ ||
+            call.type === "log" /* Protocol.Runtime.ConsoleAPICalledEventType.Log */) {
+            level = "info" /* Protocol.Log.LogEntryLevel.Info */;
         }
         let message = '';
         if (call.args.length && call.args[0].unserializableValue) {
@@ -244,7 +245,7 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
             parameters: [objects],
             executionContextId,
         };
-        const consoleMessage = new ConsoleMessage(runtimeModel, FrontendMessageSource.ConsoleAPI, "info" /* Info */, '', details);
+        const consoleMessage = new ConsoleMessage(runtimeModel, FrontendMessageSource.ConsoleAPI, "info" /* Protocol.Log.LogEntryLevel.Info */, '', details);
         this.addMessage(consoleMessage);
     }
     clearIfNecessary() {
@@ -260,11 +261,11 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
     }
     consoleProfileStarted(cpuProfilerModel, event) {
         const { data } = event;
-        this.addConsoleProfileMessage(cpuProfilerModel, "profile" /* Profile */, data.scriptLocation, i18nString(UIStrings.profileSStarted, { PH1: data.title }));
+        this.addConsoleProfileMessage(cpuProfilerModel, "profile" /* Protocol.Runtime.ConsoleAPICalledEventType.Profile */, data.scriptLocation, i18nString(UIStrings.profileSStarted, { PH1: data.title }));
     }
     consoleProfileFinished(cpuProfilerModel, event) {
         const { data } = event;
-        this.addConsoleProfileMessage(cpuProfilerModel, "profileEnd" /* ProfileEnd */, data.scriptLocation, i18nString(UIStrings.profileSFinished, { PH1: data.title }));
+        this.addConsoleProfileMessage(cpuProfilerModel, "profileEnd" /* Protocol.Runtime.ConsoleAPICalledEventType.ProfileEnd */, data.scriptLocation, i18nString(UIStrings.profileSFinished, { PH1: data.title }));
     }
     addConsoleProfileMessage(cpuProfilerModel, type, scriptLocation, messageText) {
         const script = scriptLocation.script();
@@ -275,18 +276,18 @@ export class ConsoleModel extends Common.ObjectWrapper.ObjectWrapper {
                 lineNumber: scriptLocation.lineNumber,
                 columnNumber: scriptLocation.columnNumber || 0,
             }];
-        this.addMessage(new ConsoleMessage(cpuProfilerModel.runtimeModel(), FrontendMessageSource.ConsoleAPI, "info" /* Info */, messageText, { type, stackTrace: { callFrames } }));
+        this.addMessage(new ConsoleMessage(cpuProfilerModel.runtimeModel(), FrontendMessageSource.ConsoleAPI, "info" /* Protocol.Log.LogEntryLevel.Info */, messageText, { type, stackTrace: { callFrames } }));
     }
     incrementErrorWarningCount(msg) {
-        if (msg.source === "violation" /* Violation */) {
+        if (msg.source === "violation" /* Protocol.Log.LogEntrySource.Violation */) {
             this.#violationsInternal++;
             return;
         }
         switch (msg.level) {
-            case "warning" /* Warning */:
+            case "warning" /* Protocol.Log.LogEntryLevel.Warning */:
                 this.#warningsInternal++;
                 break;
-            case "error" /* Error */:
+            case "error" /* Protocol.Log.LogEntryLevel.Error */:
                 this.#errorsInternal++;
                 break;
         }
@@ -436,7 +437,7 @@ export class ConsoleMessage {
         this.source = source;
         this.level = level;
         this.messageText = messageText;
-        this.type = details?.type || "log" /* Log */;
+        this.type = details?.type || "log" /* Protocol.Runtime.ConsoleAPICalledEventType.Log */;
         this.url = details?.url;
         this.line = details?.line || 0;
         this.column = details?.column || 0;
@@ -482,7 +483,7 @@ export class ConsoleMessage {
             scriptId: exceptionDetails.scriptId,
             affectedResources,
         };
-        return new ConsoleMessage(runtimeModel, "javascript" /* Javascript */, "error" /* Error */, RuntimeModel.simpleTextFromException(exceptionDetails), details);
+        return new ConsoleMessage(runtimeModel, "javascript" /* Protocol.Log.LogEntrySource.Javascript */, "error" /* Protocol.Log.LogEntryLevel.Error */, RuntimeModel.simpleTextFromException(exceptionDetails), details);
     }
     runtimeModel() {
         return this.#runtimeModelInternal;
@@ -510,20 +511,20 @@ export class ConsoleMessage {
         this.#exceptionId = exceptionId;
     }
     isGroupMessage() {
-        return this.type === "startGroup" /* StartGroup */ ||
-            this.type === "startGroupCollapsed" /* StartGroupCollapsed */ ||
-            this.type === "endGroup" /* EndGroup */;
+        return this.type === "startGroup" /* Protocol.Runtime.ConsoleAPICalledEventType.StartGroup */ ||
+            this.type === "startGroupCollapsed" /* Protocol.Runtime.ConsoleAPICalledEventType.StartGroupCollapsed */ ||
+            this.type === "endGroup" /* Protocol.Runtime.ConsoleAPICalledEventType.EndGroup */;
     }
     isGroupStartMessage() {
-        return this.type === "startGroup" /* StartGroup */ ||
-            this.type === "startGroupCollapsed" /* StartGroupCollapsed */;
+        return this.type === "startGroup" /* Protocol.Runtime.ConsoleAPICalledEventType.StartGroup */ ||
+            this.type === "startGroupCollapsed" /* Protocol.Runtime.ConsoleAPICalledEventType.StartGroupCollapsed */;
     }
     isErrorOrWarning() {
-        return (this.level === "warning" /* Warning */ || this.level === "error" /* Error */);
+        return (this.level === "warning" /* Protocol.Log.LogEntryLevel.Warning */ || this.level === "error" /* Protocol.Log.LogEntryLevel.Error */);
     }
     isGroupable() {
-        const isUngroupableError = this.level === "error" /* Error */ &&
-            (this.source === "javascript" /* Javascript */ || this.source === "network" /* Network */);
+        const isUngroupableError = this.level === "error" /* Protocol.Log.LogEntryLevel.Error */ &&
+            (this.source === "javascript" /* Protocol.Log.LogEntrySource.Javascript */ || this.source === "network" /* Protocol.Log.LogEntrySource.Network */);
         return (this.source !== FrontendMessageSource.ConsoleAPI && this.type !== FrontendMessageType.Command &&
             this.type !== FrontendMessageType.Result && this.type !== FrontendMessageType.System && !isUngroupableError);
     }
@@ -565,20 +566,20 @@ export class ConsoleMessage {
     }
 }
 export const MessageSourceDisplayName = new Map(([
-    ["xml" /* XML */, 'xml'],
-    ["javascript" /* Javascript */, 'javascript'],
-    ["network" /* Network */, 'network'],
+    ["xml" /* Protocol.Log.LogEntrySource.XML */, 'xml'],
+    ["javascript" /* Protocol.Log.LogEntrySource.Javascript */, 'javascript'],
+    ["network" /* Protocol.Log.LogEntrySource.Network */, 'network'],
     [FrontendMessageSource.ConsoleAPI, 'console-api'],
-    ["storage" /* Storage */, 'storage'],
-    ["appcache" /* Appcache */, 'appcache'],
-    ["rendering" /* Rendering */, 'rendering'],
+    ["storage" /* Protocol.Log.LogEntrySource.Storage */, 'storage'],
+    ["appcache" /* Protocol.Log.LogEntrySource.Appcache */, 'appcache'],
+    ["rendering" /* Protocol.Log.LogEntrySource.Rendering */, 'rendering'],
     [FrontendMessageSource.CSS, 'css'],
-    ["security" /* Security */, 'security'],
-    ["deprecation" /* Deprecation */, 'deprecation'],
-    ["worker" /* Worker */, 'worker'],
-    ["violation" /* Violation */, 'violation'],
-    ["intervention" /* Intervention */, 'intervention'],
-    ["recommendation" /* Recommendation */, 'recommendation'],
-    ["other" /* Other */, 'other'],
+    ["security" /* Protocol.Log.LogEntrySource.Security */, 'security'],
+    ["deprecation" /* Protocol.Log.LogEntrySource.Deprecation */, 'deprecation'],
+    ["worker" /* Protocol.Log.LogEntrySource.Worker */, 'worker'],
+    ["violation" /* Protocol.Log.LogEntrySource.Violation */, 'violation'],
+    ["intervention" /* Protocol.Log.LogEntrySource.Intervention */, 'intervention'],
+    ["recommendation" /* Protocol.Log.LogEntrySource.Recommendation */, 'recommendation'],
+    ["other" /* Protocol.Log.LogEntrySource.Other */, 'other'],
 ]));
 //# sourceMappingURL=ConsoleModel.js.map

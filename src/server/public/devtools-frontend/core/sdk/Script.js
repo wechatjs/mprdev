@@ -34,7 +34,6 @@ export class Script {
     debugSymbols;
     hasSourceURL;
     contentLength;
-    #originalContentProviderInternal;
     originStackTrace;
     #codeOffsetInternal;
     #language;
@@ -58,7 +57,6 @@ export class Script {
         this.debugSymbols = debugSymbols;
         this.hasSourceURL = hasSourceURL;
         this.contentLength = length;
-        this.#originalContentProviderInternal = null;
         this.originStackTrace = originStackTrace;
         this.#codeOffsetInternal = codeOffset;
         this.#language = scriptLanguage;
@@ -96,10 +94,10 @@ export class Script {
         return this.#codeOffsetInternal;
     }
     isJavaScript() {
-        return this.#language === "JavaScript" /* JavaScript */;
+        return this.#language === "JavaScript" /* Protocol.Debugger.ScriptLanguage.JavaScript */;
     }
     isWasm() {
-        return this.#language === "WebAssembly" /* WebAssembly */;
+        return this.#language === "WebAssembly" /* Protocol.Debugger.ScriptLanguage.WebAssembly */;
     }
     scriptLanguage() {
         return this.#language;
@@ -110,19 +108,78 @@ export class Script {
     isLiveEdit() {
         return this.#isLiveEditInternal;
     }
-    // TODO(crbug.com/1253323): Cast to RawPathString will be removed when migration to branded types is complete.
     contentURL() {
         return this.sourceURL;
     }
     contentType() {
         return Common.ResourceType.resourceTypes.Script;
     }
-    async contentEncoded() {
-        return false;
+    async loadTextContent() {
+        const result = await this.debuggerModel.target().debuggerAgent().invoke_getScriptSource({ scriptId: this.scriptId });
+        if (result.getError()) {
+            throw new Error(result.getError());
+        }
+        const { scriptSource, bytecode } = result;
+        if (bytecode) {
+            return { content: bytecode, isEncoded: true };
+        }
+        let content = scriptSource || '';
+        if (this.hasSourceURL && this.sourceURL.startsWith('snippet://')) {
+            // TODO(crbug.com/1330846): Find a better way to establish the snippet automapping binding then adding
+            // a sourceURL comment before evaluation and removing it here.
+            content = Script.trimSourceURLComment(content);
+        }
+        return { content, isEncoded: false };
+    }
+    async loadWasmContent() {
+        if (!this.isWasm()) {
+            throw new Error('Not a wasm script');
+        }
+        const result = await this.debuggerModel.target().debuggerAgent().invoke_disassembleWasmModule({ scriptId: this.scriptId });
+        if (result.getError()) {
+            // Fall through to text content loading if v8-based disassembly fails. This is to ensure backwards compatibility with
+            // older v8 versions;
+            return this.loadTextContent();
+        }
+        const { streamId, functionBodyOffsets, chunk: { lines, bytecodeOffsets } } = result;
+        const lineChunks = [];
+        const bytecodeOffsetChunks = [];
+        if (streamId) {
+            while (true) {
+                const result = await this.debuggerModel.target().debuggerAgent().invoke_nextWasmDisassemblyChunk({ streamId });
+                if (result.getError()) {
+                    throw new Error(result.getError());
+                }
+                const { chunk: { lines: linesChunk, bytecodeOffsets: bytecodeOffsetsChunk } } = result;
+                if (linesChunk.length === 0) {
+                    break;
+                }
+                lineChunks.push(linesChunk);
+                bytecodeOffsetChunks.push(bytecodeOffsetsChunk);
+            }
+        }
+        const functionBodyRanges = [];
+        // functionBodyOffsets contains a sequence of pairs of start and end offsets
+        for (let i = 0; i < functionBodyOffsets.length; i += 2) {
+            functionBodyRanges.push({ start: functionBodyOffsets[i], end: functionBodyOffsets[i + 1] });
+        }
+        const wasmDisassemblyInfo = new Common.WasmDisassembly.WasmDisassembly(lines.concat(...lineChunks), bytecodeOffsets.concat(...bytecodeOffsetChunks), functionBodyRanges);
+        return { content: '', isEncoded: false, wasmDisassemblyInfo };
     }
     requestContent() {
         if (!this.#contentPromise) {
-            this.#contentPromise = this.originalContentProvider().requestContent();
+            this.#contentPromise = (async () => {
+                if (!this.scriptId) {
+                    return { content: null, error: i18nString(UIStrings.scriptRemovedOrDeleted), isEncoded: false };
+                }
+                try {
+                    return this.isWasm() ? await this.loadWasmContent() : await this.loadTextContent();
+                }
+                catch (err) {
+                    // TODO(bmeurer): Propagate errors as exceptions / rejections.
+                    return { content: null, error: i18nString(UIStrings.unableToFetchScriptSource), isEncoded: false };
+                }
+            })();
         }
         return this.#contentPromise;
     }
@@ -132,41 +189,7 @@ export class Script {
         return response.arrayBuffer();
     }
     originalContentProvider() {
-        if (!this.#originalContentProviderInternal) {
-            /* } */
-            let lazyContentPromise;
-            this.#originalContentProviderInternal =
-                new TextUtils.StaticContentProvider.StaticContentProvider(this.contentURL(), this.contentType(), () => {
-                    if (!lazyContentPromise) {
-                        lazyContentPromise = (async () => {
-                            if (!this.scriptId) {
-                                return { content: null, error: i18nString(UIStrings.scriptRemovedOrDeleted), isEncoded: false };
-                            }
-                            try {
-                                const result = await this.debuggerModel.target().debuggerAgent().invoke_getScriptSource({ scriptId: this.scriptId });
-                                if (result.getError()) {
-                                    throw new Error(result.getError());
-                                }
-                                const { scriptSource, bytecode } = result;
-                                if (bytecode) {
-                                    return { content: bytecode, isEncoded: true };
-                                }
-                                let content = scriptSource || '';
-                                if (this.hasSourceURL) {
-                                    content = Script.trimSourceURLComment(content);
-                                }
-                                return { content, isEncoded: false };
-                            }
-                            catch (err) {
-                                // TODO(bmeurer): Propagate errors as exceptions / rejections.
-                                return { content: null, error: i18nString(UIStrings.unableToFetchScriptSource), isEncoded: false };
-                            }
-                        })();
-                    }
-                    return lazyContentPromise;
-                });
-        }
-        return this.#originalContentProviderInternal;
+        return new TextUtils.StaticContentProvider.StaticContentProvider(this.contentURL(), this.contentType(), () => this.requestContent());
     }
     async searchInContent(query, caseSensitive, isRegex) {
         if (!this.scriptId) {
@@ -182,25 +205,24 @@ export class Script {
         }
         return source + '\n //# sourceURL=' + this.sourceURL;
     }
-    async editSource(newSource, callback) {
+    async editSource(newSource) {
         newSource = Script.trimSourceURLComment(newSource);
         // We append correct #sourceURL to script for consistency only. It's not actually needed for things to work correctly.
         newSource = this.appendSourceURLCommentIfNeeded(newSource);
-        if (!this.scriptId) {
-            callback('Script failed to parse');
-            return;
-        }
         const { content: oldSource } = await this.requestContent();
         if (oldSource === newSource) {
-            callback(null);
-            return;
+            return { status: "Ok" /* Protocol.Debugger.SetScriptSourceResponseStatus.Ok */ };
         }
-        const response = await this.debuggerModel.target().debuggerAgent().invoke_setScriptSource({ scriptId: this.scriptId, scriptSource: newSource });
-        if (!response.getError() && !response.exceptionDetails) {
+        const response = await this.debuggerModel.target().debuggerAgent().invoke_setScriptSource({ scriptId: this.scriptId, scriptSource: newSource, allowTopFrameEditing: true });
+        if (response.getError()) {
+            // Something went seriously wrong, like the V8 inspector no longer knowing about this script without
+            // shutting down the Debugger agent etc.
+            throw new Error(`Script#editSource failed for script with id ${this.scriptId}: ${response.getError()}`);
+        }
+        if (!response.getError() && response.status === "Ok" /* Protocol.Debugger.SetScriptSourceResponseStatus.Ok */) {
             this.#contentPromise = Promise.resolve({ content: newSource, isEncoded: false });
         }
-        const needsStepIn = Boolean(response.stackChanged);
-        callback(response.getError() || null, response.exceptionDetails, response.callFrames, response.asyncStackTrace, response.asyncStackTraceId, needsStepIn);
+        return { status: response.status, exceptionDetails: response.exceptionDetails };
     }
     rawLocation(lineNumber, columnNumber) {
         if (this.containsLocation(lineNumber, columnNumber)) {

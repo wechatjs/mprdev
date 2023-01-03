@@ -217,7 +217,7 @@ export class HeapTimelineOverview extends Common.ObjectWrapper.eventMixin(UI.Wid
         }
         const minId = minIndex > 0 ? ids[minIndex - 1] : 0;
         const maxId = maxIndex < ids.length ? ids[maxIndex] : Infinity;
-        this.dispatchEventToListeners("IdsRangeChanged" /* IdsRangeChanged */, { minId, maxId, size });
+        this.dispatchEventToListeners("IdsRangeChanged" /* Events.IdsRangeChanged */, { minId, maxId, size });
     }
 }
 export class SmoothScale {

@@ -1,5 +1,5 @@
 import * as SDK from '../../core/sdk/sdk.js';
-import type { AccessibilitySidebarView } from './AccessibilitySidebarView.js';
+import { type AccessibilitySidebarView } from './AccessibilitySidebarView.js';
 import { AccessibilitySubPane } from './AccessibilitySubPane.js';
 export declare class AXBreadcrumbsPane extends AccessibilitySubPane {
     #private;

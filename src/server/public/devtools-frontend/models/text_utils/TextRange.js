@@ -28,6 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 import * as Platform from '../../core/platform/platform.js';
+const MAX_SAFE_INT32 = 2 ** 31 - 1;
 export class TextRange {
     startLine;
     startColumn;
@@ -41,6 +42,9 @@ export class TextRange {
     }
     static createFromLocation(line, column) {
         return new TextRange(line, column, line, column);
+    }
+    static createUnboundedFromLocation(line, column) {
+        return new TextRange(line, column, MAX_SAFE_INT32, MAX_SAFE_INT32);
     }
     static fromObject(serializedTextRange) {
         return new TextRange(serializedTextRange.startLine, serializedTextRange.startColumn, serializedTextRange.endLine, serializedTextRange.endColumn);
@@ -188,6 +192,12 @@ export class TextRange {
             return columnNumber <= this.endColumn;
         }
         return this.startLine < lineNumber && lineNumber < this.endLine;
+    }
+    get start() {
+        return { lineNumber: this.startLine, columnNumber: this.startColumn };
+    }
+    get end() {
+        return { lineNumber: this.endLine, columnNumber: this.endColumn };
     }
 }
 export class SourceRange {

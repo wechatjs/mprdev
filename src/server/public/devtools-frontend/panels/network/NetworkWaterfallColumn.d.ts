@@ -1,6 +1,6 @@
 import * as UI from '../../ui/legacy/legacy.js';
-import type { NetworkNode } from './NetworkDataGridNode.js';
-import type { NetworkTimeCalculator } from './NetworkTimeCalculator.js';
+import { type NetworkNode } from './NetworkDataGridNode.js';
+import { type NetworkTimeCalculator } from './NetworkTimeCalculator.js';
 export declare class NetworkWaterfallColumn extends UI.Widget.VBox {
     private canvas;
     private canvasPosition;

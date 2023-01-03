@@ -375,7 +375,7 @@ export class SearchableView extends VBox {
     }
     onSearchKeyDown(ev) {
         const event = ev;
-        if (isEscKey(event)) {
+        if (Platform.KeyboardUtilities.isEscKey(event)) {
             this.closeSearch();
             event.consume(true);
             return;
@@ -418,24 +418,6 @@ export class SearchableView extends VBox {
             return;
         }
         this.jumpToNextSearchResult(true);
-        this.searchInputElement.focus();
-    }
-    onFindClick(_event) {
-        if (!this.currentQuery) {
-            this.performSearch(true, true);
-        }
-        else {
-            this.jumpToNextSearchResult();
-        }
-        this.searchInputElement.focus();
-    }
-    onPreviousClick(_event) {
-        if (!this.currentQuery) {
-            this.performSearch(true, true, true);
-        }
-        else {
-            this.jumpToNextSearchResult(true);
-        }
         this.searchInputElement.focus();
     }
     clearSearch() {
@@ -498,6 +480,10 @@ export class SearchableView extends VBox {
         this.replaceProvider.replaceAllWith(searchConfig, this.replaceInputElement.value);
     }
     onInput(_event) {
+        if (!Common.Settings.Settings.instance().moduleSetting('searchAsYouType').get()) {
+            this.clearSearch();
+            return;
+        }
         if (this.valueChangedTimeoutId) {
             clearTimeout(this.valueChangedTimeoutId);
         }

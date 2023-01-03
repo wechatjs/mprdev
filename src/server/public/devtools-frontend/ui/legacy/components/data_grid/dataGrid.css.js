@@ -26,25 +26,23 @@ styles.replaceSync(
   width: 100%;
 }
 
-.data-grid .header-container,
 .data-grid .data-container {
   position: absolute;
+  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   overflow-x: hidden;
+  overflow-y: overlay;
+  transform: translateZ(0);
   background-color: var(--color-background);
 }
 
-.data-grid .header-container {
+.data-grid thead {
+  position: sticky;
   top: 0;
   height: 21px;
-}
-
-.data-grid .data-container {
-  top: 21px;
-  bottom: 0;
-  overflow-y: overlay;
-  transform: translateZ(0);
+  z-index: 1;
 }
 
 .data-grid .aria-live-label {
@@ -53,7 +51,6 @@ styles.replaceSync(
   overflow: hidden;
 }
 
-.data-grid.inline .header-container,
 .data-grid.inline .data-container {
   position: static;
 }
@@ -93,17 +90,17 @@ styles.replaceSync(
   position: static;
 }
 
-.data-grid table.data tr {
+.data-grid tbody tr {
   display: none;
   height: 20px;
 }
 
-.data-grid table.data tr.revealed {
+.data-grid tbody tr.revealed {
   display: table-row;
 }
 
-.striped-data-grid .revealed.data-grid-data-grid-node:nth-child(odd):not(.dirty):not(.selected),
-.striped-data-grid-starts-with-odd .revealed.data-grid-data-grid-node:nth-child(even):not(.dirty):not(.selected) {
+.striped-data-grid .revealed.data-grid-data-grid-node:nth-child(odd):not(.dirty):not(.selected):not(:hover),
+.striped-data-grid-starts-with-odd .revealed.data-grid-data-grid-node:nth-child(even):not(.dirty):not(.selected):not(:hover) {
   background-color: var(--color-background-elevation-1);
 }
 
@@ -162,6 +159,7 @@ styles.replaceSync(
 
 .data-grid th .sort-order-icon-container {
   background-color: var(--color-background-elevation-1);
+  min-width: 0;
   position: absolute;
   top: 1px;
   right: 0;
@@ -227,12 +225,12 @@ styles.replaceSync(
   -webkit-mask-position: -16px 0;
 }
 
-.data-grid table.data tr.revealed.selected {
+.data-grid tbody tr.revealed.selected {
   background-color: var(--color-background-highlight);
   color: inherit;
 }
 
-.data-grid table.data tr.revealed.selected.dirty {
+.data-grid tbody tr.revealed.selected.dirty {
   color: var(--color-selected-option);
 }
 
@@ -240,19 +238,19 @@ styles.replaceSync(
   border: 1px solid var(--color-primary) !important; /* stylelint-disable-line declaration-no-important */
 }
 
-.data-grid:focus table.data tr.selected {
+.data-grid:focus tbody tr.selected {
   background-color: var(--color-selected-option-background);
   color: var(--color-selected-option);
 }
 
-.data-grid:focus tr.selected.dirty {
-  --override-data-grid-dirty-background-color: hsl(0deg 100% 70%);
-}
-
-.data-grid table.data tr.selected.dirty {
+.data-grid tbody tr.selected.dirty {
   --override-data-grid-dirty-background-color: hsl(0deg 100% 30%);
 
   background-color: var(--override-data-grid-dirty-background-color);
+}
+
+.data-grid:focus tr.selected.dirty {
+  --override-data-grid-dirty-background-color: hsl(0deg 100% 70%);
 }
 
 .data-grid:focus tr.selected .devtools-link {
@@ -313,7 +311,7 @@ styles.replaceSync(
   .data-grid th.sortable:hover .sort-order-icon-container [is="ui-icon"].icon-mask,
   .data-grid tr.parent.selected td.disclosure::before,
   .data-grid:focus tr.parent.selected td.disclosure::before,
-  .data-grid table.data tr.parent.revealed:hover td.disclosure::before {
+  .data-grid tbody tr.parent.revealed:hover td.disclosure::before {
     background-color: HighlightText;
   }
 
@@ -330,8 +328,8 @@ styles.replaceSync(
   }
 
   .data-grid th.sortable:hover,
-  .data-grid table.data tr.revealed:hover,
-  .data-grid table.data tr.revealed.selected,
+  .data-grid tbody tr.revealed:hover,
+  .data-grid tbody tr.revealed.selected,
   .striped-data-grid .revealed:hover.data-grid-data-grid-node:nth-child(odd),
   .striped-data-grid-starts-with-odd .revealed:hover.data-grid-data-grid-node:nth-child(even),
   .request-cookies-view tr.revealed:hover.data-grid-data-grid-node.flagged-cookie-attribute-row:not(.selected):nth-child(2n),
@@ -340,10 +338,10 @@ styles.replaceSync(
     background-color: Highlight;
   }
 
-  .data-grid table.data tr.revealed:hover *,
-  .data-grid table.data tr.revealed.selected *,
-  .data-grid table.data tr.revealed:focus *,
-  .data-grid table.data tr.revealed:hover .heap-object-tag {
+  .data-grid tbody tr.revealed:hover *,
+  .data-grid tbody tr.revealed.selected *,
+  .data-grid tbody tr.revealed:focus *,
+  .data-grid tbody tr.revealed:hover .heap-object-tag {
     color: HighlightText;
   }
 

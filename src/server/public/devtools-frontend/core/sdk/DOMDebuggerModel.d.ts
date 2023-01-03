@@ -1,13 +1,14 @@
+import * as Platform from '../platform/platform.js';
 import type * as ProtocolProxyApi from '../../generated/protocol-proxy-api.js';
 import * as Protocol from '../../generated/protocol.js';
 import { CategorizedBreakpoint } from './CategorizedBreakpoint.js';
-import type { Location } from './DebuggerModel.js';
-import type { DOMNode } from './DOMModel.js';
+import { type Location } from './DebuggerModel.js';
+import { type DOMNode } from './DOMModel.js';
 import { RemoteObject } from './RemoteObject.js';
 import { RuntimeModel } from './RuntimeModel.js';
-import type { Target } from './Target.js';
+import { type Target } from './Target.js';
 import { SDKModel } from './SDKModel.js';
-import type { SDKModelObserver } from './TargetManager.js';
+import { type SDKModelObserver } from './TargetManager.js';
 export declare class DOMDebuggerModel extends SDKModel<EventTypes> {
     #private;
     readonly agent: ProtocolProxyApi.DOMDebuggerApi;
@@ -71,7 +72,7 @@ export declare class EventListener {
     once(): boolean;
     handler(): RemoteObject | null;
     location(): Location;
-    sourceURL(): string;
+    sourceURL(): Platform.DevToolsPath.UrlString;
     originalHandler(): RemoteObject | null;
     canRemove(): boolean;
     remove(): Promise<void>;

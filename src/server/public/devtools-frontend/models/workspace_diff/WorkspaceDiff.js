@@ -75,7 +75,7 @@ export class WorkspaceDiffImpl extends Common.ObjectWrapper.ObjectWrapper {
     markAsUnmodified(uiSourceCode) {
         this.uiSourceCodeProcessedForTest();
         if (this.modifiedUISourceCodesInternal.delete(uiSourceCode)) {
-            this.dispatchEventToListeners("ModifiedStatusChanged" /* ModifiedStatusChanged */, { uiSourceCode, isModified: false });
+            this.dispatchEventToListeners("ModifiedStatusChanged" /* Events.ModifiedStatusChanged */, { uiSourceCode, isModified: false });
         }
     }
     markAsModified(uiSourceCode) {
@@ -84,7 +84,7 @@ export class WorkspaceDiffImpl extends Common.ObjectWrapper.ObjectWrapper {
             return;
         }
         this.modifiedUISourceCodesInternal.add(uiSourceCode);
-        this.dispatchEventToListeners("ModifiedStatusChanged" /* ModifiedStatusChanged */, { uiSourceCode, isModified: true });
+        this.dispatchEventToListeners("ModifiedStatusChanged" /* Events.ModifiedStatusChanged */, { uiSourceCode, isModified: true });
     }
     uiSourceCodeProcessedForTest() {
     }
@@ -206,13 +206,20 @@ export class UISourceCodeDiff extends Common.ObjectWrapper.ObjectWrapper {
         if (current === null || baseline === null) {
             return null;
         }
+        let formattedCurrentMapping;
         if (shouldFormatDiff) {
             baseline = (await FormatterModule.ScriptFormatter.format(this.uiSourceCode.contentType(), this.uiSourceCode.mimeType(), baseline))
                 .formattedContent;
-            current = (await FormatterModule.ScriptFormatter.format(this.uiSourceCode.contentType(), this.uiSourceCode.mimeType(), current))
-                .formattedContent;
+            const formatCurrentResult = await FormatterModule.ScriptFormatter.format(this.uiSourceCode.contentType(), this.uiSourceCode.mimeType(), current);
+            current = formatCurrentResult.formattedContent;
+            formattedCurrentMapping = formatCurrentResult.formattedMapping;
         }
-        return Diff.Diff.DiffWrapper.lineDiff(baseline.split(/\r\n|\n|\r/), current.split(/\r\n|\n|\r/));
+        const reNewline = /\r\n?|\n/;
+        const diff = Diff.Diff.DiffWrapper.lineDiff(baseline.split(reNewline), current.split(reNewline));
+        return {
+            diff,
+            formattedCurrentMapping,
+        };
     }
 }
 // TODO(crbug.com/1167717): Make this a const enum again

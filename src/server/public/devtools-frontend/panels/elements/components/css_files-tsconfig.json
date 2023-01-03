@@ -8,10 +8,10 @@
         "adornerSettingsPane.css.js",
         "computedStyleProperty.css.js",
         "computedStyleTrace.css.js",
+        "cssHintDetailsView.css.js",
         "cssQuery.css.js",
         "elementsBreadcrumbs.css.js",
         "elementsPanelLink.css.js",
-        "nodeText.css.js",
         "queryContainer.css.js",
         "stylePropertyEditor.css.js"
     ]

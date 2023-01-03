@@ -4,35 +4,36 @@
 import { Issue, IssueCategory, IssueKind } from './Issue.js';
 function getIssueCode(details) {
     switch (details.violationType) {
-        case "PermissionPolicyDisabled" /* PermissionPolicyDisabled */:
-            return "AttributionReportingIssue::PermissionPolicyDisabled" /* PermissionPolicyDisabled */;
-        case "InvalidAttributionSourceEventId" /* InvalidAttributionSourceEventId */:
-            return "AttributionReportingIssue::InvalidAttributionSourceEventId" /* InvalidAttributionSourceEventId */;
-        case "InvalidAttributionData" /* InvalidAttributionData */:
-            return details.invalidParameter !== undefined ? "AttributionReportingIssue::InvalidAttributionData" /* InvalidAttributionData */ :
-                "AttributionReportingIssue::MissingAttributionData" /* MissingAttributionData */;
-        case "AttributionSourceUntrustworthyOrigin" /* AttributionSourceUntrustworthyOrigin */:
-            return details.frame !== undefined ? "AttributionReportingIssue::AttributionSourceUntrustworthyFrameOrigin" /* AttributionSourceUntrustworthyFrameOrigin */ :
-                "AttributionReportingIssue::AttributionSourceUntrustworthyOrigin" /* AttributionSourceUntrustworthyOrigin */;
-        case "AttributionUntrustworthyOrigin" /* AttributionUntrustworthyOrigin */:
-            return details.frame !== undefined ? "AttributionReportingIssue::AttributionUntrustworthyFrameOrigin" /* AttributionUntrustworthyFrameOrigin */ :
-                "AttributionReportingIssue::AttributionUntrustworthyOrigin" /* AttributionUntrustworthyOrigin */;
-        case "AttributionTriggerDataTooLarge" /* AttributionTriggerDataTooLarge */:
-            return "AttributionReportingIssue::AttributionTriggerDataTooLarge" /* AttributionTriggerDataTooLarge */;
-        case "AttributionEventSourceTriggerDataTooLarge" /* AttributionEventSourceTriggerDataTooLarge */:
-            return "AttributionReportingIssue::AttributionEventSourceTriggerDataTooLarge" /* AttributionEventSourceTriggerDataTooLarge */;
-        case "InvalidAttributionSourceExpiry" /* InvalidAttributionSourceExpiry */:
-            return "AttributionReportingIssue::InvalidAttributionSourceExpiry" /* InvalidAttributionSourceExpiry */;
-        case "InvalidAttributionSourcePriority" /* InvalidAttributionSourcePriority */:
-            return "AttributionReportingIssue::InvalidAttributionSourcePriority" /* InvalidAttributionSourcePriority */;
-        case "InvalidEventSourceTriggerData" /* InvalidEventSourceTriggerData */:
-            return "AttributionReportingIssue::InvalidEventSourceTriggerData" /* InvalidEventSourceTriggerData */;
-        case "InvalidTriggerPriority" /* InvalidTriggerPriority */:
-            return "AttributionReportingIssue::InvalidTriggerPriority" /* InvalidTriggerPriority */;
-        case "InvalidTriggerDedupKey" /* InvalidTriggerDedupKey */:
-            return "AttributionReportingIssue::InvalidTriggerDedupKey" /* InvalidTriggerDedupKey */;
+        case "PermissionPolicyDisabled" /* Protocol.Audits.AttributionReportingIssueType.PermissionPolicyDisabled */:
+            return "AttributionReportingIssue::PermissionPolicyDisabled" /* IssueCode.PermissionPolicyDisabled */;
+        case "PermissionPolicyNotDelegated" /* Protocol.Audits.AttributionReportingIssueType.PermissionPolicyNotDelegated */:
+            return "AttributionReportingIssue::PermissionPolicyNotDelegated" /* IssueCode.PermissionPolicyNotDelegated */;
+        case "UntrustworthyReportingOrigin" /* Protocol.Audits.AttributionReportingIssueType.UntrustworthyReportingOrigin */:
+            return "AttributionReportingIssue::UntrustworthyReportingOrigin" /* IssueCode.UntrustworthyReportingOrigin */;
+        case "InsecureContext" /* Protocol.Audits.AttributionReportingIssueType.InsecureContext */:
+            return "AttributionReportingIssue::InsecureContext" /* IssueCode.InsecureContext */;
+        case "InvalidHeader" /* Protocol.Audits.AttributionReportingIssueType.InvalidHeader */:
+            return "AttributionReportingIssue::InvalidRegisterSourceHeader" /* IssueCode.InvalidRegisterSourceHeader */;
+        case "InvalidRegisterTriggerHeader" /* Protocol.Audits.AttributionReportingIssueType.InvalidRegisterTriggerHeader */:
+            return "AttributionReportingIssue::InvalidRegisterTriggerHeader" /* IssueCode.InvalidRegisterTriggerHeader */;
+        case "InvalidEligibleHeader" /* Protocol.Audits.AttributionReportingIssueType.InvalidEligibleHeader */:
+            return "AttributionReportingIssue::InvalidEligibleHeader" /* IssueCode.InvalidEligibleHeader */;
+        case "TooManyConcurrentRequests" /* Protocol.Audits.AttributionReportingIssueType.TooManyConcurrentRequests */:
+            return "AttributionReportingIssue::TooManyConcurrentRequests" /* IssueCode.TooManyConcurrentRequests */;
+        case "SourceAndTriggerHeaders" /* Protocol.Audits.AttributionReportingIssueType.SourceAndTriggerHeaders */:
+            return "AttributionReportingIssue::SourceAndTriggerHeaders" /* IssueCode.SourceAndTriggerHeaders */;
+        case "SourceIgnored" /* Protocol.Audits.AttributionReportingIssueType.SourceIgnored */:
+            return "AttributionReportingIssue::SourceIgnored" /* IssueCode.SourceIgnored */;
+        case "TriggerIgnored" /* Protocol.Audits.AttributionReportingIssueType.TriggerIgnored */:
+            return "AttributionReportingIssue::TriggerIgnored" /* IssueCode.TriggerIgnored */;
+        default:
+            return "AttributionReportingIssue::Unknown" /* IssueCode.Unknown */;
     }
 }
+const structuredHeaderLink = {
+    link: 'https://tools.ietf.org/id/draft-ietf-httpbis-header-structure-15.html#rfc.section.4.2.2',
+    linkTitle: 'Structured Headers RFC',
+};
 export class AttributionReportingIssue extends Issue {
     issueDetails;
     constructor(issueDetails, issuesModel) {
@@ -44,112 +45,85 @@ export class AttributionReportingIssue extends Issue {
     }
     getDescription() {
         switch (this.code()) {
-            case "AttributionReportingIssue::PermissionPolicyDisabled" /* PermissionPolicyDisabled */:
+            case "AttributionReportingIssue::PermissionPolicyDisabled" /* IssueCode.PermissionPolicyDisabled */:
                 return {
                     file: 'arPermissionPolicyDisabled.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::InvalidAttributionSourceEventId" /* InvalidAttributionSourceEventId */:
+            case "AttributionReportingIssue::PermissionPolicyNotDelegated" /* IssueCode.PermissionPolicyNotDelegated */:
                 return {
-                    file: 'arInvalidAttributionSourceEventId.md',
-                    links: [{
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#html-attribute-attributionsourceeventid-required',
-                            linkTitle: 'attributionsourceeventid attribute',
-                        }],
-                };
-            case "AttributionReportingIssue::InvalidAttributionData" /* InvalidAttributionData */:
-                return {
-                    file: 'arInvalidAttributionData.md',
+                    file: 'arPermissionPolicyNotDelegated.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::MissingAttributionData" /* MissingAttributionData */:
+            case "AttributionReportingIssue::UntrustworthyReportingOrigin" /* IssueCode.UntrustworthyReportingOrigin */:
                 return {
-                    file: 'arMissingAttributionData.md',
+                    file: 'arUntrustworthyReportingOrigin.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::AttributionSourceUntrustworthyFrameOrigin" /* AttributionSourceUntrustworthyFrameOrigin */:
+            case "AttributionReportingIssue::InsecureContext" /* IssueCode.InsecureContext */:
                 return {
-                    file: 'arAttributionSourceUntrustworthyFrameOrigin.md',
+                    file: 'arInsecureContext.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::AttributionSourceUntrustworthyOrigin" /* AttributionSourceUntrustworthyOrigin */:
+            case "AttributionReportingIssue::InvalidRegisterSourceHeader" /* IssueCode.InvalidRegisterSourceHeader */:
                 return {
-                    file: 'arAttributionSourceUntrustworthyOrigin.md',
-                    links: [
-                        {
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#html-attribute-attributiondestination-required',
-                            linkTitle: 'attributiondestination attribute',
-                        },
-                        {
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#html-attribute-attributionreportto',
-                            linkTitle: 'attributionreportto attribute',
-                        },
-                    ],
-                };
-            case "AttributionReportingIssue::AttributionUntrustworthyFrameOrigin" /* AttributionUntrustworthyFrameOrigin */:
-                return {
-                    file: 'arAttributionUntrustworthyFrameOrigin.md',
+                    file: 'arInvalidRegisterSourceHeader.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::AttributionUntrustworthyOrigin" /* AttributionUntrustworthyOrigin */:
+            case "AttributionReportingIssue::InvalidRegisterTriggerHeader" /* IssueCode.InvalidRegisterTriggerHeader */:
                 return {
-                    file: 'arAttributionUntrustworthyOrigin.md',
+                    file: 'arInvalidRegisterTriggerHeader.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::AttributionTriggerDataTooLarge" /* AttributionTriggerDataTooLarge */:
+            case "AttributionReportingIssue::InvalidEligibleHeader" /* IssueCode.InvalidEligibleHeader */:
                 return {
-                    file: 'arAttributionTriggerDataTooLarge.md',
+                    file: 'arInvalidEligibleHeader.md',
+                    links: [structuredHeaderLink],
+                };
+            case "AttributionReportingIssue::TooManyConcurrentRequests" /* IssueCode.TooManyConcurrentRequests */:
+                return {
+                    file: 'arTooManyConcurrentRequests.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::AttributionEventSourceTriggerDataTooLarge" /* AttributionEventSourceTriggerDataTooLarge */:
+            case "AttributionReportingIssue::SourceAndTriggerHeaders" /* IssueCode.SourceAndTriggerHeaders */:
                 return {
-                    file: 'arAttributionEventSourceTriggerDataTooLarge.md',
+                    file: 'arSourceAndTriggerHeaders.md',
                     links: [],
                 };
-            case "AttributionReportingIssue::InvalidAttributionSourceExpiry" /* InvalidAttributionSourceExpiry */:
+            case "AttributionReportingIssue::SourceIgnored" /* IssueCode.SourceIgnored */:
                 return {
-                    file: 'arInvalidAttributionSourceExpiry.md',
-                    links: [{
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#html-attribute-attributionexpiry',
-                            linkTitle: 'attributionexpiry attribute',
-                        }],
+                    file: 'arSourceIgnored.md',
+                    links: [structuredHeaderLink],
                 };
-            case "AttributionReportingIssue::InvalidAttributionSourcePriority" /* InvalidAttributionSourcePriority */:
+            case "AttributionReportingIssue::TriggerIgnored" /* IssueCode.TriggerIgnored */:
                 return {
-                    file: 'arInvalidAttributionSourcePriority.md',
-                    links: [{
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#html-attribute-attributionsourcepriority',
-                            linkTitle: 'attributionsourcepriority attribute',
-                        }],
+                    file: 'arTriggerIgnored.md',
+                    links: [structuredHeaderLink],
                 };
-            case "AttributionReportingIssue::InvalidEventSourceTriggerData" /* InvalidEventSourceTriggerData */:
-                return {
-                    file: 'arInvalidEventSourceTriggerData.md',
-                    links: [],
-                };
-            case "AttributionReportingIssue::InvalidTriggerPriority" /* InvalidTriggerPriority */:
-                return {
-                    file: 'arInvalidTriggerPriority.md',
-                    links: [{
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#prioritize-specific-conversions',
-                            linkTitle: 'Prioritizing specific conversions',
-                        }],
-                };
-            case "AttributionReportingIssue::InvalidTriggerDedupKey" /* InvalidTriggerDedupKey */:
-                return {
-                    file: 'arInvalidTriggerDedupKey.md',
-                    links: [{
-                            link: 'https://developer.chrome.com/docs/privacy-sandbox/attribution-reporting-event-guide/#deduplicate-reports',
-                            linkTitle: 'Deduplicating reports',
-                        }],
-                };
+            case "AttributionReportingIssue::Unknown" /* IssueCode.Unknown */:
+                return null;
         }
     }
     primaryKey() {
         return JSON.stringify(this.issueDetails);
     }
     getKind() {
-        return IssueKind.PageError;
+        switch (this.code()) {
+            case "AttributionReportingIssue::PermissionPolicyNotDelegated" /* IssueCode.PermissionPolicyNotDelegated */:
+                return IssueKind.BreakingChange;
+            case "AttributionReportingIssue::PermissionPolicyDisabled" /* IssueCode.PermissionPolicyDisabled */:
+            case "AttributionReportingIssue::UntrustworthyReportingOrigin" /* IssueCode.UntrustworthyReportingOrigin */:
+            case "AttributionReportingIssue::InsecureContext" /* IssueCode.InsecureContext */:
+            case "AttributionReportingIssue::InvalidRegisterSourceHeader" /* IssueCode.InvalidRegisterSourceHeader */:
+            case "AttributionReportingIssue::InvalidRegisterTriggerHeader" /* IssueCode.InvalidRegisterTriggerHeader */:
+            case "AttributionReportingIssue::InvalidEligibleHeader" /* IssueCode.InvalidEligibleHeader */:
+            case "AttributionReportingIssue::TooManyConcurrentRequests" /* IssueCode.TooManyConcurrentRequests */:
+            case "AttributionReportingIssue::SourceAndTriggerHeaders" /* IssueCode.SourceAndTriggerHeaders */:
+            case "AttributionReportingIssue::SourceIgnored" /* IssueCode.SourceIgnored */:
+            case "AttributionReportingIssue::TriggerIgnored" /* IssueCode.TriggerIgnored */:
+            case "AttributionReportingIssue::Unknown" /* IssueCode.Unknown */:
+                return IssueKind.PageError;
+        }
     }
     static fromInspectorIssue(issuesModel, inspectorIssue) {
         const { attributionReportingIssueDetails } = inspectorIssue.details;

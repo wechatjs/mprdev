@@ -40,12 +40,12 @@ import * as ObjectUI from '../../ui/legacy/components/object_ui/object_ui.js';
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as Components from '../../ui/legacy/components/utils/utils.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { AllocationDataGrid, HeapSnapshotSortableDataGridEvents, HeapSnapshotConstructorsDataGrid, HeapSnapshotDiffDataGrid, HeapSnapshotRetainmentDataGrid, HeapSnapshotContainmentDataGrid } from './HeapSnapshotDataGrids.js';
-import { HeapSnapshotGenericObjectNode } from './HeapSnapshotGridNodes.js';
+import { AllocationDataGrid, HeapSnapshotSortableDataGridEvents, HeapSnapshotConstructorsDataGrid, HeapSnapshotDiffDataGrid, HeapSnapshotRetainmentDataGrid, HeapSnapshotContainmentDataGrid, } from './HeapSnapshotDataGrids.js';
+import { HeapSnapshotGenericObjectNode, } from './HeapSnapshotGridNodes.js';
 import { HeapSnapshotWorkerProxy } from './HeapSnapshotProxy.js';
 import { HeapTimelineOverview, Samples } from './HeapTimelineOverview.js';
 import * as ModuleUIStrings from './ModuleUIStrings.js';
-import { Events as ProfileHeaderEvents, ProfileEvents as ProfileTypeEvents, ProfileHeader, ProfileType } from './ProfileHeader.js';
+import { Events as ProfileHeaderEvents, ProfileEvents as ProfileTypeEvents, ProfileHeader, ProfileType, } from './ProfileHeader.js';
 import { ProfileSidebarTreeElement } from './ProfileSidebarTreeElement.js';
 import { instance } from './ProfileTypeRegistry.js';
 const UIStrings = {
@@ -159,9 +159,11 @@ const UIStrings = {
     */
     heapSnapshotProfilesShowMemory: 'Heap snapshot profiles show memory distribution among your page\'s JavaScript objects and related DOM nodes.',
     /**
-    *@description Text in Heap Snapshot View of a profiler tool
+    *@description Label for a checkbox in the heap snapshot view of the profiler tool. The "heap snapshot" contains the
+    * current state of JavaScript memory. With this checkbox enabled, the snapshot also includes internal data that is
+    * specific to Chrome (hence implementation-specific).
     */
-    treatGlobalObjectsAsRoots: 'Treat global objects as roots (recommended, unchecking this exposes internal nodes and introduces excessive detail, but might help debugging cycles in retaining paths)',
+    exposeInternals: 'Expose internals (includes additional implementation-specific details)',
     /**
     *@description Text in Heap Snapshot View of a profiler tool
     * This option turns on inclusion of numerical values in the heap snapshot.
@@ -287,7 +289,7 @@ export class HeapSnapshotView extends UI.View.SimpleView {
         this.profile = profile;
         this.linkifier = new Components.Linkifier.Linkifier();
         const profileType = profile.profileType();
-        profileType.addEventListener("SnapshotReceived" /* SnapshotReceived */, this.onReceiveSnapshot, this);
+        profileType.addEventListener("SnapshotReceived" /* HeapSnapshotProfileTypeEvents.SnapshotReceived */, this.onReceiveSnapshot, this);
         profileType.addEventListener(ProfileTypeEvents.RemoveProfileHeader, this.onProfileHeaderRemoved, this);
         const isHeapTimeline = profileType.id === TrackingHeapSnapshotProfileType.TypeId;
         if (isHeapTimeline) {
@@ -340,6 +342,7 @@ export class HeapSnapshotView extends UI.View.SimpleView {
             const retainmentViewHeader = document.createElement('div');
             retainmentViewHeader.classList.add('heap-snapshot-view-resizer');
             const retainingPathsTitleDiv = retainmentViewHeader.createChild('div', 'title');
+            retainmentViewHeader.createChild('div', 'verticalResizerIcon');
             const retainingPathsTitle = retainingPathsTitleDiv.createChild('span');
             retainingPathsTitle.textContent = i18nString(UIStrings.retainers);
             splitWidgetResizer = retainmentViewHeader;
@@ -393,19 +396,19 @@ export class HeapSnapshotView extends UI.View.SimpleView {
     createOverview() {
         const profileType = this.profile.profileType();
         this.trackingOverviewGrid = new HeapTimelineOverview();
-        this.trackingOverviewGrid.addEventListener("IdsRangeChanged" /* IdsRangeChanged */, this.onIdsRangeChanged.bind(this));
+        this.trackingOverviewGrid.addEventListener("IdsRangeChanged" /* Events.IdsRangeChanged */, this.onIdsRangeChanged.bind(this));
         if (!this.profile.fromFile() && profileType.profileBeingRecorded() === this.profile) {
             profileType
-                .addEventListener("HeapStatsUpdate" /* HeapStatsUpdate */, this.onHeapStatsUpdate, this);
+                .addEventListener("HeapStatsUpdate" /* TrackingHeapSnapshotProfileTypeEvents.HeapStatsUpdate */, this.onHeapStatsUpdate, this);
             profileType
-                .addEventListener("TrackingStopped" /* TrackingStopped */, this.onStopTracking, this);
+                .addEventListener("TrackingStopped" /* TrackingHeapSnapshotProfileTypeEvents.TrackingStopped */, this.onStopTracking, this);
             this.trackingOverviewGrid.start();
         }
     }
     onStopTracking() {
         const profileType = this.profile.profileType();
-        profileType.removeEventListener("HeapStatsUpdate" /* HeapStatsUpdate */, this.onHeapStatsUpdate, this);
-        profileType.removeEventListener("TrackingStopped" /* TrackingStopped */, this.onStopTracking, this);
+        profileType.removeEventListener("HeapStatsUpdate" /* TrackingHeapSnapshotProfileTypeEvents.HeapStatsUpdate */, this.onHeapStatsUpdate, this);
+        profileType.removeEventListener("TrackingStopped" /* TrackingHeapSnapshotProfileTypeEvents.TrackingStopped */, this.onStopTracking, this);
         if (this.trackingOverviewGrid) {
             this.trackingOverviewGrid.stop();
         }
@@ -841,7 +844,7 @@ export class HeapSnapshotView extends UI.View.SimpleView {
         profile.removeEventListener(ProfileHeaderEvents.ProfileTitleChanged, this.updateControls, this);
         if (this.profile === profile) {
             this.detach();
-            this.profile.profileType().removeEventListener("SnapshotReceived" /* SnapshotReceived */, this.onReceiveSnapshot, this);
+            this.profile.profileType().removeEventListener("SnapshotReceived" /* HeapSnapshotProfileTypeEvents.SnapshotReceived */, this.onReceiveSnapshot, this);
             this.profile.profileType().removeEventListener(ProfileTypeEvents.RemoveProfileHeader, this.onProfileHeaderRemoved, this);
             this.dispose();
         }
@@ -860,7 +863,7 @@ export class HeapSnapshotView extends UI.View.SimpleView {
         }
         this.onStopTracking();
         if (this.trackingOverviewGrid) {
-            this.trackingOverviewGrid.removeEventListener("IdsRangeChanged" /* IdsRangeChanged */, this.onIdsRangeChanged.bind(this));
+            this.trackingOverviewGrid.removeEventListener("IdsRangeChanged" /* Events.IdsRangeChanged */, this.onIdsRangeChanged.bind(this));
         }
     }
 }
@@ -970,6 +973,7 @@ export class AllocationPerspective extends Perspective {
         const resizer = document.createElement('div');
         resizer.classList.add('heap-snapshot-view-resizer');
         const title = resizer.createChild('div', 'title').createChild('span');
+        resizer.createChild('div', 'verticalResizerIcon');
         title.textContent = i18nString(UIStrings.liveObjects);
         this.allocationSplitWidget.hideDefaultResizer();
         this.allocationSplitWidget.installResizer(resizer);
@@ -1005,7 +1009,7 @@ export class StatisticsPerspective extends Perspective {
     }
 }
 export class HeapSnapshotProfileType extends Common.ObjectWrapper.eventMixin(ProfileType) {
-    treatGlobalObjectsAsRoots;
+    exposeInternals;
     captureNumericValue;
     customContentInternal;
     constructor(id, title) {
@@ -1014,8 +1018,7 @@ export class HeapSnapshotProfileType extends Common.ObjectWrapper.eventMixin(Pro
         SDK.TargetManager.TargetManager.instance().addModelListener(SDK.HeapProfilerModel.HeapProfilerModel, SDK.HeapProfilerModel.Events.ResetProfiles, this.resetProfiles, this);
         SDK.TargetManager.TargetManager.instance().addModelListener(SDK.HeapProfilerModel.HeapProfilerModel, SDK.HeapProfilerModel.Events.AddHeapSnapshotChunk, this.addHeapSnapshotChunk, this);
         SDK.TargetManager.TargetManager.instance().addModelListener(SDK.HeapProfilerModel.HeapProfilerModel, SDK.HeapProfilerModel.Events.ReportHeapSnapshotProgress, this.reportHeapSnapshotProgress, this);
-        this.treatGlobalObjectsAsRoots =
-            Common.Settings.Settings.instance().createSetting('treatGlobalObjectsAsRoots', true);
+        this.exposeInternals = Common.Settings.Settings.instance().createSetting('exposeInternals', false);
         this.captureNumericValue = Common.Settings.Settings.instance().createSetting('captureNumericValue', false);
         this.customContentInternal = null;
     }
@@ -1049,11 +1052,11 @@ export class HeapSnapshotProfileType extends Common.ObjectWrapper.eventMixin(Pro
     }
     customContent() {
         const optionsContainer = document.createElement('div');
-        const showOptionToNotTreatGlobalObjectsAsRoots = Root.Runtime.experiments.isEnabled('showOptionToNotTreatGlobalObjectsAsRoots');
-        const omitParagraphElement = !showOptionToNotTreatGlobalObjectsAsRoots;
-        if (showOptionToNotTreatGlobalObjectsAsRoots) {
-            const treatGlobalObjectsAsRootsCheckbox = UI.SettingsUI.createSettingCheckbox(i18nString(UIStrings.treatGlobalObjectsAsRoots), this.treatGlobalObjectsAsRoots, omitParagraphElement);
-            optionsContainer.appendChild(treatGlobalObjectsAsRootsCheckbox);
+        const showOptionToExposeInternalsInHeapSnapshot = Root.Runtime.experiments.isEnabled('showOptionToExposeInternalsInHeapSnapshot');
+        const omitParagraphElement = !showOptionToExposeInternalsInHeapSnapshot;
+        if (showOptionToExposeInternalsInHeapSnapshot) {
+            const exposeInternalsInHeapSnapshotCheckbox = UI.SettingsUI.createSettingCheckbox(i18nString(UIStrings.exposeInternals), this.exposeInternals, omitParagraphElement);
+            optionsContainer.appendChild(exposeInternalsInHeapSnapshotCheckbox);
         }
         const captureNumericValueCheckbox = UI.SettingsUI.createSettingCheckbox(UIStrings.captureNumericValue, this.captureNumericValue, omitParagraphElement);
         optionsContainer.appendChild(captureNumericValueCheckbox);
@@ -1084,8 +1087,8 @@ export class HeapSnapshotProfileType extends Common.ObjectWrapper.eventMixin(Pro
         profile.updateStatus(i18nString(UIStrings.snapshotting));
         await heapProfilerModel.takeHeapSnapshot({
             reportProgress: true,
-            treatGlobalObjectsAsRoots: this.treatGlobalObjectsAsRoots.get(),
             captureNumericValue: this.captureNumericValue.get(),
+            exposeInternals: this.exposeInternals.get(),
         });
         profile = this.profileBeingRecorded();
         if (!profile) {
@@ -1126,7 +1129,7 @@ export class HeapSnapshotProfileType extends Common.ObjectWrapper.eventMixin(Pro
         if (this.profileBeingRecorded() === profile) {
             this.setProfileBeingRecorded(null);
         }
-        this.dispatchEventToListeners("SnapshotReceived" /* SnapshotReceived */, profile);
+        this.dispatchEventToListeners("SnapshotReceived" /* HeapSnapshotProfileTypeEvents.SnapshotReceived */, profile);
     }
     // eslint-disable-next-line @typescript-eslint/naming-convention
     static TypeId = 'HEAP';
@@ -1188,7 +1191,7 @@ export class TrackingHeapSnapshotProfileType extends Common.ObjectWrapper.eventM
             profileSamples.totalTime *= 2;
         }
         if (this.profileSamples) {
-            this.dispatchEventToListeners("HeapStatsUpdate" /* HeapStatsUpdate */, this.profileSamples);
+            this.dispatchEventToListeners("HeapStatsUpdate" /* TrackingHeapSnapshotProfileTypeEvents.HeapStatsUpdate */, this.profileSamples);
         }
         const profile = this.profileBeingRecorded();
         if (profile) {
@@ -1244,7 +1247,7 @@ export class TrackingHeapSnapshotProfileType extends Common.ObjectWrapper.eventM
         this.recording = true;
         this.addProfile(this.profileBeingRecorded());
         this.profileBeingRecorded().updateStatus(i18nString(UIStrings.recording));
-        this.dispatchEventToListeners("TrackingStarted" /* TrackingStarted */);
+        this.dispatchEventToListeners("TrackingStarted" /* TrackingHeapSnapshotProfileTypeEvents.TrackingStarted */);
         return heapProfilerModel;
     }
     async stopRecordingProfile() {
@@ -1252,7 +1255,7 @@ export class TrackingHeapSnapshotProfileType extends Common.ObjectWrapper.eventM
         profile.updateStatus(i18nString(UIStrings.snapshotting));
         const stopPromise = profile.heapProfilerModel().stopTrackingHeapObjects(true);
         this.recording = false;
-        this.dispatchEventToListeners("TrackingStopped" /* TrackingStopped */);
+        this.dispatchEventToListeners("TrackingStopped" /* TrackingHeapSnapshotProfileTypeEvents.TrackingStopped */);
         await stopPromise;
         profile = this.profileBeingRecorded();
         if (!profile) {
@@ -1381,7 +1384,7 @@ export class HeapProfileHeader extends ProfileHeader {
     setupWorker() {
         console.assert(!this.workerProxy, 'HeapSnapshotWorkerProxy already exists');
         this.workerProxy = new HeapSnapshotWorkerProxy(this.handleWorkerEvent.bind(this));
-        this.workerProxy.addEventListener("Wait" /* Wait */, event => {
+        this.workerProxy.addEventListener("Wait" /* HeapSnapshotWorkerProxy.Events.Wait */, event => {
             this.updateStatus(null, event.data);
         }, this);
         this.receiver = this.workerProxy.createLoader(this.uid, this.snapshotReceived.bind(this));
@@ -1609,7 +1612,7 @@ export class HeapAllocationStackView extends UI.Widget.Widget {
                 continue;
             }
             const target = this.heapProfilerModel ? this.heapProfilerModel.target() : null;
-            const options = { columnNumber: frame.column - 1 };
+            const options = { columnNumber: frame.column - 1, inlineFrameIndex: 0 };
             const urlElement = this.linkifier.linkifyScriptLocation(target, String(frame.scriptId), frame.scriptName, frame.line - 1, options);
             frameDiv.appendChild(urlElement);
             stackFrameToURLElement.set(frameDiv, urlElement);

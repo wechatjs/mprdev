@@ -34,7 +34,7 @@ import * as Common from '../common/common.js';
 import * as Host from '../host/host.js';
 import { DebuggerModel } from './DebuggerModel.js';
 import { HeapProfilerModel } from './HeapProfilerModel.js';
-import { RemoteFunction, RemoteObject, RemoteObjectImpl, RemoteObjectProperty, ScopeRemoteObject } from './RemoteObject.js';
+import { RemoteFunction, RemoteObject, RemoteObjectImpl, RemoteObjectProperty, ScopeRemoteObject, } from './RemoteObject.js';
 import { Capability, Type } from './Target.js';
 import { SDKModel } from './SDKModel.js';
 export class RuntimeModel extends SDKModel {
@@ -447,7 +447,7 @@ export class ExecutionContext {
     }
     static comparator(a, b) {
         function targetWeight(target) {
-            if (!target.parentTarget()) {
+            if (target.parentTarget()?.type() !== Type.Frame) {
                 return 5;
             }
             if (target.type() === Type.Frame) {

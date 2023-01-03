@@ -344,38 +344,38 @@ export class ServiceWorkerVersion {
         return !this.registration.isDeleted && this.isActivated() && this.isStopped();
     }
     isStoppedAndRedundant() {
-        return this.runningStatus === "stopped" /* Stopped */ &&
-            this.status === "redundant" /* Redundant */;
+        return this.runningStatus === "stopped" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Stopped */ &&
+            this.status === "redundant" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Redundant */;
     }
     isStopped() {
-        return this.runningStatus === "stopped" /* Stopped */;
+        return this.runningStatus === "stopped" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Stopped */;
     }
     isStarting() {
-        return this.runningStatus === "starting" /* Starting */;
+        return this.runningStatus === "starting" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Starting */;
     }
     isRunning() {
-        return this.runningStatus === "running" /* Running */;
+        return this.runningStatus === "running" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Running */;
     }
     isStopping() {
-        return this.runningStatus === "stopping" /* Stopping */;
+        return this.runningStatus === "stopping" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Stopping */;
     }
     isNew() {
-        return this.status === "new" /* New */;
+        return this.status === "new" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.New */;
     }
     isInstalling() {
-        return this.status === "installing" /* Installing */;
+        return this.status === "installing" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Installing */;
     }
     isInstalled() {
-        return this.status === "installed" /* Installed */;
+        return this.status === "installed" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Installed */;
     }
     isActivating() {
-        return this.status === "activating" /* Activating */;
+        return this.status === "activating" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Activating */;
     }
     isActivated() {
-        return this.status === "activated" /* Activated */;
+        return this.status === "activated" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Activated */;
     }
     isRedundant() {
-        return this.status === "redundant" /* Redundant */;
+        return this.status === "redundant" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Redundant */;
     }
     get status() {
         return this.currentState.status;
@@ -398,18 +398,18 @@ export class ServiceWorkerVersion {
 }
 (function (ServiceWorkerVersion) {
     ServiceWorkerVersion.RunningStatus = {
-        ["running" /* Running */]: i18nLazyString(UIStrings.running),
-        ["starting" /* Starting */]: i18nLazyString(UIStrings.starting),
-        ["stopped" /* Stopped */]: i18nLazyString(UIStrings.stopped),
-        ["stopping" /* Stopping */]: i18nLazyString(UIStrings.stopping),
+        ["running" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Running */]: i18nLazyString(UIStrings.running),
+        ["starting" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Starting */]: i18nLazyString(UIStrings.starting),
+        ["stopped" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Stopped */]: i18nLazyString(UIStrings.stopped),
+        ["stopping" /* Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus.Stopping */]: i18nLazyString(UIStrings.stopping),
     };
     ServiceWorkerVersion.Status = {
-        ["activated" /* Activated */]: i18nLazyString(UIStrings.activated),
-        ["activating" /* Activating */]: i18nLazyString(UIStrings.activating),
-        ["installed" /* Installed */]: i18nLazyString(UIStrings.installed),
-        ["installing" /* Installing */]: i18nLazyString(UIStrings.installing),
-        ["new" /* New */]: i18nLazyString(UIStrings.new),
-        ["redundant" /* Redundant */]: i18nLazyString(UIStrings.redundant),
+        ["activated" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Activated */]: i18nLazyString(UIStrings.activated),
+        ["activating" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Activating */]: i18nLazyString(UIStrings.activating),
+        ["installed" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Installed */]: i18nLazyString(UIStrings.installed),
+        ["installing" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Installing */]: i18nLazyString(UIStrings.installing),
+        ["new" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.New */]: i18nLazyString(UIStrings.new),
+        ["redundant" /* Protocol.ServiceWorker.ServiceWorkerVersionStatus.Redundant */]: i18nLazyString(UIStrings.redundant),
     };
     // TODO(crbug.com/1167717): Make this a const enum again
     // eslint-disable-next-line rulesdir/const_enum

@@ -9,7 +9,7 @@ import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import { AnimationGroupPreviewUI } from './AnimationGroupPreviewUI.js';
 import animationTimelineStyles from './animationTimeline.css.js';
-import { AnimationModel, Events } from './AnimationModel.js';
+import { AnimationModel, Events, } from './AnimationModel.js';
 import { AnimationScreenshotPopover } from './AnimationScreenshotPopover.js';
 import { AnimationUI } from './AnimationUI.js';
 const UIStrings = {
@@ -236,7 +236,7 @@ export class AnimationTimeline extends UI.Widget.VBox {
         const toolbar = new UI.Toolbar.Toolbar('animation-controls-toolbar', controls);
         this.#controlButton =
             new UI.Toolbar.ToolbarToggle(i18nString(UIStrings.replayTimeline), 'largeicon-replay-animation');
-        this.#controlState = "replay-outline" /* Replay */;
+        this.#controlState = "replay-outline" /* ControlState.Replay */;
         this.#controlButton.setToggled(true);
         this.#controlButton.addEventListener(UI.Toolbar.ToolbarButton.Events.Click, this.controlButtonToggle.bind(this));
         toolbar.appendToolbarItem(this.#controlButton);
@@ -346,10 +346,10 @@ export class AnimationTimeline extends UI.Widget.VBox {
         }
     }
     controlButtonToggle() {
-        if (this.#controlState === "play-outline" /* Play */) {
+        if (this.#controlState === "play-outline" /* ControlState.Play */) {
             this.togglePause(false);
         }
-        else if (this.#controlState === "replay-outline" /* Replay */) {
+        else if (this.#controlState === "replay-outline" /* ControlState.Replay */) {
             this.replay();
         }
         else {
@@ -362,20 +362,20 @@ export class AnimationTimeline extends UI.Widget.VBox {
         }
         this.#controlButton.setEnabled(Boolean(this.#selectedGroup));
         if (this.#selectedGroup && this.#selectedGroup.paused()) {
-            this.#controlState = "play-outline" /* Play */;
+            this.#controlState = "play-outline" /* ControlState.Play */;
             this.#controlButton.setToggled(true);
             this.#controlButton.setTitle(i18nString(UIStrings.playTimeline));
             this.#controlButton.setGlyph('largeicon-play-animation');
         }
         else if (!this.#scrubberPlayer || !this.#scrubberPlayer.currentTime ||
             this.#scrubberPlayer.currentTime >= this.duration()) {
-            this.#controlState = "replay-outline" /* Replay */;
+            this.#controlState = "replay-outline" /* ControlState.Replay */;
             this.#controlButton.setToggled(true);
             this.#controlButton.setTitle(i18nString(UIStrings.replayTimeline));
             this.#controlButton.setGlyph('largeicon-replay-animation');
         }
         else {
-            this.#controlState = "pause-outline" /* Pause */;
+            this.#controlState = "pause-outline" /* ControlState.Pause */;
             this.#controlButton.setToggled(false);
             this.#controlButton.setTitle(i18nString(UIStrings.pauseTimeline));
             this.#controlButton.setGlyph('largeicon-pause-animation');

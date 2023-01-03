@@ -7,6 +7,7 @@ export declare class FrameDetailsView extends UI.ThrottledWidget.ThrottledWidget
 }
 export interface FrameDetailsReportViewData {
     frame: SDK.ResourceTreeModel.ResourceTreeFrame;
+    target?: SDK.Target.Target;
 }
 export declare class FrameDetailsReportView extends HTMLElement {
     #private;

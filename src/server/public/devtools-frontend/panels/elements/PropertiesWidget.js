@@ -119,32 +119,13 @@ export class PropertiesWidget extends UI.ThrottledWidget.ThrottledWidget {
         this.filterList();
     }
     filterList() {
-        const isHidden = (property) => {
-            if (!this.showAllPropertiesSetting.get()) {
-                if (SDK.RemoteObject.RemoteObject.isNullOrUndefined(property.value)) {
-                    return true;
-                }
-                if (property.value?.type === "undefined" /* Undefined */ ||
-                    (property.value?.type === "object" /* Object */ &&
-                        property.value.subtype === "null" /* Null */)) {
-                    return true;
-                }
-            }
-            if (this.filterRegex !== null) {
-                if (this.filterRegex.test(property.name)) {
-                    return false;
-                }
-                if (this.filterRegex.test(property.value?.description ?? '')) {
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        };
         let noMatches = true;
         for (const element of this.treeOutline.rootElement().children()) {
             const { property } = element;
-            const hidden = isHidden(property);
+            const hidden = !property.match({
+                includeNullOrUndefinedValues: this.showAllPropertiesSetting.get(),
+                regex: this.filterRegex,
+            });
             if (!hidden) {
                 noMatches = false;
             }

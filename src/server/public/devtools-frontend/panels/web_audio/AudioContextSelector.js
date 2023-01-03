@@ -102,7 +102,7 @@ export class AudioContextSelector extends Common.ObjectWrapper.ObjectWrapper {
             this.selectedContextInternal = item;
             this.toolbarItemInternal.setTitle(i18nString(UIStrings.audioContextS, { PH1: this.titleFor(item) }));
         }
-        this.dispatchEventToListeners("ContextSelected" /* ContextSelected */, item);
+        this.dispatchEventToListeners("ContextSelected" /* Events.ContextSelected */, item);
     }
     reset() {
         this.items.replaceAll([]);

@@ -1,5 +1,5 @@
 import * as Workspace from '../workspace/workspace.js';
-import type { FormatterSourceMapping } from './ScriptFormatter.js';
+import { type FormatterSourceMapping } from './ScriptFormatter.js';
 export declare class SourceFormatData {
     originalSourceCode: Workspace.UISourceCode.UISourceCode;
     formattedSourceCode: Workspace.UISourceCode.UISourceCode;

@@ -6,7 +6,7 @@ import * as ComponentHelpers from '../helpers/helpers.js';
 import * as IconButton from '../icon_button/icon_button.js';
 import linearMemoryValueInterpreterStyles from './linearMemoryValueInterpreter.css.js';
 import { ValueInterpreterDisplay } from './ValueInterpreterDisplay.js';
-import { ValueInterpreterSettings } from './ValueInterpreterSettings.js';
+import { ValueInterpreterSettings, } from './ValueInterpreterSettings.js';
 import * as i18n from '../../../core/i18n/i18n.js';
 const UIStrings = {
     /**
@@ -41,7 +41,7 @@ export class ValueTypeToggledEvent extends Event {
 export class LinearMemoryValueInterpreter extends HTMLElement {
     static litTagName = LitHtml.literal `devtools-linear-memory-inspector-interpreter`;
     #shadow = this.attachShadow({ mode: 'open' });
-    #endianness = "Little Endian" /* Little */;
+    #endianness = "Little Endian" /* Endianness.Little */;
     #buffer = new ArrayBuffer(0);
     #valueTypes = new Set();
     #valueTypeModeConfig = new Map();
@@ -109,7 +109,7 @@ export class LinearMemoryValueInterpreter extends HTMLElement {
       <select class="chrome-select"
         style="border: none; background-color: transparent; cursor: pointer;"
         data-endianness="true" @change=${onEnumSettingChange}>
-        ${["Little Endian" /* Little */, "Big Endian" /* Big */].map(endianness => {
+        ${["Little Endian" /* Endianness.Little */, "Big Endian" /* Endianness.Big */].map(endianness => {
             return html `<option value=${endianness} .selected=${this.#endianness === endianness}>${i18n.i18n.lockedString(endianness)}</option>`;
         })}
       </select>

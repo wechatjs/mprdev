@@ -1,6 +1,6 @@
 import * as Common from '../../core/common/common.js';
 import type * as Protocol from '../../generated/protocol.js';
-import type { Issue } from './Issue.js';
+import { type Issue } from './Issue.js';
 import { IssuesManager } from './IssuesManager.js';
 /**
   * A class that facilitates resolving an issueId to an issue. See `ResolverBase` for more info.

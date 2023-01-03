@@ -58,6 +58,8 @@ export class CSSStyleDeclaration {
                     parseUnusedText.call(this, cssText, start.line, start.column, range.startLine, range.startColumn);
                     start = { line: range.endLine, column: range.endColumn };
                 }
+                // TODO(changhaohan): we should try not including longhand properties anymore, because
+                // they are already included in the longhandProperties field in a shorthand property.
                 this.#allPropertiesInternal.push(CSSProperty.parsePayload(this, this.#allPropertiesInternal.length, cssProperty));
             }
             parseUnusedText.call(this, cssText, start.line, start.column, this.range.endLine, this.range.endColumn);
@@ -151,7 +153,7 @@ export class CSSStyleDeclaration {
             for (const shorthand of shorthands) {
                 if (propertiesSet.has(shorthand)) {
                     continue;
-                } // There already is a shorthand this #longhands falls under.
+                } // There already is a shorthand this #longhand falls under.
                 const shorthandValue = this.#shorthandValues.get(shorthand);
                 if (!shorthandValue) {
                     continue;
@@ -257,17 +259,6 @@ export class CSSStyleDeclaration {
     isPropertyImplicit(name) {
         const property = this.#activePropertyMap.get(name);
         return property ? property.implicit : false;
-    }
-    longhandProperties(name) {
-        const longhands = cssMetadata().getLonghands(name.toLowerCase());
-        const result = [];
-        for (let i = 0; longhands && i < longhands.length; ++i) {
-            const property = this.#activePropertyMap.get(longhands[i]);
-            if (property) {
-                result.push(property);
-            }
-        }
-        return result;
     }
     propertyAt(index) {
         return (index < this.allProperties().length) ? this.allProperties()[index] : null;

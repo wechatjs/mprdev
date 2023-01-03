@@ -49,6 +49,9 @@
       "path": "../../panels/js_profiler/meta-tsconfig.json"
     },
     {
+      "path": "../../panels/mobile_throttling/meta-tsconfig.json"
+    },
+    {
       "path": "../../panels/sources/bundle-tsconfig.json"
     },
     {

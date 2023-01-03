@@ -1,10 +1,9 @@
 import * as SDK from '../../core/sdk/sdk.js';
 import * as PerfUI from '../../ui/legacy/components/perf_ui/perf_ui.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import type { PerformanceModel } from './PerformanceModel.js';
-import type { TimelineModeViewDelegate } from './TimelinePanel.js';
-import { TimelineSelection } from './TimelinePanel.js';
-import type { TimelineMarkerStyle } from './TimelineUIUtils.js';
+import { type PerformanceModel } from './PerformanceModel.js';
+import { TimelineSelection, type TimelineModeViewDelegate } from './TimelinePanel.js';
+import { type TimelineMarkerStyle } from './TimelineUIUtils.js';
 export declare class TimelineFlameChartView extends UI.Widget.VBox implements PerfUI.FlameChart.FlameChartDelegate, UI.SearchableView.Searchable {
     private readonly delegate;
     private model;

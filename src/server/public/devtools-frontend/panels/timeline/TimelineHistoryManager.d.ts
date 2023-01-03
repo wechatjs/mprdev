@@ -1,5 +1,5 @@
 import * as UI from '../../ui/legacy/legacy.js';
-import type { PerformanceModel } from './PerformanceModel.js';
+import { type PerformanceModel } from './PerformanceModel.js';
 export declare class TimelineHistoryManager {
     private recordings;
     private readonly action;

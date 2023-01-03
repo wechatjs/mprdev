@@ -8,6 +8,8 @@ const { render, html } = LitHtml;
 export class ComputedStyleProperty extends HTMLElement {
     static litTagName = LitHtml.literal `devtools-computed-style-property`;
     #shadow = this.attachShadow({ mode: 'open' });
+    #propertyNameRenderer = undefined;
+    #propertyValueRenderer = undefined;
     #inherited = false;
     #traceable = false;
     #onNavigateToSource = () => { };
@@ -15,22 +17,30 @@ export class ComputedStyleProperty extends HTMLElement {
         this.#shadow.adoptedStyleSheets = [computedStylePropertyStyles];
     }
     set data(data) {
+        this.#propertyNameRenderer = data.propertyNameRenderer;
+        this.#propertyValueRenderer = data.propertyValueRenderer;
         this.#inherited = data.inherited;
         this.#traceable = data.traceable;
         this.#onNavigateToSource = data.onNavigateToSource;
         this.#render();
     }
     #render() {
+        const propertyNameElement = this.#propertyNameRenderer?.();
+        const propertyValueElement = this.#propertyValueRenderer?.();
         // Disabled until https://crbug.com/1079231 is fixed.
         // clang-format off
         render(html `
       <div class="computed-style-property ${this.#inherited ? 'inherited' : ''}">
-        <slot name="property-name"></slot>
+        <div class="property-name">
+          ${propertyNameElement}
+        </div>
         <span class="hidden" aria-hidden="false">: </span>
         ${this.#traceable ?
             html `<span class="goto" @click=${this.#onNavigateToSource}></span>` :
             null}
-        <slot name="property-value"></slot>
+        <div class="property-value">
+          ${propertyValueElement}
+        </div>
         <span class="hidden" aria-hidden="false">;</span>
       </div>
     `, this.#shadow, {

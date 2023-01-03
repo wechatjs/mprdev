@@ -7,7 +7,7 @@ import * as i18n from '../../core/i18n/i18n.js';
 import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
 import * as UI from '../../ui/legacy/legacy.js';
-import { Horizontal, HorizontalSpanned, Vertical, VerticalSpanned } from './EmulatedDevices.js';
+import { Horizontal, HorizontalSpanned, Vertical, VerticalSpanned, } from './EmulatedDevices.js';
 const UIStrings = {
     /**
     * @description Error message shown in the Devices settings pane when the user enters an invalid
@@ -425,11 +425,11 @@ export class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper {
         switch (this.#modeInternal.orientation) {
             case VerticalSpanned:
             case Vertical:
-                return "portraitPrimary" /* PortraitPrimary */;
+                return "portraitPrimary" /* Protocol.Emulation.ScreenOrientationType.PortraitPrimary */;
             case HorizontalSpanned:
             case Horizontal:
             default:
-                return "landscapePrimary" /* LandscapePrimary */;
+                return "landscapePrimary" /* Protocol.Emulation.ScreenOrientationType.LandscapePrimary */;
         }
     }
     calculateAndEmulate(resetPageScaleFactor) {
@@ -475,15 +475,15 @@ export class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper {
             const defaultDeviceScaleFactor = mobile ? defaultMobileScaleFactor : 0;
             this.#fitScaleInternal = this.calculateFitScale(this.#widthSetting.get(), this.#heightSetting.get());
             this.#appliedUserAgentTypeInternal = this.#uaSettingInternal.get();
-            this.applyDeviceMetrics(new UI.Geometry.Size(screenWidth, screenHeight), new Insets(0, 0, 0, 0), new Insets(0, 0, 0, 0), this.#scaleSettingInternal.get(), this.#deviceScaleFactorSettingInternal.get() || defaultDeviceScaleFactor, mobile, screenHeight >= screenWidth ? "portraitPrimary" /* PortraitPrimary */ :
-                "landscapePrimary" /* LandscapePrimary */, resetPageScaleFactor);
+            this.applyDeviceMetrics(new UI.Geometry.Size(screenWidth, screenHeight), new Insets(0, 0, 0, 0), new Insets(0, 0, 0, 0), this.#scaleSettingInternal.get(), this.#deviceScaleFactorSettingInternal.get() || defaultDeviceScaleFactor, mobile, screenHeight >= screenWidth ? "portraitPrimary" /* Protocol.Emulation.ScreenOrientationType.PortraitPrimary */ :
+                "landscapePrimary" /* Protocol.Emulation.ScreenOrientationType.LandscapePrimary */, resetPageScaleFactor);
             this.applyUserAgent(mobile ? defaultMobileUserAgent : '', mobile ? defaultMobileUserAgentMetadata : null);
             this.applyTouch(this.#uaSettingInternal.get() === UA.DesktopTouch || this.#uaSettingInternal.get() === UA.Mobile, this.#uaSettingInternal.get() === UA.Mobile);
         }
         if (overlayModel) {
             overlayModel.setShowViewportSizeOnResize(this.#typeInternal === Type.None);
         }
-        this.dispatchEventToListeners("Updated" /* Updated */);
+        this.dispatchEventToListeners("Updated" /* Events.Updated */);
     }
     calculateFitScale(screenWidth, screenHeight, outline, insets) {
         const outlineWidth = outline ? outline.left + outline.right : 0;
@@ -523,7 +523,7 @@ export class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper {
         let pageHeight = screenSize.height - insets.top - insets.bottom;
         const positionX = insets.left;
         const positionY = insets.top;
-        const screenOrientationAngle = screenOrientation === "landscapePrimary" /* LandscapePrimary */ ? 90 : 0;
+        const screenOrientationAngle = screenOrientation === "landscapePrimary" /* Protocol.Emulation.ScreenOrientationType.LandscapePrimary */ ? 90 : 0;
         this.#appliedDeviceSizeInternal = screenSize;
         this.#appliedDeviceScaleFactorInternal = deviceScaleFactor || window.devicePixelRatio;
         this.#screenRectInternal = new Rect(Math.max(0, (this.#availableSize.width - screenSize.width * scale) / 2), outline.top * scale, screenSize.width * scale, screenSize.height * scale);
@@ -598,21 +598,21 @@ export class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper {
         if (!screenCaptureModel) {
             return null;
         }
+        let screenshotMode;
+        if (clip) {
+            screenshotMode = "fromClip" /* SDK.ScreenCaptureModel.ScreenshotMode.FROM_CLIP */;
+        }
+        else if (fullSize) {
+            screenshotMode = "fullpage" /* SDK.ScreenCaptureModel.ScreenshotMode.FULLPAGE */;
+        }
+        else {
+            screenshotMode = "fromViewport" /* SDK.ScreenCaptureModel.ScreenshotMode.FROM_VIEWPORT */;
+        }
         const overlayModel = this.#emulationModel ? this.#emulationModel.overlayModel() : null;
         if (overlayModel) {
             overlayModel.setShowViewportSizeOnResize(false);
         }
-        // Define the right clipping area for fullsize screenshots.
-        if (fullSize) {
-            const metrics = await screenCaptureModel.fetchLayoutMetrics();
-            if (!metrics) {
-                return null;
-            }
-            // Cap the height to not hit the GPU limit.
-            const contentHeight = Math.min((1 << 14), metrics.contentHeight);
-            clip = { x: 0, y: 0, width: Math.floor(metrics.contentWidth), height: Math.floor(contentHeight), scale: 1 };
-        }
-        const screenshot = await screenCaptureModel.captureScreenshot("png" /* Png */, 100, clip);
+        const screenshot = await screenCaptureModel.captureScreenshot("png" /* Protocol.Page.CaptureScreenshotRequestFormat.Png */, 100, screenshotMode, clip);
         const deviceMetrics = {
             width: 0,
             height: 0,
@@ -665,11 +665,11 @@ export class DeviceModeModel extends Common.ObjectWrapper.ObjectWrapper {
         switch (this.#modeInternal.orientation) {
             case VerticalSpanned:
             case Vertical:
-                return "vertical" /* Vertical */;
+                return "vertical" /* Protocol.Emulation.DisplayFeatureOrientation.Vertical */;
             case HorizontalSpanned:
             case Horizontal:
             default:
-                return "horizontal" /* Horizontal */;
+                return "horizontal" /* Protocol.Emulation.DisplayFeatureOrientation.Horizontal */;
         }
     }
     getDisplayFeature() {

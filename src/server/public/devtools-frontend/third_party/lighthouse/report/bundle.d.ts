@@ -10,13 +10,6 @@ export type CRCSegment = {
     transferSize: number;
     treeMarkers: boolean[];
 };
-export type LineDetails = {
-    content: string;
-    lineNumber: string | number;
-    contentType: LineContentType;
-    truncated?: boolean;
-    visibility?: LineVisibility;
-};
 /**
  * @license
  * Copyright 2017 The Lighthouse Authors. All Rights Reserved.
@@ -289,12 +282,12 @@ export class ReportUIFeatures {
      */
     _getThirdPartyRows(rowEls: HTMLElement[], finalUrl: string): Array<HTMLElement>;
     /**
-     * DevTools uses its own file manager to download files, so it redefines this function.
-     * Wrapper is necessary so DevTools can still override this function.
-     *
      * @param {Blob|File} blob
      */
     _saveFile(blob: Blob | File): void;
+}
+export namespace format {
+    export { registerLocaleData };
 }
 /**
  * @license Copyright 2021 The Lighthouse Authors. All Rights Reserved.
@@ -307,19 +300,16 @@ export class ReportUIFeatures {
  * @return {HTMLElement}
  */
 export function renderReport(lhr: LH.Result, opts?: LH.Renderer.Options): HTMLElement;
-type LineContentType = number;
-declare namespace LineContentType {
-    const CONTENT_NORMAL: number;
-    const CONTENT_HIGHLIGHTED: number;
-    const PLACEHOLDER: number;
-    const MESSAGE: number;
-}
-type LineVisibility = number;
-declare namespace LineVisibility {
-    const ALWAYS: number;
-    const WHEN_COLLAPSED: number;
-    const WHEN_EXPANDED: number;
-}
+/**
+ * Returns a new LHR with all strings changed to the new requestedLocale.
+ * @param {LH.Result} lhr
+ * @param {LH.Locale} requestedLocale
+ * @return {{lhr: LH.Result, missingIcuMessageIds: string[]}}
+ */
+export function swapLocale(lhr: LH.Result, requestedLocale: LH.Locale): {
+    lhr: LH.Result;
+    missingIcuMessageIds: string[];
+};
 /**
  * @license
  * Copyright 2017 The Lighthouse Authors. All Rights Reserved.
@@ -590,6 +580,16 @@ declare class TopbarFeatures {
      */
     _updateStickyHeader(): void;
 }
+/**
+ * Populate the i18n string lookup dict with locale data
+ * Used when the host environment selects the locale and serves lighthouse the intended locale file
+ * @see https://docs.google.com/document/d/1jnt3BqKB-4q3AE94UWFA0Gqspx8Sd_jivlB7gQMlmfk/edit
+ * @param {LH.Locale} locale
+ * @param {Record<string, {message: string}>} lhlMessages
+ */
+declare function registerLocaleData(locale: LH.Locale, lhlMessages: Record<string, {
+    message: string;
+}>): void;
 declare class DetailsRenderer {
     /**
      * @param {DOM} dom
@@ -716,10 +716,10 @@ declare class DetailsRenderer {
      */
     _renderTable(details: OpportunityTable | Table): Element;
     /**
-     * @param {LH.Audit.Details.List} details
+     * @param {LH.FormattedIcu<LH.Audit.Details.List>} details
      * @return {Element}
      */
-    _renderList(details: LH.Audit.Details.List): Element;
+    _renderList(details: LH.FormattedIcu<LH.Audit.Details.List>): Element;
     /**
      * @param {LH.Audit.Details.NodeValue} item
      * @return {Element}

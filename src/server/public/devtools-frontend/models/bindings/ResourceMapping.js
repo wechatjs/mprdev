@@ -32,6 +32,9 @@ export class ResourceMapping {
         }
         return resourceMappingInstance;
     }
+    static removeInstance() {
+        resourceMappingInstance = undefined;
+    }
     modelAdded(resourceTreeModel) {
         const info = new ModelInfo(this.#workspace, resourceTreeModel);
         this.#modelToInfo.set(resourceTreeModel, info);
@@ -78,16 +81,26 @@ export class ResourceMapping {
         if (!info) {
             return null;
         }
-        const uiSourceCode = info.getProject().uiSourceCodeForURL(script.sourceURL);
+        const embedderName = script.embedderName();
+        if (!embedderName) {
+            return null;
+        }
+        const uiSourceCode = info.getProject().uiSourceCodeForURL(embedderName);
         if (!uiSourceCode) {
             return null;
         }
         const offset = scriptOffsetMap.get(script) ||
             TextUtils.TextRange.TextRange.createFromLocation(script.lineOffset, script.columnOffset);
-        const lineNumber = jsLocation.lineNumber + offset.startLine - script.lineOffset;
+        let lineNumber = jsLocation.lineNumber + offset.startLine - script.lineOffset;
         let columnNumber = jsLocation.columnNumber;
         if (jsLocation.lineNumber === script.lineOffset) {
             columnNumber += offset.startColumn - script.columnOffset;
+        }
+        if (script.hasSourceURL) {
+            if (lineNumber === 0) {
+                columnNumber += script.columnOffset;
+            }
+            lineNumber += script.lineOffset;
         }
         return uiSourceCode.uiLocation(lineNumber, columnNumber);
     }
@@ -103,14 +116,32 @@ export class ResourceMapping {
         if (!debuggerModel) {
             return [];
         }
-        const location = debuggerModel.createRawLocationByURL(uiSourceCode.url(), lineNumber, columnNumber);
-        if (location) {
-            const script = location.script();
-            if (script && script.containsLocation(lineNumber, columnNumber)) {
-                return [location];
+        const locations = [];
+        for (const script of debuggerModel.scripts()) {
+            if (script.embedderName() !== uiSourceCode.url()) {
+                continue;
             }
+            const { startLine, startColumn } = scriptOffsetMap.get(script) ||
+                TextUtils.TextRange.TextRange.createFromLocation(script.lineOffset, script.columnOffset);
+            if (lineNumber < startLine || (lineNumber === startLine && columnNumber < startColumn)) {
+                continue;
+            }
+            const endLine = startLine + (script.endLine - script.lineOffset);
+            const endColumn = startLine === endLine ? startColumn + (script.endColumn - script.columnOffset) : script.endColumn;
+            if (lineNumber > endLine || (lineNumber === endLine && columnNumber > endColumn)) {
+                continue;
+            }
+            let scriptLineNumber = lineNumber;
+            let scriptColumnNumber = columnNumber;
+            if (script.hasSourceURL) {
+                scriptLineNumber -= startLine;
+                if (scriptLineNumber === 0) {
+                    scriptColumnNumber -= startColumn;
+                }
+            }
+            locations.push(debuggerModel.createRawLocation(script, scriptLineNumber, scriptColumnNumber));
         }
-        return [];
+        return locations;
     }
     uiLocationToCSSLocations(uiLocation) {
         if (!boundUISourceCodes.has(uiLocation.uiSourceCode)) {
@@ -290,7 +321,7 @@ class Binding {
         if (!debuggerModel) {
             return [];
         }
-        return debuggerModel.scriptsForSourceURL(this.#uiSourceCode.url());
+        return debuggerModel.scripts().filter(script => script.embedderName() === this.#uiSourceCode.url());
     }
     async styleSheetChanged(stylesheet, edit) {
         this.#edits.push({ stylesheet, edit });
@@ -365,9 +396,6 @@ class Binding {
     }
     contentType() {
         return this.firstResource().contentType();
-    }
-    contentEncoded() {
-        return this.firstResource().contentEncoded();
     }
     requestContent() {
         return this.firstResource().requestContent();

@@ -232,6 +232,13 @@ export class ConsolePin {
                         },
                     },
                     {
+                        key: 'Enter',
+                        run: () => {
+                            this.focusOut();
+                            return true;
+                        },
+                    },
+                    {
                         key: 'Mod-Enter',
                         run: () => {
                             this.focusOut();
@@ -301,7 +308,7 @@ export class ConsolePin {
         const timeout = throwOnSideEffect ? 250 : undefined;
         const executionContext = UI.Context.Context.instance().flavor(SDK.RuntimeModel.ExecutionContext);
         const preprocessedExpression = ObjectUI.JavaScriptREPL.JavaScriptREPL.preprocessExpression(text);
-        const { preview, result } = await ObjectUI.JavaScriptREPL.JavaScriptREPL.evaluateAndBuildPreview(preprocessedExpression, throwOnSideEffect, false /* replMode */, timeout, !isEditing /* allowErrors */, 'console', true /* awaitPromise */);
+        const { preview, result } = await ObjectUI.JavaScriptREPL.JavaScriptREPL.evaluateAndBuildPreview(preprocessedExpression, throwOnSideEffect, true /* replMode */, timeout, !isEditing /* allowErrors */, 'console', true /* awaitPromise */, true /* silent */);
         if (this.lastResult && this.lastExecutionContext) {
             this.lastExecutionContext.runtimeModel.releaseEvaluationResult(this.lastResult);
         }

@@ -17,7 +17,7 @@ export class TextEditor extends HTMLElement {
     #dynamicSettings = DynamicSetting.none;
     #activeSettingListeners = [];
     #pendingState;
-    #lastScrollPos = { left: 0, top: 0 };
+    #lastScrollPos = { left: 0, top: 0, changed: false };
     #resizeTimeout = -1;
     #resizeListener = () => {
         if (this.#resizeTimeout < 0) {
@@ -47,11 +47,16 @@ export class TextEditor extends HTMLElement {
                 }
             },
         });
-        this.#activeEditor.scrollDOM.scrollTop = this.#lastScrollPos.top;
-        this.#activeEditor.scrollDOM.scrollLeft = this.#lastScrollPos.left;
-        this.#activeEditor.scrollDOM.addEventListener('scroll', (event) => {
-            this.#lastScrollPos.left = event.target.scrollLeft;
-            this.#lastScrollPos.top = event.target.scrollTop;
+        this.#restoreScrollPosition(this.#activeEditor);
+        this.#activeEditor.scrollDOM.addEventListener('scroll', event => {
+            if (!this.#activeEditor) {
+                return;
+            }
+            this.#saveScrollPosition(this.#activeEditor, {
+                scrollLeft: event.target.scrollLeft,
+                scrollTop: event.target.scrollTop,
+            });
+            this.scrollEventHandledToSaveScrollPositionForTest();
         });
         this.#ensureSettingListeners();
         this.#startObservingResize();
@@ -86,9 +91,63 @@ export class TextEditor extends HTMLElement {
             this.#pendingState = state;
         }
     }
+    #restoreScrollPosition(editor) {
+        // Only restore scroll position if the scroll position
+        // has already changed. This check is needed because
+        // we only want to restore scroll for the text editors
+        // that are itself scrollable which, when scrolled,
+        // triggers 'scroll' event from `scrollDOM` meaning that
+        // it contains a scrollable `scrollDOM` that is scrolled.
+        if (!this.#lastScrollPos.changed) {
+            return;
+        }
+        // Instead of reaching to the internal DOM node
+        // of CodeMirror `scrollDOM` and setting the scroll
+        // position directly via `scrollLeft` and `scrollTop`
+        // we're using the public `scrollIntoView` effect.
+        // However, this effect doesn't provide a way to
+        // scroll to the given rectangle position.
+        // So, as a "workaround", we're instructing it to scroll to
+        // the start of the page with last scroll position margins
+        // from the sides.
+        editor.dispatch({
+            effects: CodeMirror.EditorView.scrollIntoView(0, {
+                x: 'start',
+                xMargin: -this.#lastScrollPos.left,
+                y: 'start',
+                yMargin: -this.#lastScrollPos.top,
+            }),
+        });
+    }
+    // `scrollIntoView` starts the scrolling from the start of the `line`
+    // not the content area and there is a padding between the
+    // sides and initial character of the line. So, we're saving
+    // the last scroll position with this margin taken into account.
+    #saveScrollPosition(editor, { scrollLeft, scrollTop }) {
+        const contentRect = editor.contentDOM.getBoundingClientRect();
+        // In some cases `editor.coordsAtPos(0)` can return `null`
+        // (maybe, somehow, the editor is not visible yet).
+        // So, in that case, we don't take margins from the sides
+        // into account by setting `coordsAtZero` rectangle
+        // to be the same with `contentRect`.
+        const coordsAtZero = editor.coordsAtPos(0) ?? {
+            top: contentRect.top,
+            left: contentRect.left,
+            bottom: contentRect.bottom,
+            right: contentRect.right,
+        };
+        this.#lastScrollPos.left = scrollLeft + (contentRect.left - coordsAtZero.left);
+        this.#lastScrollPos.top = scrollTop + (contentRect.top - coordsAtZero.top);
+        this.#lastScrollPos.changed = true;
+    }
+    scrollEventHandledToSaveScrollPositionForTest() {
+    }
     connectedCallback() {
         if (!this.#activeEditor) {
             this.#createEditor();
+        }
+        else {
+            this.#restoreScrollPosition(this.#activeEditor);
         }
     }
     disconnectedCallback() {
@@ -151,7 +210,7 @@ export class TextEditor extends HTMLElement {
         const editorRect = view.scrollDOM.getBoundingClientRect();
         const targetPos = view.coordsAtPos(selection.main.head);
         if (!targetPos || targetPos.top < editorRect.top || targetPos.bottom > editorRect.bottom) {
-            effects.push(CodeMirror.EditorView.centerOn.of(selection.main));
+            effects.push(CodeMirror.EditorView.scrollIntoView(selection.main, { y: 'center' }));
         }
         view.dispatch({
             selection,
@@ -163,7 +222,7 @@ export class TextEditor extends HTMLElement {
             // Reset the highlight state if, after 2 seconds (the animation
             // duration) it is still showing this highlight.
             window.setTimeout(() => {
-                if (view.state.field(highlightState).id === id) {
+                if (view === this.#activeEditor && view.state.field(highlightState).id === id) {
                     view.dispatch({ effects: setHighlightLine.of(null) });
                 }
             }, 2000);

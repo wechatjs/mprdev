@@ -16,6 +16,7 @@ export interface LogMessage {
     type: 'send' | 'recv';
 }
 export declare class ProtocolMonitorImpl extends UI.Widget.VBox {
+    #private;
     private started;
     private startTime;
     private readonly dataGridRowForId;
@@ -28,7 +29,7 @@ export declare class ProtocolMonitorImpl extends UI.Widget.VBox {
     private isRecording;
     constructor();
     static instance(opts?: {
-        forceNew: null;
+        forceNew: null | boolean;
     }): ProtocolMonitorImpl;
     wasShown(): void;
     private setRecording;
@@ -36,6 +37,12 @@ export declare class ProtocolMonitorImpl extends UI.Widget.VBox {
     private messageReceived;
     private messageSent;
     private saveAsFile;
+}
+export declare class HistoryAutocompleteDataProvider {
+    #private;
+    constructor(maxHistorySize?: number);
+    buildTextPromptCompletions: (expression: string, prefix: string, force?: boolean) => Promise<UI.SuggestBox.Suggestions>;
+    addEntry(value: string): void;
 }
 export declare class InfoWidget extends UI.Widget.VBox {
     private readonly tabbedPane;
@@ -46,3 +53,7 @@ export declare class InfoWidget extends UI.Widget.VBox {
         type: 'sent' | 'received' | undefined;
     } | null): void;
 }
+export declare function parseCommandInput(input: string): {
+    command: string;
+    parameters: unknown;
+};

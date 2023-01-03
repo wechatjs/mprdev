@@ -65,6 +65,7 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
     workingCopyGetter;
     disableEditInternal;
     contentEncodedInternal;
+    isKnownThirdPartyInternal;
     constructor(project, url, contentType) {
         super();
         this.projectInternal = project;
@@ -72,7 +73,8 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
         const parsedURL = Common.ParsedURL.ParsedURL.fromString(url);
         if (parsedURL) {
             this.originInternal = parsedURL.securityOrigin();
-            this.parentURLInternal = this.originInternal + parsedURL.folderPathComponents;
+            this.parentURLInternal =
+                Common.ParsedURL.ParsedURL.concatenate(this.originInternal, parsedURL.folderPathComponents);
             if (parsedURL.queryParams) {
                 // in case file name contains query params, it doesn't look like a normal file name anymore
                 // so it can as well remain encoded
@@ -84,8 +86,8 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
             }
         }
         else {
-            this.originInternal = '';
-            this.parentURLInternal = '';
+            this.originInternal = Platform.DevToolsPath.EmptyUrlString;
+            this.parentURLInternal = Platform.DevToolsPath.EmptyUrlString;
             this.nameInternal = url;
         }
         this.contentTypeInternal = contentType;
@@ -100,6 +102,7 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
         this.workingCopyInternal = null;
         this.workingCopyGetter = null;
         this.disableEditInternal = false;
+        this.isKnownThirdPartyInternal = false;
     }
     requestMetadata() {
         return this.projectInternal.requestMetadata(this);
@@ -112,6 +115,12 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
     }
     url() {
         return this.urlInternal;
+    }
+    // Identifier used for deduplicating scripts that are considered by the
+    // DevTools UI to be the same script. For now this is just the url but this
+    // is likely to change in the future.
+    canononicalScriptId() {
+        return `${this.contentTypeInternal.name()},${this.urlInternal}`;
     }
     parentURL() {
         return this.parentURLInternal;
@@ -170,10 +179,6 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
     contentType() {
         return this.contentTypeInternal;
     }
-    async contentEncoded() {
-        await this.requestContent();
-        return this.contentEncodedInternal || false;
-    }
     project() {
         return this.projectInternal;
     }
@@ -202,6 +207,12 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
         }
         return this.contentInternal;
     }
+    #decodeContent(content) {
+        if (!content) {
+            return null;
+        }
+        return content.isEncoded && content.content ? window.atob(content.content) : content.content;
+    }
     async checkContentUpdated() {
         if (!this.contentLoadedInternal && !this.forceLoadOnCheckContentInternal) {
             return;
@@ -224,7 +235,7 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
         if (this.lastAcceptedContent === updatedContent.content) {
             return;
         }
-        if (this.contentInternal?.content === updatedContent.content) {
+        if (this.#decodeContent(this.contentInternal) === this.#decodeContent(updatedContent)) {
             this.lastAcceptedContent = null;
             return;
         }
@@ -326,6 +337,12 @@ export class UISourceCode extends Common.ObjectWrapper.ObjectWrapper {
     isDirty() {
         return this.workingCopyInternal !== null || this.workingCopyGetter !== null;
     }
+    isKnownThirdParty() {
+        return this.isKnownThirdPartyInternal;
+    }
+    markKnownThirdParty() {
+        this.isKnownThirdPartyInternal = true;
+    }
     extension() {
         return Common.ParsedURL.ParsedURL.extractExtension(this.nameInternal);
     }
@@ -414,22 +431,27 @@ export class UILocation {
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
     }
-    linkText(skipTrim, showColumnNumber) {
-        let linkText = this.uiSourceCode.displayName(skipTrim);
+    linkText(skipTrim = false, showColumnNumber = false) {
+        const displayName = this.uiSourceCode.displayName(skipTrim);
+        const lineAndColumnText = this.lineAndColumnText(showColumnNumber);
+        return lineAndColumnText ? displayName + ':' + lineAndColumnText : displayName;
+    }
+    lineAndColumnText(showColumnNumber = false) {
+        let lineAndColumnText;
         if (this.uiSourceCode.mimeType() === 'application/wasm') {
             // For WebAssembly locations, we follow the conventions described in
             // github.com/WebAssembly/design/blob/master/Web.md#developer-facing-display-conventions
             if (typeof this.columnNumber === 'number') {
-                linkText += `:0x${this.columnNumber.toString(16)}`;
+                lineAndColumnText = `0x${this.columnNumber.toString(16)}`;
             }
         }
         else {
-            linkText += ':' + (this.lineNumber + 1);
+            lineAndColumnText = `${this.lineNumber + 1}`;
             if (showColumnNumber && typeof this.columnNumber === 'number') {
-                linkText += ':' + (this.columnNumber + 1);
+                lineAndColumnText += ':' + (this.columnNumber + 1);
             }
         }
-        return linkText;
+        return lineAndColumnText;
     }
     id() {
         if (typeof this.columnNumber === 'number') {

@@ -52,7 +52,7 @@ export class PresentationConsoleMessageManager {
     consoleMessageAdded(message) {
         const runtimeModel = message.runtimeModel();
         if (!message.isErrorOrWarning() || !message.runtimeModel() ||
-            message.source === "violation" /* Violation */ || !runtimeModel) {
+            message.source === "violation" /* Protocol.Log.LogEntrySource.Violation */ || !runtimeModel) {
             return;
         }
         const helper = debuggerModelToMessageHelperMap.get(runtimeModel.debuggerModel());
@@ -162,7 +162,7 @@ export class PresentationConsoleMessageHelper {
 export class PresentationConsoleMessage extends Workspace.UISourceCode.Message {
     #uiSourceCode;
     constructor(message, rawLocation, locationPool) {
-        const level = message.level === "error" /* Error */ ? Workspace.UISourceCode.Message.Level.Error :
+        const level = message.level === "error" /* Protocol.Log.LogEntryLevel.Error */ ? Workspace.UISourceCode.Message.Level.Error :
             Workspace.UISourceCode.Message.Level.Warning;
         super(level, message.messageText);
         void DebuggerWorkspaceBinding.instance().createLiveLocation(rawLocation, this.updateLocation.bind(this), locationPool);

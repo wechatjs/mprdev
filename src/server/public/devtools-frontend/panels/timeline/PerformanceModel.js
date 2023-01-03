@@ -53,18 +53,14 @@ export class PerformanceModel extends Common.ObjectWrapper.ObjectWrapper {
     setTracingModel(model) {
         this.tracingModelInternal = model;
         this.timelineModelInternal.setEvents(model);
-        let inputEvents = null;
         let animationEvents = null;
         for (const track of this.timelineModelInternal.tracks()) {
-            if (track.type === TimelineModel.TimelineModel.TrackType.Input) {
-                inputEvents = track.asyncEvents;
-            }
             if (track.type === TimelineModel.TimelineModel.TrackType.Animation) {
                 animationEvents = track.asyncEvents;
             }
         }
-        if (inputEvents || animationEvents) {
-            this.irModel.populate(inputEvents || [], animationEvents || []);
+        if (animationEvents) {
+            this.irModel.populate([], animationEvents || []);
         }
         const mainTracks = this.timelineModelInternal.tracks().filter(track => track.type === TimelineModel.TimelineModel.TrackType.MainThread && track.forMainFrame &&
             track.events.length);

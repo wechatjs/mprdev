@@ -1,15 +1,16 @@
 import * as SDK from '../../core/sdk/sdk.js';
+import type * as Platform from '../../core/platform/platform.js';
 import * as Workspace from '../workspace/workspace.js';
-import type { DebuggerSourceMapping, DebuggerWorkspaceBinding, RawLocationRange } from './DebuggerWorkspaceBinding.js';
+import { type DebuggerSourceMapping, type DebuggerWorkspaceBinding, type RawLocationRange } from './DebuggerWorkspaceBinding.js';
 export declare class CompilerScriptMapping implements DebuggerSourceMapping {
     #private;
     constructor(debuggerModel: SDK.DebuggerModel.DebuggerModel, workspace: Workspace.Workspace.WorkspaceImpl, debuggerWorkspaceBinding: DebuggerWorkspaceBinding);
     private onUiSourceCodeAdded;
     private addStubUISourceCode;
     private removeStubUISourceCode;
-    static uiSourceCodeOrigin(uiSourceCode: Workspace.UISourceCode.UISourceCode): string[];
+    static uiSourceCodeOrigin(uiSourceCode: Workspace.UISourceCode.UISourceCode): Platform.DevToolsPath.UrlString[];
     getLocationRangesForSameSourceLocation(rawLocation: SDK.DebuggerModel.Location): RawLocationRange[];
-    uiSourceCodeForURL(url: string, isContentScript: boolean): Workspace.UISourceCode.UISourceCode | null;
+    uiSourceCodeForURL(url: Platform.DevToolsPath.UrlString, isContentScript: boolean): Workspace.UISourceCode.UISourceCode | null;
     rawLocationToUILocation(rawLocation: SDK.DebuggerModel.Location): Workspace.UISourceCode.UILocation | null;
     uiLocationToRawLocations(uiSourceCode: Workspace.UISourceCode.UISourceCode, lineNumber: number, columnNumber: number): SDK.DebuggerModel.Location[];
     private sourceMapWillAttach;
