@@ -71,7 +71,7 @@ export function init(opts = {}) {
     });
   });
 
-  window.__remote_dev_sdk_inited__ = true;
+  window.__remote_dev_sdk_inited__ = opts;
 }
 
 // 断点脚本转换工具
