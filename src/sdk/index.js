@@ -5,6 +5,7 @@ import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import ChromeDomain from './domain/index';
 import JDB from './common/jdb';
+import Debugger from './domain/debugger';
 
 // 获取页面icon
 function getDocumentFavicon() {
@@ -89,9 +90,9 @@ export function debug(rawCode, rawUrl) {
   if (!url || typeof url !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debug"');
   }
-  const absURL = new URL(url, location.href);
-  const importUrl = absURL.href;
+  const importUrl = getAbsoultPath(url);
   new JDB(rawCode, importUrl);
+  Debugger.scriptDebugCache.set(importUrl, rawCode);
 }
 
 // 断点脚本拉取及转换工具
@@ -112,8 +113,7 @@ export function debugSrc(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debugSrc"');
   }
-  const absURL = new URL(rawUrl, location.href);
-  const importUrl = absURL.href;
+  const importUrl = getAbsoultPath(rawUrl);
   const result = { importUrl, rawCode: null };
   debugSrcResList.push(result);
   JDB.getTransCode(importUrl).then((rawCode) => {

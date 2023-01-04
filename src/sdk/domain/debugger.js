@@ -8,11 +8,12 @@ export default class Debugger extends BaseDomain {
   namespace = 'Debugger';
   
   // javascript脚本集合
-  scripts = new Map();
-  scriptUrlSet = new Set();
-  scriptDebugOffsets = new Map();
-  static scriptUrls = new Map();
+  static scripts = new Map();
   static scriptIds = new Map();
+  static scriptUrls = new Map();
+  static scriptUrlSet = new Set();
+  static scriptDebugCache = new Map();
+  static scriptDebugOffsets = new Map();
 
   // javascript脚本的唯一id
   scriptId = 1;
@@ -89,7 +90,7 @@ export default class Debugger extends BaseDomain {
     if (typeof url === 'string') {
       const breakpoints = JDB.getPossibleBreakpoints(url);
       if (breakpoints?.length) {
-        const offset = this.scriptDebugOffsets.get(scriptId) || 0;
+        const offset = Debugger.scriptDebugOffsets.get(scriptId) || 0;
         const locations = breakpoints.filter((bp) =>
           (bp.lineNumber + offset > lineNumber && (!end || bp.lineNumber + offset < end.lineNumber))
           || (bp.lineNumber + offset === lineNumber && bp.columnNumber >= columnNumber)
@@ -127,7 +128,7 @@ export default class Debugger extends BaseDomain {
   setBreakpointByUrl({ url, lineNumber, columnNumber, condition }) {
     const scriptId = Debugger.scriptUrls.get(url);
     if (typeof scriptId === 'string') {
-      const offset = this.scriptDebugOffsets.get(scriptId) || 0;
+      const offset = Debugger.scriptDebugOffsets.get(scriptId) || 0;
       const breakpoint = JDB.setBreakpoint(url, lineNumber - offset, columnNumber, condition);
       if (breakpoint) {
         return {
@@ -243,19 +244,17 @@ export default class Debugger extends BaseDomain {
    * @private
    */
   collectScripts() {
-    this.scriptUrlSet = new Set(
+    Debugger.scriptUrlSet = new Set(
       Array.from(document.querySelectorAll('script'))
-        .map((se) => [
-          se.src || se.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1],
-          se.crossOrigin === 'use-credentials'
-        ])
-        .filter((args) => !!args[0])
-        .map((args) => [getAbsoultPath(args[0]), args[1]])
-        .concat(Array.from(this.scriptUrlSet))
+        .map((s) => s.src || s.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1])
+        .filter(Boolean)
+        .map((u) => getAbsoultPath(u))
+        .concat(Array.from(Debugger.scriptUrlSet))
     );
-    Array.from(this.scriptUrlSet).forEach((args) => {
-      this.fetchScriptSource(...args);
-    });
+    Array.from(Debugger.scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
+    for (const [src, content] of Debugger.scriptDebugCache) {
+      this.sendScriptDebugCache(src, content);
+    }
   }
 
   /**
@@ -272,10 +271,9 @@ export default class Debugger extends BaseDomain {
           if (src) {
             const absSrc = getAbsoultPath(src);
             setTimeout(() => {
-              const credentials = this.crossOrigin === 'use-credentials';
-              domainThis.scriptUrlSet.add([absSrc, credentials]);
+              domainThis.scriptUrlSet.add(absSrc);
               if (domainThis.enabledCount) {
-                domainThis.fetchScriptSource(absSrc, credentials);
+                domainThis.fetchScriptSource(absSrc);
               }
             });
           }
@@ -329,7 +327,7 @@ export default class Debugger extends BaseDomain {
         const cfScriptId = Debugger.scriptUrls.get(cfUrl);
         const cfLineNumber = callFrame.lineNumber;
         const cfColumnNumber = callFrame.columnNumber;
-        const cfOffset = this.scriptDebugOffsets.get(cfScriptId) || 0;
+        const cfOffset = Debugger.scriptDebugOffsets.get(cfScriptId) || 0;
         return {
           functionName: cfFuncName,
           lineNumber: cfLineNumber + cfOffset,
@@ -372,7 +370,7 @@ export default class Debugger extends BaseDomain {
         const cfScriptId = Debugger.scriptUrls.get(cfUrl);
         const cfLineNumber = callFrame.lineNumber;
         const cfColumnNumber = callFrame.columnNumber;
-        const cfOffset = this.scriptDebugOffsets.get(cfScriptId) || 0;
+        const cfOffset = Debugger.scriptDebugOffsets.get(cfScriptId) || 0;
         return {
           url: cfUrl,
           callFrameId,
@@ -401,16 +399,15 @@ export default class Debugger extends BaseDomain {
    * 拉取js文件源内容
    * @private
    * @param {String} url javascript文件的链接地址
-   * @param {Boolean} credentials 拉取时是否带上cookie
    */
-  fetchScriptSource(url, credentials) {
+  fetchScriptSource(url) {
     if (!Debugger.scriptUrls.get(url)) {
       const scriptId = this.getScriptId();
       const onload = (xhr) => {
         const scriptSource = JDB.commentDebuggerCall(xhr.responseText);
         const sourceMapURL = this.getSourceMappingURL(scriptSource);
-        this.scripts.set(scriptId, scriptSource);
-        this.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(xhr.responseText));
+        Debugger.scripts.set(scriptId, scriptSource);
+        Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(xhr.responseText));
         this.parseImportScriptSource(xhr.responseText, url);
         this.parseDebugScriptSource(xhr.responseText, url);
         this.send({
@@ -428,12 +425,45 @@ export default class Debugger extends BaseDomain {
         });
         JDB.checkIfBreakWhenEnable(url);
       };
-      Debugger.scriptUrls.set(url, scriptId);
       Debugger.scriptIds.set(scriptId, url);
-      // 先按照credentials选项拉取一次，如果失败了，取反再试一次
-      requestSource(url, 'Script', credentials, onload, () => {
-        requestSource(getUrlWithRandomNum(url), 'Script', !credentials, onload);
+      Debugger.scriptUrls.set(url, scriptId);
+      // 先不带credentials请求一次，如果失败了再带credentials请求一次
+      requestSource(url, 'Script', false, onload, () => {
+        requestSource(getUrlWithRandomNum(url), 'Script', true, onload);
       });
+    }
+  }
+
+  /**
+   * 发送debug包裹但没被记录的脚本，通常为inline脚本
+   * @param {String} url debug脚本的id，通常为脚本url
+   * @param {String} content debug脚本的内容
+   */
+  sendScriptDebugCache(url, content) {
+    if (!Debugger.scriptUrls.get(url)) {
+      const scriptId = this.getScriptId();
+      const scriptSource = JDB.commentDebuggerCall(content);
+      const sourceMapURL = this.getSourceMappingURL(scriptSource);
+      Debugger.scriptIds.set(scriptId, url);
+      Debugger.scriptUrls.set(url, scriptId);
+      Debugger.scripts.set(scriptId, scriptSource);
+      Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(content));
+      this.parseImportScriptSource(content, url);
+      this.parseDebugScriptSource(content, url);
+      this.send({
+        method: Event.scriptParsed,
+        params: {
+          scriptId,
+          sourceMapURL,
+          startColumn: 0,
+          startLine: 0,
+          endColumn: 999999,
+          endLine: 999999,
+          scriptLanguage: 'JavaScript',
+          url,
+        }
+      });
+      JDB.checkIfBreakWhenEnable(url);
     }
   }
 
@@ -449,7 +479,7 @@ export default class Debugger extends BaseDomain {
       const match = importStr.match(/(?:^|\n|;|}|\*\/)\s*?import[\s|(|{][\s\S]*?['|"](.*?)['|"]\)?/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const importURL = new URL(match[1], url);
-        this.scriptUrlSet.add([importURL.href]);
+        Debugger.scriptUrlSet.add(importURL.href);
         this.fetchScriptSource(importURL.href);
       }
     });
@@ -467,7 +497,7 @@ export default class Debugger extends BaseDomain {
       const match = debugStr.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const debugURL = new URL(match[1], url);
-        this.scriptUrlSet.add([debugURL.href]);
+        Debugger.scriptUrlSet.add(debugURL.href);
         this.fetchScriptSource(debugURL.href);
       }
     });
@@ -479,7 +509,7 @@ export default class Debugger extends BaseDomain {
    * @param {Number} scriptId javascript脚本唯一标识
    */
   getScriptSourceById(scriptId) {
-    return this.scripts.get(scriptId);
+    return Debugger.scripts.get(scriptId);
   }
 
   /**

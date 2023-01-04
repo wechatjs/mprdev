@@ -1,8 +1,7 @@
 export function getAbsoultPath(url) {
   if (!url || typeof url !== 'string') return '';
-  const a = document.createElement('a');
-  a.href = url;
-  return a.href;
+  const absURL = new URL(url, location.href);
+  return absURL.href;
 }
 
 export function key2UpperCase(key) {
