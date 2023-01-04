@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import BaseDomain from './domain';
 import { Event } from './protocol';
+import { getUrlWithRandomNum, requestSource } from '../common/utils';
 
 export default class Page extends BaseDomain {
   namespace = 'Page';
@@ -14,7 +15,7 @@ export default class Page extends BaseDomain {
    * @public
    */
   enable() {
-    this.frame.set(location.href, document.documentElement.outerHTML);
+    this.fetchPageHTML();
   }
 
   /**
@@ -100,6 +101,25 @@ export default class Page extends BaseDomain {
     if (this.intervalTimer) {
       clearInterval(this.intervalTimer);
       this.intervalTimer = null;
+    }
+  }
+
+  /**
+   * 拉取主文档
+   * @private
+   */
+  fetchPageHTML() {
+    if (!this.frame.has(location.href)) {
+      const onload = (xhr) => {
+        this.frame.set(location.href, xhr.responseText);
+      };
+      const onerror = () => {
+        this.frame.set(location.href, document.documentElement.outerHTML);
+      };
+      // 先不带credentials请求一次，如果失败了再带credentials请求一次
+      requestSource(location.href, 'Document', false, onload, () => {
+        requestSource(getUrlWithRandomNum(location.href), 'Document', true, onload, onerror);
+      });
     }
   }
 
