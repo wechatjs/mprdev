@@ -12,6 +12,7 @@ export default class Debugger extends BaseDomain {
   scriptUrlSet = new Set();
   scriptDebugOffsets = new Map();
   static scriptUrls = new Map();
+  static scriptIds = new Map();
 
   // javascript脚本的唯一id
   scriptId = 1;
@@ -83,12 +84,25 @@ export default class Debugger extends BaseDomain {
    * @param {Location} params.end javascript脚本结束位置
    */
   getPossibleBreakpoints({ start, end }) {
-    const { scriptId, lineNumber } = start;
-    return {
-      locations:[{
-        scriptId, lineNumber
-      }]
-    };
+    const { scriptId, lineNumber, columnNumber } = start;
+    const url = Debugger.scriptIds.get(scriptId);
+    if (typeof url === 'string') {
+      const breakpoints = JDB.getPossibleBreakpoints(url);
+      if (breakpoints && breakpoints.length) {
+        const offset = this.scriptDebugOffsets.get(scriptId) || 0;
+        const locations = breakpoints.filter((bp) =>
+          (bp.lineNumber + offset > lineNumber && (!end || bp.lineNumber + offset < end.lineNumber))
+          || (bp.lineNumber + offset === lineNumber && bp.columnNumber >= columnNumber)
+          || (end && bp.lineNumber + offset === end.lineNumber && bp.columnNumber < end.columnNumber)
+        ).map((bp) => ({
+          scriptId,
+          lineNumber: bp.lineNumber + offset,
+          columnNumber: bp.columnNumber,
+        }));
+        return { locations };
+      }
+    }
+    return { locations: [] };
   }
 
   /**
@@ -105,6 +119,7 @@ export default class Debugger extends BaseDomain {
    * 设置js脚本文件断点
    * @public
    * @param {Object} params
+   * @param {String} params.url 断点所在脚本url
    * @param {Number} params.lineNumber 断点所在行
    * @param {Number} params.columnNumber 断点所在列
    * @param {String} params.condition 条件断点执行脚本
@@ -120,7 +135,7 @@ export default class Debugger extends BaseDomain {
           locations: [{
             scriptId,
             lineNumber: breakpoint.lineNumber + offset,
-            columnNumber: breakpoint.columnNumber
+            columnNumber: breakpoint.columnNumber,
           }],
         };
       }
@@ -133,7 +148,7 @@ export default class Debugger extends BaseDomain {
       locations: [{
         scriptId: scriptId || tmpId,
         lineNumber: lineNumber,
-        columnNumber: 0
+        columnNumber: 0,
       }],
     };
   }
@@ -414,6 +429,7 @@ export default class Debugger extends BaseDomain {
         JDB.checkIfBreakWhenEnable(url);
       };
       Debugger.scriptUrls.set(url, scriptId);
+      Debugger.scriptIds.set(scriptId, url);
       // 先按照credentials选项拉取一次，如果失败了，取反再试一次
       requestSource(url, 'Script', credentials, onload, () => {
         requestSource(getUrlWithRandomNum(url), 'Script', !credentials, onload);

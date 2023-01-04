@@ -104,6 +104,14 @@ export default class JDB {
   }
 
   /**
+   * 获取可能的断点位置
+   * @param {String} debuggerId 调试器id，通常是script的url
+   */
+  static getPossibleBreakpoints(debuggerId) {
+    return vDebugger.getPossibleBreakpoints(debuggerId);
+  }
+
+  /**
    * 设置断点
    * @param {String} debuggerId 调试器id，通常是script的url
    * @param {Number} lineNumber 尝试断点的行号
