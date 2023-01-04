@@ -255,7 +255,7 @@ export default class CSS extends BaseDomain {
                 origin: 'regular',
                 disabled: false,
                 isConstructed: false,
-                isInline: false,
+                isInline: true,
                 isMutable: false,
                 length: content.length,
                 startLine: leftExcludes.length - 1,
