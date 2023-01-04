@@ -32,6 +32,7 @@ export default class Debugger extends BaseDomain {
     this.enableJsDebugger();
     this.sendCacheScripts();
     this.collectScripts();
+    this.sendDebugCacheScripts();
   }
 
   disable() {
@@ -239,34 +240,35 @@ export default class Debugger extends BaseDomain {
 
   /**
    * 返回debug包裹但没被记录的脚本，通常为inline脚本
-   * @param {String} url debug脚本的id，通常为脚本url
-   * @param {String} content debug脚本的内容
+   * @private
    */
-  sendScriptDebugCache(url, content) {
-    if (!Debugger.scriptUrls.get(url)) {
-      const scriptId = this.getScriptId();
-      const scriptSource = JDB.commentDebuggerCall(content);
-      const sourceMapURL = this.getSourceMappingURL(scriptSource);
-      Debugger.scriptIds.set(scriptId, url);
-      Debugger.scriptUrls.set(url, scriptId);
-      Debugger.scripts.set(scriptId, scriptSource);
-      Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(content));
-      this.parseImportScriptSource(content, url);
-      this.parseDebugScriptSource(content, url);
-      this.send({
-        method: Event.scriptParsed,
-        params: {
-          scriptId,
-          sourceMapURL,
-          startColumn: 0,
-          startLine: 0,
-          endColumn: 999999,
-          endLine: 999999,
-          scriptLanguage: 'JavaScript',
-          url,
-        }
-      });
-      JDB.checkIfBreakWhenEnable(url);
+  sendDebugCacheScripts() {
+    for (const [url, content] of JDB.rawCodeCache) {
+      if (!Debugger.scriptUrls.get(url)) {
+        const scriptId = this.getScriptId();
+        const scriptSource = JDB.commentDebuggerCall(content);
+        const sourceMapURL = this.getSourceMappingURL(scriptSource);
+        Debugger.scriptIds.set(scriptId, url);
+        Debugger.scriptUrls.set(url, scriptId);
+        Debugger.scripts.set(scriptId, scriptSource);
+        Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(content));
+        this.parseImportScriptSource(content, url);
+        this.parseDebugScriptSource(content, url);
+        this.send({
+          method: Event.scriptParsed,
+          params: {
+            scriptId,
+            sourceMapURL,
+            startColumn: 0,
+            startLine: 0,
+            endColumn: 999999,
+            endLine: 999999,
+            scriptLanguage: 'JavaScript',
+            url,
+          }
+        });
+        JDB.checkIfBreakWhenEnable(url);
+      }
     }
   }
 
@@ -283,9 +285,6 @@ export default class Debugger extends BaseDomain {
         .concat(Array.from(Debugger.scriptUrls.keys()))
     );
     Array.from(scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
-    for (const [src, content] of JDB.rawCodeCache) {
-      this.sendScriptDebugCache(src, content);
-    }
   }
 
   /**
