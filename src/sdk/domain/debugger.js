@@ -88,7 +88,7 @@ export default class Debugger extends BaseDomain {
     const url = Debugger.scriptIds.get(scriptId);
     if (typeof url === 'string') {
       const breakpoints = JDB.getPossibleBreakpoints(url);
-      if (breakpoints && breakpoints.length) {
+      if (breakpoints?.length) {
         const offset = this.scriptDebugOffsets.get(scriptId) || 0;
         const locations = breakpoints.filter((bp) =>
           (bp.lineNumber + offset > lineNumber && (!end || bp.lineNumber + offset < end.lineNumber))
