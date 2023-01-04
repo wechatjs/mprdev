@@ -11,7 +11,6 @@ export default class Debugger extends BaseDomain {
   static scripts = new Map();
   static scriptIds = new Map();
   static scriptUrls = new Map();
-  static scriptUrlSet = new Set();
   static scriptDebugCache = new Map();
   static scriptDebugOffsets = new Map();
 
@@ -240,18 +239,51 @@ export default class Debugger extends BaseDomain {
   }
 
   /**
+   * 返回debug包裹但没被记录的脚本，通常为inline脚本
+   * @param {String} url debug脚本的id，通常为脚本url
+   * @param {String} content debug脚本的内容
+   */
+  sendScriptDebugCache(url, content) {
+    if (!Debugger.scriptUrls.get(url)) {
+      const scriptId = this.getScriptId();
+      const scriptSource = JDB.commentDebuggerCall(content);
+      const sourceMapURL = this.getSourceMappingURL(scriptSource);
+      Debugger.scriptIds.set(scriptId, url);
+      Debugger.scriptUrls.set(url, scriptId);
+      Debugger.scripts.set(scriptId, scriptSource);
+      Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(content));
+      this.parseImportScriptSource(content, url);
+      this.parseDebugScriptSource(content, url);
+      this.send({
+        method: Event.scriptParsed,
+        params: {
+          scriptId,
+          sourceMapURL,
+          startColumn: 0,
+          startLine: 0,
+          endColumn: 999999,
+          endLine: 999999,
+          scriptLanguage: 'JavaScript',
+          url,
+        }
+      });
+      JDB.checkIfBreakWhenEnable(url);
+    }
+  }
+
+  /**
    * 收集页面的所有script
    * @private
    */
   collectScripts() {
-    Debugger.scriptUrlSet = new Set(
+    const scriptUrlSet = new Set(
       Array.from(document.querySelectorAll('script'))
         .map((s) => s.src || s.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1])
         .filter(Boolean)
         .map((u) => getAbsoultPath(u))
-        .concat(Array.from(Debugger.scriptUrlSet))
+        .concat(Array.from(Debugger.scriptUrls.keys()))
     );
-    Array.from(Debugger.scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
+    Array.from(scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
     for (const [src, content] of Debugger.scriptDebugCache) {
       this.sendScriptDebugCache(src, content);
     }
@@ -271,7 +303,6 @@ export default class Debugger extends BaseDomain {
           if (src) {
             const absSrc = getAbsoultPath(src);
             setTimeout(() => {
-              domainThis.scriptUrlSet.add(absSrc);
               if (domainThis.enabledCount) {
                 domainThis.fetchScriptSource(absSrc);
               }
@@ -435,39 +466,6 @@ export default class Debugger extends BaseDomain {
   }
 
   /**
-   * 发送debug包裹但没被记录的脚本，通常为inline脚本
-   * @param {String} url debug脚本的id，通常为脚本url
-   * @param {String} content debug脚本的内容
-   */
-  sendScriptDebugCache(url, content) {
-    if (!Debugger.scriptUrls.get(url)) {
-      const scriptId = this.getScriptId();
-      const scriptSource = JDB.commentDebuggerCall(content);
-      const sourceMapURL = this.getSourceMappingURL(scriptSource);
-      Debugger.scriptIds.set(scriptId, url);
-      Debugger.scriptUrls.set(url, scriptId);
-      Debugger.scripts.set(scriptId, scriptSource);
-      Debugger.scriptDebugOffsets.set(scriptId, this.getScriptDebugOffset(content));
-      this.parseImportScriptSource(content, url);
-      this.parseDebugScriptSource(content, url);
-      this.send({
-        method: Event.scriptParsed,
-        params: {
-          scriptId,
-          sourceMapURL,
-          startColumn: 0,
-          startLine: 0,
-          endColumn: 999999,
-          endLine: 999999,
-          scriptLanguage: 'JavaScript',
-          url,
-        }
-      });
-      JDB.checkIfBreakWhenEnable(url);
-    }
-  }
-
-  /**
    * 解析js文件中的import
    * @private
    * @param {Number} scriptSource js内容
@@ -479,7 +477,6 @@ export default class Debugger extends BaseDomain {
       const match = importStr.match(/(?:^|\n|;|}|\*\/)\s*?import[\s|(|{][\s\S]*?['|"](.*?)['|"]\)?/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const importURL = new URL(match[1], url);
-        Debugger.scriptUrlSet.add(importURL.href);
         this.fetchScriptSource(importURL.href);
       }
     });
@@ -497,7 +494,6 @@ export default class Debugger extends BaseDomain {
       const match = debugStr.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/);
       if (match?.[1] && /^[.|/]/.test(match[1])) {
         const debugURL = new URL(match[1], url);
-        Debugger.scriptUrlSet.add(debugURL.href);
         this.fetchScriptSource(debugURL.href);
       }
     });
