@@ -11,7 +11,6 @@ export default class Debugger extends BaseDomain {
   static scripts = new Map();
   static scriptIds = new Map();
   static scriptUrls = new Map();
-  static scriptDebugCache = new Map();
   static scriptDebugOffsets = new Map();
 
   // javascript脚本的唯一id
@@ -284,7 +283,7 @@ export default class Debugger extends BaseDomain {
         .concat(Array.from(Debugger.scriptUrls.keys()))
     );
     Array.from(scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
-    for (const [src, content] of Debugger.scriptDebugCache) {
+    for (const [src, content] of JDB.rawCodeCache) {
       this.sendScriptDebugCache(src, content);
     }
   }

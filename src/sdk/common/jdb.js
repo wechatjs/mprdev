@@ -39,6 +39,8 @@ export default class JDB {
   static resumed = () => {};
   static forceCache = () => false;
 
+  static rawCodeCache = new Map();
+
   constructor(rawCode, debuggerId) {
     const run = vDebugger.debug(rawCode, debuggerId);
     run && run();

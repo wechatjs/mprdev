@@ -5,7 +5,6 @@ import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import ChromeDomain from './domain/index';
 import JDB from './common/jdb';
-import Debugger from './domain/debugger';
 
 // 获取页面icon
 function getDocumentFavicon() {
@@ -91,8 +90,8 @@ export function debug(rawCode, rawUrl) {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debug"');
   }
   const importUrl = getAbsoultPath(url);
+  JDB.rawCodeCache.set(importUrl, rawCode);
   new JDB(rawCode, importUrl);
-  Debugger.scriptDebugCache.set(importUrl, rawCode);
 }
 
 // 断点脚本拉取及转换工具
