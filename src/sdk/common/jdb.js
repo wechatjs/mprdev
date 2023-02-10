@@ -13,6 +13,7 @@ debugMark.style.cssText = 'display:none;position:fixed;top:0;bottom:0;left:0;rig
 debugTips.style.cssText = 'color:#333;background:#ffffcc;margin:24px auto 0;font-size:17px;height:24px;line-height:24px;padding:2px 4px 2px 6px;border-radius:2px';
 debugGo.style.cssText = 'color:#1a73e8;padding-left:8px;cursor:pointer';
 debugGo.innerText = '►';
+debugGo.addEventListener('click', () => JDB.resume(), true);
 debugGo.addEventListener('touchstart', () => JDB.resume(), true);
 debugMark.addEventListener('touchstart', (e) => e.preventDefault());
 debugMark.appendChild(debugTips);
@@ -22,6 +23,20 @@ const oriFetch = window.fetch;
 const codeFetch = (url) => oriFetch(url).then((res) =>
   res.ok ? res.text() : oriFetch(getUrlWithRandomNum(url), { credentials: 'include' }).then((res) => res.text())
 );
+
+const breakpointCacheKey = 'debug_breakpoint_cache';
+let cachedBreakpoints = {};
+try {
+  cachedBreakpoints = JSON.parse(sessionStorage.getItem(breakpointCacheKey)) || {};
+} catch { /* empty */ }
+const setBreakpointCache = (breakpointId, breakpointInfo) => {
+  if (breakpointInfo) {
+    cachedBreakpoints[breakpointId] = breakpointInfo;
+  } else {
+    delete cachedBreakpoints[breakpointId];
+  }
+  sessionStorage.setItem(breakpointCacheKey, JSON.stringify(cachedBreakpoints));
+};
 
 const cacheKey = 'debug_cache';
 const useCache = sessionStorage.getItem(cacheKey);
@@ -43,7 +58,16 @@ export default class JDB {
 
   constructor(rawCode, debuggerId) {
     const run = vDebugger.debug(rawCode, debuggerId);
+    this.initCachedBreakpoints();
     run && run();
+  }
+
+  /**
+   * 初始化设置缓存的断点
+   * @private
+   */
+  initCachedBreakpoints() {
+    Object.values(cachedBreakpoints).forEach((breakpointInfo) => vDebugger.setBreakpoint(...breakpointInfo))
   }
 
   /**
@@ -121,7 +145,11 @@ export default class JDB {
    * @param {String} condition 条件断点的条件
    */
   static setBreakpoint(debuggerId, lineNumber, columnNumber, condition) {
-    return vDebugger.setBreakpoint(debuggerId, lineNumber, columnNumber, condition);
+    const breakpoint = vDebugger.setBreakpoint(debuggerId, lineNumber, columnNumber, condition);
+    if (breakpoint) {
+      setBreakpointCache(breakpoint.id, [debuggerId, lineNumber, columnNumber, condition]);
+    }
+    return breakpoint;
   }
 
   /**
@@ -129,6 +157,7 @@ export default class JDB {
    * @param {Number} id 断点id
    */
   static removeBreakpoint(id) {
+    setBreakpointCache(id);
     return vDebugger.removeBreakpoint(id);
   }
 
