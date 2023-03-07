@@ -56,8 +56,8 @@ export function init(opts = {}) {
 
   const host = opts.host || location.hostname;
   const port = opts.port || location.port;
-  const protocol = opts.protocol || (opts.httpsocket ? location.protocol : (location.protocol === 'https:' ? 'wss:' : 'ws:'));
-  const SocketClass = opts.httpsocket ? HttpSocket : ReconnectingWebSocket;
+  const protocol = opts.protocol || (opts.polling ? location.protocol : (location.protocol === 'https:' ? 'wss:' : 'ws:'));
+  const SocketClass = opts.polling ? HttpSocket : ReconnectingWebSocket;
   const socket = new SocketClass(`${protocol}//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`);
   const domain = new ChromeDomain({ socket });
 

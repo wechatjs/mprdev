@@ -89,6 +89,8 @@ declare interface InitOptions {
   port?: number // DevTools服务部署的端口
   uin?: number // 用户ID，用于DevTools服务显示和搜索入口
   title?: string // 页面标题，用于DevTools服务显示搜索入口
+  protocol?: 'wss:' | 'ws:' // 指定WebSocket协议
+  polling?: boolean // 强制使用HTTP轮询进行通信，适用于WebSocket不可用的场景
 }
 
 export declare const version: string // 远程调试SDK版本

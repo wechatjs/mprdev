@@ -90,12 +90,14 @@ declare interface InitOptions {
   port?: number // DevTools service deploy port
   uin?: number // user id for display and search in Devtools service
   title?: string // page title for display and search in Devtools service
+  protocol?: 'wss:' | 'ws:' // specify WebSocket protocol
+  polling?: boolean // force fallback to HTTP polling when WebSocket is unsupported
 }
 
 export declare const version: string
 export declare function init(opts: InitOptions): void
-export function debug(script: string, url: string): void // input source code for remote breakpoint debug
-export function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
+export declare function debug(script: string, url: string): void // input source code for remote breakpoint debug
+export declare function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
 export declare function debugCache(check: boolean | ((url: string) => boolean)): void // control whether cache debug codes by url, which can reduce loading time 
 export declare function getId(): string // get device id
 
