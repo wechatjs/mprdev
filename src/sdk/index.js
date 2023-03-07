@@ -80,10 +80,10 @@ export function init(opts = {}) {
   socket.addEventListener('error', () => {
     if (!domain) {
       // websocket初始化失败，回退到httpsocket
-      console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
       socket.close();
       socket = new HttpSocket(`${location.protocol}${devUrl}`);
       domain = new ChromeDomain({ socket });
+      console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
     }
   });
 
