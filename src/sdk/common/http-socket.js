@@ -30,9 +30,9 @@ export default class HttpSocket {
       .then((resp) => resp.json())
       .then((messages) => {
         if (this.listeners.message) {
-          for (let msg of messages) {
-            for (let callback of this.listeners.message) {
-              callback({ data: msg });
+          for (const data of messages) {
+            for (const callback of this.listeners.message) {
+              callback({ data });
             }
           }
         }
