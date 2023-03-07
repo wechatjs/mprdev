@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import { Socket } from 'net';
-import { WebSocket, Server as WSS, } from 'ws';
+import { WebSocket, Server as WSS } from 'ws';
 import { Channel } from './channel';
 import { channelService } from './channel-service';
 import { ChannelEventName } from './enum';

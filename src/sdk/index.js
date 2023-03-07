@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { version } from '../../package.json';
 import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
+import HttpSocket from './common/http-socket';
 import ChromeDomain from './domain/index';
 import JDB from './common/jdb';
 
@@ -55,8 +56,9 @@ export function init(opts = {}) {
 
   const host = opts.host || location.hostname;
   const port = opts.port || location.port;
-  const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
-  const socket = new ReconnectingWebSocket(`${protocol}//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`);
+  const protocol = opts.protocol || (opts.httpsocket ? location.protocol : (location.protocol === 'https:' ? 'wss:' : 'ws:'));
+  const SocketClass = opts.httpsocket ? HttpSocket : ReconnectingWebSocket;
+  const socket = new SocketClass(`${protocol}//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`);
   const domain = new ChromeDomain({ socket });
 
   socket.addEventListener('message', ({ data }) => {
