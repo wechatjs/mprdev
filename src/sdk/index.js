@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { version } from '../../package.json';
 import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import HttpSocket from './common/http-socket';
+import HttpSocket from './common/httpsocket';
 import ChromeDomain from './domain/index';
 import JDB from './common/jdb';
 

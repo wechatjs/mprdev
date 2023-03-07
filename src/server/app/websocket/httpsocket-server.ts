@@ -1,8 +1,4 @@
-
-import { channelService } from './channel-service';
-import { ChannelEventName } from './enum';
 import { WebSocket, Data } from 'ws';
-import { Channel } from './channel';
 import * as Router from 'koa-router';
 
 /**
@@ -39,13 +35,8 @@ export function listenHttpSocket(router: Router) {
       if (connections[id]) {
         connections[id].socket.terminate();
         await new Promise(resolve => {
-          const callback = (eventName: ChannelEventName, channel: Channel) => {
-            if (eventName === ChannelEventName.TARGET_REMOVE && channel.id === id) {
-              channelService.unsubscribeChannelChange(callback);
-              resolve(null);
-            }
-          };
-          channelService.subscribeChannelChange(callback);
+          // 延迟一下，防止收到上个页面的调试消息
+          connections[id].socket.onclose = () => setTimeout(resolve, 1000);
         });
       }
       connections[id] = {
@@ -55,14 +46,7 @@ export function listenHttpSocket(router: Router) {
       };
       connections[id].socket.onmessage = ({ data }) => connections[id].messages.push(data);
       initCleaner();
-      await new Promise(resolve => {
-        connections[id].socket.onopen = () => {
-          setTimeout(() => {
-            console.log('open');
-            resolve(null);
-          });
-        };
-      });
+      await new Promise(resolve => connections[id].socket.onopen = resolve);
     }
     // 处理消息
     const { socket, messages } = connections[id];
