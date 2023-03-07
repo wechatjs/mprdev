@@ -26,7 +26,7 @@ export default class HttpSocket {
       },
     }).then(() => {
       this.pollingMessages();
-    });
+    }).catch(console.error);
   }
   pollingMessages() {
     const body = JSON.stringify(this.messages);

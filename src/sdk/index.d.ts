@@ -4,7 +4,6 @@ declare interface InitOptions {
   uin?: number
   title?: string
   protocol?: 'wss:' | 'ws:'
-  polling?: boolean
 }
 
 export declare const version: string

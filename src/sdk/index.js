@@ -56,12 +56,12 @@ export function init(opts = {}) {
 
   const host = opts.host || location.hostname;
   const port = opts.port || location.port;
-  const protocol = opts.protocol || (opts.polling ? location.protocol : (location.protocol === 'https:' ? 'wss:' : 'ws:'));
-  const SocketClass = opts.polling ? HttpSocket : ReconnectingWebSocket;
-  const socket = new SocketClass(`${protocol}//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`);
-  const domain = new ChromeDomain({ socket });
+  const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
+  const devUrl = `//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`;
+  let socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
+  let domain;
 
-  socket.addEventListener('message', ({ data }) => {
+  const handleMessage = ({ data }) => {
     return JDB.runInNativeEnv(() => {
       try {
         const message = JSON.parse(data);
@@ -71,6 +71,20 @@ export function init(opts = {}) {
         console.error(err);
       }
     });
+  };
+
+  socket.addEventListener('message', handleMessage);
+  socket.addEventListener('open', () => {
+    domain = new ChromeDomain({ socket });
+  });
+  socket.addEventListener('error', () => {
+    if (!domain) {
+      // websocket初始化失败，回退到httpsocket
+      console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
+      socket.close();
+      socket = new HttpSocket(`${location.protocol}${devUrl}`);
+      domain = new ChromeDomain({ socket });
+    }
   });
 
   window.__remote_dev_sdk_inited__ = opts;
