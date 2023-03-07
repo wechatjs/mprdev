@@ -45,18 +45,30 @@ class ChannelService implements IChannelService {
   }
 
   /**
-   * 订阅频道变化，供 websocket 服务器调用
+   * 订阅频道变化，供 websocket 和 httpsocket 服务器调用
    */
   public subscribeChannelChange(
     cb: (...args: any[]) => void
   ) {
+    (cb as any).__listeners__ = {};
     for (const key of enumKeys(ChannelEventName)) {
       const eventName = ChannelEventName[key];
-      this.eventEmitter.on(
-        eventName,
-        (channel: Channel) => {
-          cb(eventName, channel);
-        });
+      (cb as any).__listeners__[eventName] = (channel: Channel) => cb(eventName, channel);
+      this.eventEmitter.on(eventName, (cb as any).__listeners__[eventName]);
+    }
+  }
+
+  /**
+   * 取消订阅频道变化，供 httpsocket 服务器调用
+   */
+  public unsubscribeChannelChange(
+    cb: (...args: any[]) => void
+  ) {
+    if ((cb as any).__listeners__) {
+      for (const key of enumKeys(ChannelEventName)) {
+        const eventName = ChannelEventName[key];
+        this.eventEmitter.off(eventName, (cb as any).__listeners__[eventName]);
+      }
     }
   }
 

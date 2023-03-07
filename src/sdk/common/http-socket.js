@@ -5,7 +5,7 @@ export default class HttpSocket {
     this.url = url;
     this.messages = [];
     this.listeners = {};
-    this.pollingMessages();
+    this.initConnection();
   }
   send(data) {
     this.messages.push(data);
@@ -15,6 +15,18 @@ export default class HttpSocket {
       this.listeners[event] = [];
     }
     this.listeners[event].push(callback);
+  }
+  initConnection() {
+    oriFetch(this.url, {
+      method: 'POST',
+      body: JSON.stringify(['connect']),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    }).then(() => {
+      this.pollingMessages();
+    });
   }
   pollingMessages() {
     const body = JSON.stringify(this.messages);
@@ -26,26 +38,22 @@ export default class HttpSocket {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-    })
-      .then((resp) => resp.json())
-      .then((messages) => {
-        if (this.listeners.message) {
-          for (const data of messages) {
-            for (const callback of this.listeners.message) {
-              callback({ data });
-            }
+    }).then((resp) => resp.json()).then((messages) => {
+      if (this.listeners.message) {
+        for (const data of messages) {
+          for (const callback of this.listeners.message) {
+            callback({ data });
           }
         }
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (this.messages.length) {
+      }
+    }).catch(console.error).finally(() => {
+      if (this.messages.length) {
+        this.pollingMessages();
+      } else {
+        setTimeout(() => {
           this.pollingMessages();
-        } else {
-          setTimeout(() => {
-            this.pollingMessages();
-          }, 500);
-        }
-      });
+        }, 500);
+      }
+    });
   }
 }

@@ -1,6 +1,5 @@
 import * as Koa from 'koa';
-import {} from 'koa-bodyparser';
-import bodyParser = require('koa-bodyparser');
+import * as bodyParser from 'koa-bodyparser';
 import { router, interceptor } from './middle';
 import { ServeOptions } from './websocket/interface';
 import WebSocketServer from './websocket/websocket-server';
