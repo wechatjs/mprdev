@@ -77,16 +77,19 @@ export function init(opts = {}) {
   socket.addEventListener('open', () => {
     domain = new ChromeDomain({ socket });
   });
-  socket.addEventListener('error', () => {
-    if (!domain) {
-      // websocket初始化失败，回退到httpsocket
-      socket.close();
-      socket = new HttpSocket(`${location.protocol}${devUrl}`);
-      socket.addEventListener('message', handleMessage);
-      domain = new ChromeDomain({ socket });
-      console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
-    }
-  });
+
+  if (opts.enablePollingFallback) {
+    socket.addEventListener('error', () => {
+      if (!domain) {
+        // websocket初始化失败，回退到httpsocket
+        socket.close();
+        socket = new HttpSocket(`${location.protocol}${devUrl}`);
+        socket.addEventListener('message', handleMessage);
+        domain = new ChromeDomain({ socket });
+        console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
+      }
+    });
+  }
 
   window.__remote_dev_sdk_inited__ = opts;
 }
