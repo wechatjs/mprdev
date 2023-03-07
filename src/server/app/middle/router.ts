@@ -33,12 +33,13 @@ const connections: Record<string, { socket: WebSocket, alive: number, messages: 
 let cleanerIntervalId: NodeJS.Timer = null;
 const initCleaner = () => {
   if (cleanerIntervalId === null) {
+    // 定期清理过期连接
     cleanerIntervalId = setInterval(() => {
       const keepAlive = Date.now() - 5000;
-      Object.keys(connections).forEach((url) => {
-        if (connections[url].alive < keepAlive) {
-          connections[url].socket.close();
-          delete connections[url];
+      Object.keys(connections).forEach((id) => {
+        if (connections[id].alive < keepAlive) {
+          connections[id].socket.close();
+          delete connections[id];
         }
       });
       if (!Object.keys(connections).length) {
@@ -48,24 +49,33 @@ const initCleaner = () => {
     }, 5000);
   }
 };
-router.post('/target/:info', async ctx => {
-  if (!connections[ctx.url]) {
-    connections[ctx.url] = {
+router.post('/target/:id', async ctx => {
+  const id = ctx.params.id;
+  const data = ctx.request.body as string[];
+  // 干掉连接
+  if (data[0] === 'close') {
+    if (connections[id]) {
+      connections[id].socket.close();
+      delete connections[id];
+    }
+    return;
+  }
+  // 如果没有连接，新建
+  if (!connections[id]) {
+    connections[id] = {
       socket: new WebSocket(`ws://0.0.0.0:${ctx.socket.localPort}${ctx.url}`),
       alive: Date.now(),
       messages: [],
     };
-    connections[ctx.url].socket.onmessage = ({ data }) => {
-      connections[ctx.url].messages.push(data);
-    };
+    connections[id].socket.onmessage = ({ data }) => connections[id].messages.push(data);
     initCleaner();
   }
-  const { socket, messages } = connections[ctx.url];
-  connections[ctx.url].messages = [];
-  connections[ctx.url].alive = Date.now();
-  (ctx.request.body as string[]).forEach((message) => {
-    socket.send(message);
-  });
+  // 处理消息
+  const { socket, messages } = connections[id];
+  connections[id].messages = [];
+  connections[id].alive = Date.now();
+  data.forEach((message) => socket.send(message));
+  // 返回缓存的消息
   ctx.body = JSON.stringify(messages);
 });
 

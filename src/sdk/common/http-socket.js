@@ -19,7 +19,7 @@ export default class HttpSocket {
   pollingMessages() {
     const body = JSON.stringify(this.messages);
     this.messages = [];
-    return oriFetch(this.url, {
+    oriFetch(this.url, {
       method: 'POST',
       body,
       headers: {
@@ -39,9 +39,13 @@ export default class HttpSocket {
       })
       .catch(console.error)
       .finally(() => {
-        setTimeout(() => {
+        if (this.messages.length) {
           this.pollingMessages();
-        }, 500);
+        } else {
+          setTimeout(() => {
+            this.pollingMessages();
+          }, 500);
+        }
       });
   }
 }
