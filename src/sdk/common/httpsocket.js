@@ -26,7 +26,9 @@ export default class HttpSocket {
       },
     }).then(() => {
       this.pollingMessages();
-    }).catch(console.error);
+    }).catch((err) => {
+      console.error('[RemoteDev][Connection]', err);
+    });
   }
   pollingMessages() {
     const body = JSON.stringify(this.messages);
@@ -46,13 +48,15 @@ export default class HttpSocket {
           }
         }
       }
-    }).catch(console.error).finally(() => {
+    }).catch((err) => {
+      console.error('[RemoteDev][Connection]', err);
+    }).finally(() => {
       if (this.messages.length) {
         this.pollingMessages();
       } else {
         setTimeout(() => {
           this.pollingMessages();
-        }, 500);
+        }, 2000);
       }
     });
   }

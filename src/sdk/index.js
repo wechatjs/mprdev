@@ -68,7 +68,7 @@ export function init(opts = {}) {
         const ret = domain.execute(message);
         socket.send(JSON.stringify(ret));
       } catch (err) {
-        console.error(err);
+        console.error('[RemoteDev][Message]', err);
       }
     });
   };
@@ -86,7 +86,7 @@ export function init(opts = {}) {
         socket = new HttpSocket(`${location.protocol}${devUrl}`);
         socket.addEventListener('message', handleMessage);
         domain = new ChromeDomain({ socket });
-        console.warn('Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
+        console.warn('[RemoteDev][Connection]', 'Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
       }
     });
   }
@@ -124,7 +124,7 @@ function debugSrcResHandler() {
     try {
       new JDB(result.rawCode, result.importUrl);
     } catch (err) {
-      console.error(err);
+      console.error('[RemoteDev][Debug]', err);
     }
   }
 }

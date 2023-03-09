@@ -218,7 +218,7 @@ export default class Page extends BaseDomain {
         }
       });
     }).catch(() => {
-      console.warn('MpRdev failed to take screenshot by html2canvas');
+      console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot by html2canvas');
     });
   }
 }
