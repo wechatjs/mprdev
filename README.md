@@ -91,7 +91,6 @@ declare interface InitOptions {
   uin?: number // user id for display and search in Devtools service
   title?: string // page title for display and search in Devtools service
   protocol?: 'wss:' | 'ws:' // specify WebSocket protocol
-  enablePollingFallback?: boolean // enable fallback to HTTP polling when WebSocket failed
 }
 
 export declare const version: string

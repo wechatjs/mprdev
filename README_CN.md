@@ -90,7 +90,6 @@ declare interface InitOptions {
   uin?: number // 用户ID，用于DevTools服务显示和搜索入口
   title?: string // 页面标题，用于DevTools服务显示搜索入口
   protocol?: 'wss:' | 'ws:' // 指定WebSocket协议
-  enablePollingFallback?: boolean // 当WebSocket失败时，允许回退到HTTP轮询
 }
 
 export declare const version: string // 远程调试SDK版本
