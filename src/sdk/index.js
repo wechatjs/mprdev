@@ -92,14 +92,14 @@ export function init(opts = {}) {
         if (++trialIdx < hostList.length) {
           // 如果还有host列表，继续尝试下一个
           initSocket();
-          console.warn('[RemoteDev][Connection]', `Failed to connect "${host[trialIdx - 1]}" and try the next host`);  
+          console.warn('[RemoteDev][Connection]', `Failed to open a WebSocket connection of "${hostList[trialIdx - 1]}" and try the next host`);  
         } else {
           // 否则，所有host的websocket初始化失败，用第一个host来回退到httpsocket
           const devUrl = getDevUrl(hostList[0]);
           socket = new HttpSocket(`${location.protocol}${devUrl}`);
           socket.addEventListener('message', handleMessage);
-          domain = new ChromeDomain({ socket });
-          console.warn('[RemoteDev][Connection]', 'Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');      
+          domain = new ChromeDomain({ socket });    
+          console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP polling');      
         }
       }
     });
