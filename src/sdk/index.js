@@ -92,6 +92,7 @@ export function init(opts = {}) {
         if (++trialIdx < hostList.length) {
           // 如果还有host列表，继续尝试下一个
           initSocket();
+          console.warn('[RemoteDev][Connection]', `Failed to connect "${host[trialIdx - 1]}" and try the next host`);  
         } else {
           // 否则，所有host的websocket初始化失败，用第一个host来回退到httpsocket
           const devUrl = getDevUrl(hostList[0]);
