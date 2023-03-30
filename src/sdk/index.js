@@ -54,12 +54,13 @@ export function init(opts = {}) {
     time: Date.now(),
   });
 
-  const host = opts.host || location.hostname;
-  const port = opts.port || location.port;
+  const port = opts.port;
+  const hostList = [].concat(opts.host || location.hostname);
   const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
-  const devUrl = `//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`;
-  let socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
+
+  let socket;
   let domain;
+  let trialIdx = 0;
 
   const handleMessage = ({ data }) => {
     return JDB.runInNativeEnv(() => {
@@ -68,26 +69,42 @@ export function init(opts = {}) {
         const ret = domain.execute(message);
         socket.send(JSON.stringify(ret));
       } catch (err) {
-        console.error('[RemoteDev][Message]', err);
+        console.error('[RemoteDev][Message]', err.toString());
       }
     });
   };
 
-  socket.addEventListener('message', handleMessage);
-  socket.addEventListener('open', () => {
-    domain = new ChromeDomain({ socket });
-  });
+  const getDevUrl = (host) => {
+    return `//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`;
+  };
 
-  socket.addEventListener('error', () => {
-    if (!domain) {
-      // websocket初始化失败，回退到httpsocket
-      socket.close();
-      socket = new HttpSocket(`${location.protocol}${devUrl}`);
-      socket.addEventListener('message', handleMessage);
+  const initSocket = () => {
+    const host = hostList[trialIdx];
+    const devUrl = getDevUrl(host);
+    socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
+    socket.addEventListener('message', handleMessage);
+    socket.addEventListener('open', () => {
       domain = new ChromeDomain({ socket });
-      console.warn('[RemoteDev][Connection]', 'Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');
-    }
-  });
+    });
+    socket.addEventListener('error', () => {
+      if (!domain) {
+        socket.close();
+        if (++trialIdx < hostList.length) {
+          // 如果还有host列表，继续尝试下一个
+          initSocket();
+        } else {
+          // 否则，所有host的websocket初始化失败，用第一个host来回退到httpsocket
+          const devUrl = getDevUrl(hostList[0]);
+          socket = new HttpSocket(`${location.protocol}${devUrl}`);
+          socket.addEventListener('message', handleMessage);
+          domain = new ChromeDomain({ socket });
+          console.warn('[RemoteDev][Connection]', 'Fallback to connect DevTools by HTTP polling because of WebSocket connection failure');      
+        }
+      }
+    });
+  };
+  
+  initSocket();
 
   window.__remote_dev_sdk_inited__ = opts;
 }
@@ -122,7 +139,7 @@ function debugSrcResHandler() {
     try {
       new JDB(result.rawCode, result.importUrl);
     } catch (err) {
-      console.error('[RemoteDev][Debug]', err);
+      console.error('[RemoteDev][Debug]', err.toString());
     }
   }
 }

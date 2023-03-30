@@ -27,7 +27,7 @@ export default class HttpSocket {
     }).then(() => {
       this.pollingMessages();
     }).catch((err) => {
-      console.error('[RemoteDev][Connection]', err);
+      console.error('[RemoteDev][Connection]', err.toString());
     });
   }
   pollingMessages() {
@@ -49,7 +49,7 @@ export default class HttpSocket {
         }
       }
     }).catch((err) => {
-      console.error('[RemoteDev][Connection]', err);
+      console.error('[RemoteDev][Connection]', err.toString());
     }).finally(() => {
       if (this.messages.length) {
         this.pollingMessages();

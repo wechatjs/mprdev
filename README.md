@@ -86,7 +86,7 @@ script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.rep
 
 ```ts
 declare interface InitOptions {
-  host?: string // DevTools service deploy Host/IP
+  host?: string | string[] // DevTools service deploy Host/IP (If receiving a host list, try sequently until connect succeeds)
   port?: number // DevTools service deploy port
   uin?: number // user id for display and search in Devtools service
   title?: string // page title for display and search in Devtools service

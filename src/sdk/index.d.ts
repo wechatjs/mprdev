@@ -1,5 +1,5 @@
 declare interface InitOptions {
-  host?: string
+  host?: string | string[]
   port?: number
   uin?: number
   title?: string

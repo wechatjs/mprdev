@@ -85,7 +85,7 @@ script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.rep
 
 ```ts
 declare interface InitOptions {
-  host?: string // DevTools服务部署的Host/IP
+  host?: string | string[] // DevTools服务部署的Host/IP (如果传入列表，将依次尝试直到连接成功)
   port?: number // DevTools服务部署的端口
   uin?: number // 用户ID，用于DevTools服务显示和搜索入口
   title?: string // 页面标题，用于DevTools服务显示搜索入口
