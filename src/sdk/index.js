@@ -181,6 +181,6 @@ if (document.currentScript?.src) {
   const protocol = matchUrl('protocol')?.[2];
   const title = decodeURIComponent(matchUrl('title')?.[2] || '');
   if (host || port || uin || title) {
-    docReady(() => init({ host, port, uin, title, protocol }));
+    docReady(() => init({ host: host.split(','), port, uin, title, protocol }));
   }
 }
