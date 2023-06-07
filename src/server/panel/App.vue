@@ -18,7 +18,7 @@
               <t-icon name="chevron-down" size="small" />
             </t-button>
           </t-dropdown>
-          <t-input-adornment :prepend="I18N.Refresh" class="search">
+          <t-input-adornment :prepend="I18N.Search" class="search">
             <t-input
               class="searchbar"
               v-model="searchContent"
