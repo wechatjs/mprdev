@@ -27,8 +27,8 @@ export default class CSS extends BaseDomain {
     let index = 0;
     let specificityArray = [0, 0, 0, 0];
 
-    const selectors = rule.selectorText.split(',').map((item, i) => {
-      const text = item.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    const selectors = rule.selectorText.replace(/\/\*[\s\S]*?\*\//g, '').split(',').map((item, i) => {
+      const text = item.trim();
       if (node instanceof Element && isMatches(node, text)) {
         specificityArray = calculate(text)[0].specificityArray;
         index = i;
