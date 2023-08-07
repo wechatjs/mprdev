@@ -42,6 +42,7 @@ export function listenHttpSocket(router: Router) {
     const id = ctx.params.id;
     if (connections[id]) {
       ctx.body = connections[id].stream = new PassThrough();
+      connections[id].stream.write('data: connected\n\n');
       connections[id].stream.addListener('close', () => {
         // 清理SSE的连接
         connections[id].socket.close();
