@@ -99,7 +99,7 @@ export function init(opts = {}) {
           socket = new HttpSocket(`${location.protocol}${devUrl}`);
           socket.addEventListener('message', handleMessage);
           domain = new ChromeDomain({ socket });    
-          console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP polling');      
+          console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP');      
         }
       }
     });
