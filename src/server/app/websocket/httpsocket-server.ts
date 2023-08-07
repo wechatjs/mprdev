@@ -22,7 +22,7 @@ const initCleaner = () => {
         clearInterval(cleanerIntervalId);
         cleanerIntervalId = null;
       }
-    }, 5000);
+    }, 30000);
   }
 };
 
