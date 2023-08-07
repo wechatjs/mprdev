@@ -9,7 +9,11 @@ const app = new Koa();
 
 export function start(options: ServeOptions) {
   const { port = PORT, host = '0.0.0.0', verbose = false } = options;
-  const server = app.use(interceptor).use(bodyParser()).use(router.routes()).listen(port, host);
+  const server = app
+    .use(interceptor)
+    .use(bodyParser({ jsonLimit: '50mb' }))
+    .use(router.routes())
+    .listen(port, host);
   const wss = new WebSocketServer(verbose);
   wss.init(server);
 }
