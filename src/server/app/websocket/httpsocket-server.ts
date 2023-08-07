@@ -1,10 +1,11 @@
 import { WebSocket, Data } from 'ws';
+import { PassThrough } from 'stream';
 import * as Router from 'koa-router';
 
 /**
  * websocket不可用的环境，留一个http轮询的接入接口
  */
-const connections: Record<string, { socket: WebSocket, alive: number, messages: Data[] }> = {};
+const connections: Record<string, { socket: WebSocket, stream: PassThrough, alive: number, messages: Data[] }> = {};
 let cleanerIntervalId: NodeJS.Timer = null;
 
 const initCleaner = () => {
@@ -13,7 +14,8 @@ const initCleaner = () => {
     cleanerIntervalId = setInterval(() => {
       const keepAlive = Date.now() - 5000;
       Object.keys(connections).forEach((id) => {
-        if (connections[id].alive < keepAlive) {
+        if (connections[id].alive < keepAlive && !connections[id].stream) {
+          // 清理长轮询的连接
           connections[id].socket.close();
           delete connections[id];
         }
@@ -27,6 +29,26 @@ const initCleaner = () => {
 };
 
 export function listenHttpSocket(router: Router) {
+  router.get('/target/:id', async ctx => {
+    // 使用SSE来推送服务端数据
+    ctx.request.socket.setTimeout(0);
+    ctx.req.socket.setNoDelay(true);
+    ctx.req.socket.setKeepAlive(true);
+    ctx.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+    const id = ctx.params.id;
+    if (connections[id]) {
+      ctx.body = connections[id].stream = new PassThrough();
+      connections[id].stream.addListener('close', () => {
+        // 清理SSE的连接
+        connections[id].socket.close();
+        delete connections[id];
+      });
+    }
+  });
   router.post('/target/:id', async ctx => {
     const id = ctx.params.id;
     const data = ctx.request.body as string[];
@@ -41,10 +63,18 @@ export function listenHttpSocket(router: Router) {
       }
       connections[id] = {
         socket: new WebSocket(`ws://0.0.0.0:${ctx.socket.localPort}${ctx.url}`),
+        stream: null,
         alive: Date.now(),
         messages: [],
       };
-      connections[id].socket.onmessage = ({ data }) => connections[id].messages.push(data);
+      connections[id].socket.onmessage = ({ data }) => {
+        connections[id].messages.push(data);
+        if (connections[id].stream) { // 如果支持SSE，直接推送
+          const { stream, messages } = connections[id];
+          connections[id].messages = [];
+          stream.write(`data: ${JSON.stringify(messages)}\n\n`);
+        }
+      };
       initCleaner();
       await new Promise(resolve => connections[id].socket.onopen = resolve);
     }

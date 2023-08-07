@@ -1,3 +1,5 @@
+const supportSSE = typeof window.EventSource === 'function';
+const oriEventSource = window.EventSource;
 const oriFetch = window.fetch;
 
 export default class HttpSocket {
@@ -5,10 +7,18 @@ export default class HttpSocket {
     this.url = url;
     this.messages = [];
     this.listeners = {};
+    this.sseSocket = null;
+    this.sseSendTimeout = null;
     this.initConnection();
   }
   send(data) {
     this.messages.push(data);
+    if (this.sseSocket && !this.sseSendTimeout) {
+      this.sseSendTimeout = setTimeout(() => {
+        this.sseSendTimeout = null;
+        this.batchSendMessages();
+      }, 50);
+    }
   }
   addEventListener(event, callback) {
     if (!this.listeners[event]) {
@@ -25,32 +35,39 @@ export default class HttpSocket {
         'Content-Type': 'application/json',
       },
     }).then(() => {
-      this.pollingMessages();
+      if (supportSSE) {
+        // 如果支持SSE，用SSE
+        this.initEventSource();
+      } else {
+        // 否则回退成长轮询
+        this.pollingMessages();
+      }
     }).catch((err) => {
       console.error('[RemoteDev][Connection]', err.toString());
     });
   }
-  pollingMessages() {
-    const body = JSON.stringify(this.messages);
-    this.messages = [];
-    oriFetch(this.url, {
-      method: 'POST',
-      body,
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    }).then((resp) => resp.json()).then((messages) => {
-      if (this.listeners.message) {
-        for (const data of messages) {
-          for (const callback of this.listeners.message) {
-            callback({ data });
-          }
-        }
+  initEventSource() {
+    const socket = new oriEventSource(this.url);
+    socket.onopen = () => {
+      this.sseSocket = socket;
+      this.batchSendMessages();
+    };
+    socket.onmessage = (e) => {
+      let messages = [];
+      try {
+        messages = JSON.parse(e.data);
+      } catch (err) {
+        console.error('[RemoteDev][Connection]', err.toString());
       }
-    }).catch((err) => {
-      console.error('[RemoteDev][Connection]', err.toString());
-    }).finally(() => {
+      this.callbackData(messages);
+    };
+    socket.onerror = () => {
+      this.sseSocket = null;
+      console.error('[RemoteDev][Connection]', socket);
+    };
+  }
+  pollingMessages() {
+    this.batchSendMessages().finally(() => {
       if (this.messages.length) {
         this.pollingMessages();
       } else {
@@ -59,5 +76,30 @@ export default class HttpSocket {
         }, 2000);
       }
     });
+  }
+  batchSendMessages() {
+    const body = JSON.stringify(this.messages);
+    this.messages = [];
+    return oriFetch(this.url, {
+      method: 'POST',
+      body,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    }).then((resp) => resp.json()).then((messages) => {
+      this.callbackData(messages);
+    }).catch((err) => {
+      console.error('[RemoteDev][Connection]', err.toString());
+    });
+  }
+  callbackData(messages) {
+    if (this.listeners.message) {
+      for (const data of messages) {
+        for (const callback of this.listeners.message) {
+          callback({ data });
+        }
+      }
+    }
   }
 }
