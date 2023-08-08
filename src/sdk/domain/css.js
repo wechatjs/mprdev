@@ -126,8 +126,8 @@ export default class CSS extends BaseDomain {
         if (cur.length === 1) {
           return pre.concat(splitProps(cur[0]));
         }
-        if (!isValidProp(cur[0]) && !isValidProp(cur[1])) {
-          // 如果注释的不是样式，并且当前样式不是合法的格式，做一下合并，来避免这个情况下被拆开：a:b,/* c */d
+        if (!isValidProp(cur[1])) {
+          // 如果当前不是合法的格式，做一下合并，来避免这个情况下被拆开：a:b,/* c */d
           pre[pre.length - 1] += splitProps(cur[1]).join('');
           return pre;
         }
