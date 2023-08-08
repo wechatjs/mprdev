@@ -2,10 +2,10 @@ import * as path from 'path';
 import * as Router from 'koa-router';
 import * as send from 'koa-send';
 
-const MAX_AGE = 43200000; // 缓存半天
+const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 缓存7天
 
 /**
- *  静态页面生成
+ * 静态页面生成
  */
 export const createStatic = (router: Router, hash: string, folder: string) => {
   const sendOption = {
