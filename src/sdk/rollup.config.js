@@ -3,6 +3,7 @@ import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import json from '@rollup/plugin-json';
+import gzip from 'rollup-plugin-gzip';
 import path from 'path';
 
 export default {
@@ -22,5 +23,6 @@ export default {
     }),
     terser(),
     json(),
+    gzip(),
   ],
 }

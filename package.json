@@ -1,6 +1,6 @@
 {
   "name": "mprdev",
-  "version": "0.1.54",
+  "version": "0.1.55",
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
@@ -43,6 +43,7 @@
     "@types/ws": "^8.2.0",
     "eslint": "^6.8.0",
     "rollup": "^2.67.2",
+    "rollup-plugin-gzip": "^3.1.0",
     "typescript": "^3.8.3",
     "vite": "^2.7.6",
     "vite-plugin-vue2": "^1.9.0",
