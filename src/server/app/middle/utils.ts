@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as Router from 'koa-router';
 import * as send from 'koa-send';
 
-const MAX_AGE = 7200000;
+const MAX_AGE = 43200000; // 缓存半天
 
 /**
  *  静态页面生成
