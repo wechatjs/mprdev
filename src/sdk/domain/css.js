@@ -113,6 +113,7 @@ export default class CSS extends BaseDomain {
    * @param {Object} cssRange css文本范围，eg: {startLine,startColumn,endLine,endColumn}
    */
   static formatCssProperties(cssText = '', cssRange) {
+    const isValidProp = (text) => /[\s\S]+?\:[\s\S]+?;\s*/.test(text);
     const splitProps = (text) => text.split(';').map((v, i, a) => i < a.length - 1 ? `${v};` : v);
     const splited = cssText.split(/\/\*/)
       .map((text) => text.split(/\*\//))
@@ -122,7 +123,14 @@ export default class CSS extends BaseDomain {
         return item;
       })
       .reduce((pre, cur) => {
-        if (cur.length === 1) return pre.concat(splitProps(cur[0]));
+        if (cur.length === 1) {
+          return pre.concat(splitProps(cur[0]));
+        }
+        if (!isValidProp(cur[0]) && !isValidProp(cur[1])) {
+          // 如果注释的不是样式，并且当前样式不是合法的格式，做一下合并，来避免这个情况下被拆开：a:b,/* c */d
+          pre[pre.length - 1] += splitProps(cur[1]).join('');
+          return pre;
+        }
         return pre.concat(`/*${cur[0]}*/`, splitProps(cur[1]));
       }, []);
 
