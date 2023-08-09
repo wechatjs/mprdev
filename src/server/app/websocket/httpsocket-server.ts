@@ -45,8 +45,10 @@ export function listenHttpSocket(router: Router) {
       connections[id].stream.write('data: connected\n\n');
       connections[id].stream.addListener('close', () => {
         // 清理SSE的连接
-        connections[id].socket.close();
-        delete connections[id];
+        if (connections[id]) {
+          connections[id].socket.close();
+          delete connections[id];
+        }
       });
     }
   });
