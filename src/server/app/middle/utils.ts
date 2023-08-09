@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as Router from 'koa-router';
 import * as send from 'koa-send';
 
-const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 缓存7天
+const MAX_AGE = 24 * 60 * 60 * 1000; // 缓存一天
 
 /**
  * 静态页面生成
