@@ -43,7 +43,7 @@ export default class Network extends BaseDomain {
     header.split(/[\r\n]/).filter(Boolean)
       .forEach((item) => {
         const [key, val] = item.split(':');
-        headers[key2UpperCase(key)] = val;
+        headers[key2UpperCase(key)] = val.trim();
       });
     return headers;
   }
