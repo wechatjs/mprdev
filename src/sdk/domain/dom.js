@@ -423,18 +423,6 @@ export default class Dom extends BaseDomain {
       const shadowRoot = elAttachShadow.apply(this, arguments);
       this.$$shadow = { root: shadowRoot, init };
       self.observeNode(shadowRoot);
-      Promise.resolve().then(() => {
-        return JDB.runInNativeEnv(() => {
-          if (!self.isEnabled) return;
-          self.send({
-            method: Event.shadowRootPushed,
-            params: {
-              hostId: nodes.getIdByNode(this),
-              root: nodes.collectNodes(shadowRoot, { depth: 0, shadowRootType: init?.mode || 'open' })
-            }
-          });
-        });
-      });
       return shadowRoot;
     };
   }
@@ -496,7 +484,7 @@ export default class Dom extends BaseDomain {
               method: Event.childNodeCountUpdated,
               params: {
                 nodeId: parentNodeId,
-                childNodeCount: nodes.getChildNodes(target).length,
+                childNodeCount: nodes.getChildNodeCount(target)
               }
             });
           };
@@ -522,7 +510,7 @@ export default class Dom extends BaseDomain {
                   method: Event.childNodeRemoved,
                   params: {
                     nodeId,
-                    parentNodeId,
+                    parentNodeId
                   }
                 });
               });
@@ -536,7 +524,7 @@ export default class Dom extends BaseDomain {
                 params: {
                   nodeId: parentNodeId,
                   value: value || undefined,
-                  name: attributeName,
+                  name: attributeName
                 }
               });
               break;

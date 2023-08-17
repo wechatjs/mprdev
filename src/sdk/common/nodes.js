@@ -140,6 +140,17 @@ class Nodes {
   }
 
   /**
+   * 获取指定dom的子元素个数
+   * @public
+   * @param {HTMLElement} node DOM
+   */
+  getChildNodeCount(node) {
+    return Array.from(node.childNodes)
+      .filter(Nodes.isNode)
+      .length;
+  }
+
+  /**
    * 收集指定dom的子元素
    * @public
    * @param {HTMLElement} node DOM
