@@ -199,7 +199,7 @@ export default class Dom extends BaseDomain {
       text.replace(/\n/g, '')
         .replace(/\s*=\s*/g, '=')
         .replace(/['"].*?['"]/g, (m) => m.replace(/\s/g, '&'))
-        .split(' ').filter(item => item)
+        .split(' ').filter(Boolean)
         .forEach((item) => {
           const [name, value] = item.split('=');
           node.setAttribute(name, value.replace(/\&/g, ' ').replace(/["']/g, ''));

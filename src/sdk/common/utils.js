@@ -5,7 +5,7 @@ export function getAbsoultPath(url) {
 }
 
 export function key2UpperCase(key) {
-  return key.replace(/^\S|-[a-z]/g, s => s.toUpperCase());
+  return key.replace(/^\S|-[a-z]/g, (s) => s.toUpperCase());
 }
 
 export function isMatches(element, selector) {

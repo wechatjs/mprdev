@@ -40,7 +40,7 @@ export default class Network extends BaseDomain {
    */
   static formatResponseHeader(header) {
     const headers = {};
-    header.split(/[\r\n]/).filter(val => val)
+    header.split(/[\r\n]/).filter(Boolean)
       .forEach((item) => {
         const [key, val] = item.split(':');
         headers[key2UpperCase(key)] = val;
@@ -69,7 +69,7 @@ export default class Network extends BaseDomain {
    */
   enable() {
     this.isEnabled = true;
-    this.cacheRequest.forEach(data => this.send(data));
+    this.cacheRequest.forEach((data) => this.send(data));
   }
 
   /**
@@ -92,7 +92,7 @@ export default class Network extends BaseDomain {
   getCookies() {
     const cookies = jsCookie.get();
     return {
-      cookies: Object.keys(cookies).map(name => ({ name, value: cookies[name] }))
+      cookies: Object.keys(cookies).map((name) => ({ name, value: cookies[name] }))
     };
   }
 
@@ -280,7 +280,7 @@ export default class Network extends BaseDomain {
 
             let responseBody = ''
             const contentType = headers.get('Content-Type');
-            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some(type => contentType.includes(type))) {
+            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
               responseBody = response.clone().text();
             }
 

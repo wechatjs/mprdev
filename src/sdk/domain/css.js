@@ -531,7 +531,7 @@ export default class CSS extends BaseDomain {
     if (!(node instanceof Element) && !(['::before', '::after'].includes(node.nodeName?.toLowerCase()))) return;
 
     let computedStyle = node instanceof Element ? window.getComputedStyle(node) : window.getComputedStyle(node.parentNode, node.nodeName);
-    computedStyle = Array.from(computedStyle).map(style => ({
+    computedStyle = Array.from(computedStyle).map((style) => ({
       name: style,
       value: computedStyle[style]
     }));

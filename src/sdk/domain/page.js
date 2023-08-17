@@ -200,7 +200,7 @@ export default class Page extends BaseDomain {
         const { display, opacity, visibility } = element.style;
         return display === 'none' || opacity === 0 || visibility === 'hidden';
       }
-    }).then(canvas => canvas.toDataURL('image/jpeg')).then((screenshot) => {
+    }).then((canvas) => canvas.toDataURL('image/jpeg')).then((screenshot) => {
       this.send({
         method: Event.screencastFrame,
         params: {

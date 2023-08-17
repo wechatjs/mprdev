@@ -34,7 +34,7 @@ export default class Overlay {
    * @param {Object} styles style对象 eg: {color: red, position: absolute}
    */
   static formatCssText(styles) {
-    return Object.entries(styles).map(item => `${item[0]}:${item[1]}`)
+    return Object.entries(styles).map((item) => `${item[0]}:${item[1]}`)
       .join(';');
   }
 
@@ -44,7 +44,7 @@ export default class Overlay {
    */
   static getStylePropertyValue(properties, styles) {
     if (Array.isArray(properties)) {
-      return properties.map(key => Number(styles[key].replace('px', '')));
+      return properties.map((key) => Number(styles[key].replace('px', '')));
     }
 
     return Number(styles[properties].replace('px', ''));

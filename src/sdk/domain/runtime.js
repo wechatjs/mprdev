@@ -156,8 +156,8 @@ export default class Runtime extends BaseDomain {
    */
   enable() {
     this.isEnabled = true;
-    this.cacheConsole.forEach(data => this.send(data));
-    this.cacheError.forEach(data => this.send(data));
+    this.cacheConsole.forEach((data) => this.send(data));
+    this.cacheError.forEach((data) => this.send(data));
 
     if (isQuiteMode()) {
       const noop = () => { };
@@ -280,7 +280,7 @@ export default class Runtime extends BaseDomain {
             method: Event.consoleAPICalled,
             params: {
               type: methods[key],
-              args: args.map(arg => objectFormat(arg, { preview: true })),
+              args: args.map((arg) => objectFormat(arg, { preview: true })),
               executionContextId: 1,
               timestamp: Date.now(),
               stackTrace: { callFrames },
@@ -320,7 +320,7 @@ export default class Runtime extends BaseDomain {
     };
 
     // 全局监听错误
-    window.addEventListener('error', e => exceptionThrown(e.error));
-    window.addEventListener('unhandledrejection', e => exceptionThrown(e.reason));
+    window.addEventListener('error', (e) => exceptionThrown(e.error));
+    window.addEventListener('unhandledrejection', (e) => exceptionThrown(e.reason));
   }
 }
