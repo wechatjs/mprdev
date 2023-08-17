@@ -59,7 +59,6 @@ export default class Network extends BaseDomain {
     if (document.cookie) {
       headers.Cookie = document.cookie;
     }
-
     return headers;
   }
 
