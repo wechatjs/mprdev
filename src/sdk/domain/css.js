@@ -113,7 +113,7 @@ export default class CSS extends BaseDomain {
    * @param {Object} cssRange css文本范围，eg: {startLine,startColumn,endLine,endColumn}
    */
   static formatCssProperties(cssText = '', cssRange) {
-    const isValidProp = (text) => /[\s\S]+?\:[\s\S]+?;\s*/.test(text);
+    const isValidProp = (text) => /[\s\S]+?\:[\s\S]+?;/.test(text);
     const splitProps = (text) => text.split(';').map((v, i, a) => i < a.length - 1 ? `${v};` : v);
     const splited = cssText.split(/\/\*/)
       .map((text) => text.split(/\*\//))
@@ -126,14 +126,16 @@ export default class CSS extends BaseDomain {
         if (cur.length === 1) {
           return pre.concat(splitProps(cur[0]));
         }
-        if (!isValidProp(cur[1])) {
+        const props = splitProps(cur[1]);
+        if (!isValidProp(props[0])) {
           // 如果当前不是合法的格式，做一下合并，来避免这个情况下被拆开：a:b,/* c */d
-          pre[pre.length - 1] += splitProps(cur[1]).join('');
-          return pre;
+          pre[pre.length - 1] += `/*${cur[0]}*/` + props.shift();
+          return pre.concat(props);
         }
-        return pre.concat(`/*${cur[0]}*/`, splitProps(cur[1]));
+        return pre.concat(`/*${cur[0]}*/`, props);
       }, []);
 
+    const formatVal = (text) => text.trim().replace(/\/\*.*?\*\//g, '');
     return splited.map((style) => {
       const [name, ...values] = style.replace(/^\/\*|;?\s*\*\/$|;$/g, '').split(':');
       const value = values.join(':');
@@ -152,8 +154,8 @@ export default class CSS extends BaseDomain {
           };
         }
         return {
-          name: name.trim(),
-          value: value.trim(),
+          name: formatVal(name),
+          value: formatVal(value),
           text: style,
           important: value.includes('important'),
           disabled: style.startsWith('/*'),
