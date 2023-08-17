@@ -70,8 +70,8 @@ export default class HttpSocket {
     };
   }
   pollingMessages() {
-    this.batchSendMessages().finally(() => {
-      if (this.messages.length) {
+    this.batchSendMessages().then((success) => {
+      if (success && this.messages.length) {
         this.pollingMessages();
       } else {
         setTimeout(() => {
@@ -92,8 +92,10 @@ export default class HttpSocket {
       },
     }).then((resp) => resp.json()).then((messages) => {
       this.callbackData(messages);
+      return true;
     }).catch((err) => {
       console.error('[RemoteDev][Connection]', err.toString());
+      return false;
     });
   }
   callbackData(messages) {
