@@ -5,16 +5,16 @@ import * as Router from 'koa-router';
 /**
  * websocket不可用的环境，留一个http轮询的接入接口
  */
-const connections: Record<string, { socket: WebSocket, stream: PassThrough, alive: number, messages: Data[] }> = {};
+const connections: Record<string, { socket: WebSocket, stream: PassThrough, expiry: number, messages: Data[] }> = {};
 let cleanerIntervalId: NodeJS.Timer = null;
 
 const initCleaner = () => {
   if (cleanerIntervalId === null) {
     // 定期清理过期连接
     cleanerIntervalId = setInterval(() => {
-      const keepAlive = Date.now() - 5000;
+      const current = Date.now();
       Object.keys(connections).forEach((id) => {
-        if (connections[id].alive < keepAlive && !connections[id].stream) {
+        if (connections[id].expiry < current) {
           // 清理长轮询的连接
           connections[id].socket.close();
           delete connections[id];
@@ -24,7 +24,7 @@ const initCleaner = () => {
         clearInterval(cleanerIntervalId);
         cleanerIntervalId = null;
       }
-    }, 30000);
+    }, 5000);
   }
 };
 
@@ -43,13 +43,6 @@ export function listenHttpSocket(router: Router) {
     if (connections[id]) {
       ctx.body = connections[id].stream = new PassThrough();
       connections[id].stream.write('data: connected\n\n');
-      connections[id].stream.addListener('close', () => {
-        // 清理SSE的连接
-        if (connections[id]) {
-          connections[id].socket.close();
-          delete connections[id];
-        }
-      });
     }
   });
   router.post('/target/:id', async ctx => {
@@ -67,13 +60,14 @@ export function listenHttpSocket(router: Router) {
       connections[id] = {
         socket: new WebSocket(`ws://0.0.0.0:${ctx.socket.localPort}${ctx.url}`),
         stream: null,
-        alive: Date.now(),
+        expiry: 0,
         messages: [],
       };
       connections[id].socket.onmessage = ({ data }) => {
         connections[id].messages.push(data);
         if (connections[id].stream) { // 如果支持SSE，直接推送
           const { stream, messages } = connections[id];
+          connections[id].expiry = Date.now() + 10000; // 10s后过期
           connections[id].messages = [];
           stream.write(`data: ${JSON.stringify(messages)}\n\n`);
         }
@@ -83,7 +77,7 @@ export function listenHttpSocket(router: Router) {
     }
     // 处理消息
     const { socket, messages } = connections[id];
-    connections[id].alive = Date.now();
+    connections[id].expiry = Date.now() + 30000; // 30s后过期
     connections[id].messages = [];
     data.forEach((message) => socket.send(message));
     // 返回缓存的消息

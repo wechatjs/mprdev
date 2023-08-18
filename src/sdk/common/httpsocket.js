@@ -66,7 +66,9 @@ export default class HttpSocket {
     };
     socket.onerror = () => {
       this.sseSocket = null;
-      console.error('[RemoteDev][Connection]', 'Failed to open a Server-Send Event connection and fallback to polling');
+      setTimeout(() => {
+        this.initEventSource();
+      }, 2000);
     };
   }
   pollingMessages() {
