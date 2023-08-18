@@ -45,8 +45,10 @@ export function listenHttpSocket(router: Router) {
       connections[id].stream.write('data: connected\n\n');
       connections[id].stream.addListener('close', () => {
         // 清空SSE流，以便定期清理
-        connections[id].expiry = Date.now() + cleanerInterval;
-        connections[id].stream = null;
+        if (connections[id]) {
+          connections[id].expiry = Date.now() + cleanerInterval;
+          connections[id].stream = null;
+        }
       });
     }
   });
