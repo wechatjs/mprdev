@@ -14,8 +14,7 @@ const initCleaner = () => {
     cleanerIntervalId = setInterval(() => {
       const current = Date.now();
       Object.keys(connections).forEach((id) => {
-        if (connections[id].expiry < current) {
-          // 清理长轮询的连接
+        if (connections[id].expiry < current && !connections[id].stream) {
           connections[id].socket.close();
           delete connections[id];
         }
@@ -24,7 +23,7 @@ const initCleaner = () => {
         clearInterval(cleanerIntervalId);
         cleanerIntervalId = null;
       }
-    }, 5000);
+    }, 10000);
   }
 };
 
@@ -43,6 +42,10 @@ export function listenHttpSocket(router: Router) {
     if (connections[id]) {
       ctx.body = connections[id].stream = new PassThrough();
       connections[id].stream.write('data: connected\n\n');
+      connections[id].stream.addListener('close', () => {
+        // 清空SSE，以便清理
+        connections[id].stream = null;
+      });
     }
   });
   router.post('/target/:id', async ctx => {
