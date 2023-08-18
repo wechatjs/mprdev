@@ -6,6 +6,7 @@ import * as Router from 'koa-router';
  * websocket不可用的环境，留一个http轮询的接入接口
  */
 const connections: Record<string, { socket: WebSocket, stream: PassThrough, expiry: number, messages: Data[] }> = {};
+const cleanerInterval = 10000; // 清理间隔10s
 let cleanerIntervalId: NodeJS.Timer = null;
 
 const initCleaner = () => {
@@ -23,7 +24,7 @@ const initCleaner = () => {
         clearInterval(cleanerIntervalId);
         cleanerIntervalId = null;
       }
-    }, 10000);
+    }, cleanerInterval);
   }
 };
 
@@ -43,7 +44,8 @@ export function listenHttpSocket(router: Router) {
       ctx.body = connections[id].stream = new PassThrough();
       connections[id].stream.write('data: connected\n\n');
       connections[id].stream.addListener('close', () => {
-        // 清空SSE，以便清理
+        // 清空SSE流，以便定期清理
+        connections[id].expiry = Date.now() + cleanerInterval;
         connections[id].stream = null;
       });
     }
@@ -70,7 +72,7 @@ export function listenHttpSocket(router: Router) {
         connections[id].messages.push(data);
         if (connections[id].stream) { // 如果支持SSE，直接推送
           const { stream, messages } = connections[id];
-          connections[id].expiry = Date.now() + 10000; // 10s后过期
+          connections[id].expiry = Date.now() + cleanerInterval;
           connections[id].messages = [];
           stream.write(`data: ${JSON.stringify(messages)}\n\n`);
         }
@@ -80,7 +82,7 @@ export function listenHttpSocket(router: Router) {
     }
     // 处理消息
     const { socket, messages } = connections[id];
-    connections[id].expiry = Date.now() + 30000; // 30s后过期
+    connections[id].expiry = Date.now() + cleanerInterval * 3;
     connections[id].messages = [];
     data.forEach((message) => socket.send(message));
     // 返回缓存的消息
