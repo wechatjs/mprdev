@@ -71,12 +71,14 @@ export function listenHttpSocket(router: Router) {
         messages: [],
       };
       connections[id].socket.onmessage = ({ data }) => {
-        connections[id].messages.push(data);
-        if (connections[id].stream) { // 如果支持SSE，直接推送
-          const { stream, messages } = connections[id];
-          connections[id].expiry = Date.now() + cleanerInterval;
-          connections[id].messages = [];
-          stream.write(`data: ${JSON.stringify(messages)}\n\n`);
+        if (connections[id]) {
+          connections[id].messages.push(data);
+          if (connections[id].stream) { // 如果支持SSE，直接推送
+            const { stream, messages } = connections[id];
+            connections[id].expiry = Date.now() + cleanerInterval;
+            connections[id].messages = [];
+            stream.write(`data: ${JSON.stringify(messages)}\n\n`);
+          }
         }
       };
       initCleaner();
