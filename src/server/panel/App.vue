@@ -20,8 +20,10 @@
           </t-dropdown>
           <t-input-adornment :prepend="I18N.Search" class="search">
             <t-input
+              clearable
               class="searchbar"
               v-model="searchContent"
+              :status="searchStatus"
               :placeholder="'UIN / ' + I18N.Title + ' / ' + I18N.DeviceId + ' / URL'"
             />
           </t-input-adornment>
@@ -124,11 +126,15 @@ export default {
         : this.list;
       return filterList.sort(this.sorterFactory(this.sortType));
     },
+    searchStatus() {
+      if (this.searchContent) {
+        return this.displayList.length ? 'success' : 'error';
+      }
+    },
   },
   watch: {
     searchContent(val) {
-      // 缓存搜索结果
-      try { window.localStorage.setItem('__remote_dev_search_content__', val) } catch { /* empty */ }
+      try { window.localStorage.setItem('__remote_dev_search_content__', val) } catch { /* empty */ } // 缓存搜索结果
     },
   },
   created() {
@@ -323,5 +329,16 @@ export default {
 
 .debug-options {
   margin-left: 8px;
+}
+</style>
+
+<style>
+.searchbar .t-input.t-is-success {
+  border: none;
+  background-color: var(--td-success-color-1);
+}
+.searchbar .t-input.t-is-error {
+  border: none;
+  background-color: var(--td-error-color-1);
 }
 </style>
