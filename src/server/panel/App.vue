@@ -99,6 +99,9 @@ export default {
     }
   },
   data() {
+    let searchContent = '';
+    try { searchContent = window.localStorage.getItem('__remote_dev_search_content__') || '' } catch { /* empty */ }
+
     return {
       list: [],
       sortOptions: [
@@ -110,7 +113,7 @@ export default {
       sortType: SORT.TIME_DESC,
       intervalTimer: null,
       isLoading: false,
-      searchContent: '',
+      searchContent,
       I18N,
     };
   },
@@ -120,6 +123,12 @@ export default {
         ? this.list.filter((info) => `${info.targetId};;;${info.pageUrl};;;${info.title};;;${info.uin}`.includes(this.searchContent))
         : this.list;
       return filterList.sort(this.sorterFactory(this.sortType));
+    },
+  },
+  watch: {
+    searchContent(val) {
+      // 缓存搜索结果
+      try { window.localStorage.setItem('__remote_dev_search_content__', val) } catch { /* empty */ }
     },
   },
   created() {
