@@ -75,7 +75,9 @@ export function init(opts = {}) {
   };
 
   const getDevUrl = (host) => {
-    return `//${host}${port ? (':' + port) : ''}/target/${getId()}?${query}`;
+    const match = host.match(/^(.+?)([\/|\?|#].*)$/);
+    const base = `${match?.[1] || host}${port ? (':' + port) : ''}${match?.[2] || ''}`;
+    return `//${base}/target/${getId()}?${query}`;
   };
 
   const initSocket = () => {
