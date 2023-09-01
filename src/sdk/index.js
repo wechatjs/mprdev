@@ -86,27 +86,31 @@ export function init(opts = {}) {
     socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
     socket.addEventListener('message', handleMessage);
     socket.addEventListener('open', () => {
-      domain = new ChromeDomain({ socket });
+      if (!domain) {
+        domain = new ChromeDomain({ socket });
+      }
     });
-    socket.addEventListener('error', () => {
+    socket.addEventListener('error', (e) => {
       if (!domain) {
         socket.close();
         if (++trialIdx < hostList.length) {
           // 如果还有host列表，继续尝试下一个
           initSocket();
-          console.warn('[RemoteDev][Connection]', `Failed to open a WebSocket connection of "${hostList[trialIdx - 1]}" and try the next host`);  
+          console.warn('[RemoteDev][Connection]', `Failed to open a WebSocket connection of "${hostList[trialIdx - 1]}" and try the next host`);
         } else {
           // 否则，所有host的websocket初始化失败，用第一个host来回退到httpsocket
           const devUrl = getDevUrl(hostList[0]);
           socket = new HttpSocket(`${location.protocol}${devUrl}`);
           socket.addEventListener('message', handleMessage);
-          domain = new ChromeDomain({ socket });    
-          console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP');      
+          domain = new ChromeDomain({ socket });
+          console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP');
         }
+      } else {
+        console.error('[RemoteDev][Connection]', e?.error?.toString() || 'WebSocket unknown error');
       }
     });
   };
-  
+
   initSocket();
 
   window.__remote_dev_sdk_inited__ = opts;
