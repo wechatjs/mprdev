@@ -106,7 +106,7 @@ export function init(opts = {}) {
           console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP');
         }
       } else {
-        console.error('[RemoteDev][Connection]', e?.error?.toString() || 'WebSocket unknown error');
+        console.error('[RemoteDev][Connection]', e?.error?.toString() || 'Unknown error of WebSocket');
       }
     });
   };
