@@ -61,18 +61,7 @@ export function init(opts = {}) {
   let socket;
   let domain;
   let trialIdx = 0;
-
-  const handleMessage = ({ data }) => {
-    return JDB.runInNativeEnv(() => {
-      try {
-        const message = JSON.parse(data);
-        const ret = domain.execute(message);
-        socket.send(JSON.stringify(ret));
-      } catch (err) {
-        console.error('[RemoteDev][Message]', err.toString());
-      }
-    });
-  };
+  let connectTimeout = null;
 
   const getDevUrl = (host) => {
     const match = host.match(/^(.+?)([\/|\?|#].*)$/);
@@ -83,16 +72,30 @@ export function init(opts = {}) {
   const initSocket = () => {
     const host = hostList[trialIdx];
     const devUrl = getDevUrl(host);
-    socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
-    socket.addEventListener('message', handleMessage);
-    socket.addEventListener('open', () => {
+
+    const handleMessage = ({ data }) => {
       if (!domain) {
-        domain = new ChromeDomain({ socket });
+        if (data === 'connected') {
+          clearTimeout(connectTimeout);
+          domain = new ChromeDomain({ socket });
+        }
+        return;
       }
-    });
-    socket.addEventListener('error', (e) => {
+      return JDB.runInNativeEnv(() => {
+        try {
+          const message = JSON.parse(data);
+          const ret = domain.execute(message);
+          socket.send(JSON.stringify(ret));
+        } catch (err) {
+          console.error('[RemoteDev][Message]', err.toString());
+        }
+      });
+    };
+
+    const handleError = (e) => {
       if (!domain) {
-        socket.close();
+        clearTimeout(connectTimeout);
+        socket?.close();
         if (++trialIdx < hostList.length) {
           // 如果还有host列表，继续尝试下一个
           initSocket();
@@ -108,7 +111,16 @@ export function init(opts = {}) {
       } else {
         console.error('[RemoteDev][Connection]', e?.message || e?.error?.toString?.() || 'Unknown error of WebSocket');
       }
-    });
+    };
+
+    const handleOpen = () => {
+      connectTimeout = setTimeout(() => handleError({ message: 'Open a WebSocket connection timeout'}), 1000);
+    };
+
+    socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
+    socket.addEventListener('message', handleMessage);
+    socket.addEventListener('error', handleError);
+    socket.addEventListener('open', handleOpen);
   };
 
   initSocket();

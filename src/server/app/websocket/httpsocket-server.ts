@@ -42,8 +42,11 @@ export function listenHttpSocket(router: Router) {
     const id = ctx.params.id;
     if (connections[id]) {
       ctx.body = connections[id].stream = new PassThrough();
-      connections[id].stream.write('data: connected\n\n');
-      connections[id].stream.addListener('close', () => {
+      const { stream, messages } = connections[id];
+      connections[id].expiry = Date.now() + cleanerInterval;
+      connections[id].messages = [];
+      stream.write(`data: ${JSON.stringify(messages)}\n\n`);
+      stream.addListener('close', () => {
         // 清空SSE流，以便定期清理
         if (connections[id]) {
           connections[id].expiry = Date.now() + cleanerInterval;

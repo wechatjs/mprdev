@@ -53,9 +53,6 @@ export default class HttpSocket {
       this.batchSendMessages();
     };
     socket.onmessage = (e) => {
-      if (e.data === 'connected') {
-        return;
-      }
       let messages = [];
       try {
         messages = JSON.parse(e.data);
