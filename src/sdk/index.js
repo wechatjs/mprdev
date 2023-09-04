@@ -74,9 +74,9 @@ export function init(opts = {}) {
     const devUrl = getDevUrl(host);
 
     const handleMessage = ({ data }) => {
-      if (!domain) {
-        if (data === 'connected') {
-          clearTimeout(connectTimeout);
+      if (data === 'connected') {
+        clearTimeout(connectTimeout);
+        if (!domain) {
           domain = new ChromeDomain({ socket });
         }
         return;
