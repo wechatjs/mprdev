@@ -35,7 +35,6 @@ export class Channel {
     }
     target.ws.on('message', this.handleTargetMessage.bind(this));
     target.ws.on('close', this.handleTargetClose.bind(this, target));
-    target.ws.send('connected');
     this.internalTargets.push(target);
     channelService.fireChannelChange(ChannelEventName.TARGET_ADD, this);
   }

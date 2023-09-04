@@ -6,6 +6,6 @@ export class Target {
     public ws: WebSocket,
     public info: TargetInfo,
   ) {
- 
+    ws.send('connected');
   }
 }
