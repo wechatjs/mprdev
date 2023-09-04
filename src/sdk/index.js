@@ -75,8 +75,8 @@ export function init(opts = {}) {
 
     const handleMessage = ({ data }) => {
       if (data === 'connected') {
-        clearTimeout(connectTimeout);
         if (!domain) {
+          clearTimeout(connectTimeout);
           domain = new ChromeDomain({ socket });
         }
         return;
@@ -114,7 +114,9 @@ export function init(opts = {}) {
     };
 
     const handleOpen = () => {
-      connectTimeout = setTimeout(() => handleError({ message: 'Open a WebSocket connection timeout'}), 1000);
+      if (!domain) {
+        connectTimeout = setTimeout(() => handleError({ message: 'Open a WebSocket connection timeout'}), 1000);
+      }
     };
 
     socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
