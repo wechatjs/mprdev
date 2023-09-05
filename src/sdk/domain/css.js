@@ -1,6 +1,6 @@
 import nodes from '../common/nodes';
 import * as stylesheet from '../common/stylesheet';
-import { escapeRegString, getAbsoultPath, getUrlWithRandomNum, isMatches, requestSource } from '../common/utils';
+import { escapeRegString, getAbsoultPath, isMatches, requestSource } from '../common/utils';
 import { calculate, compare } from 'specificity';
 import { Event } from './protocol';
 import BaseDomain from './domain';
@@ -299,10 +299,7 @@ export default class CSS extends BaseDomain {
       this.styles.set(styleSheetId, 'Cannot get style source code');
       this.styleRules.set(styleSheetId, this.parseStyleRules(''));
     };
-    // 先不带credentials请求一次，如果失败了再带credentials请求一次
-    requestSource(url, 'Stylesheet', false, onload, () => {
-      requestSource(getUrlWithRandomNum(url), 'Stylesheet', true, onload, onerror);
-    });
+    requestSource(url, 'Stylesheet', onload, onerror);
   }
 
   /**

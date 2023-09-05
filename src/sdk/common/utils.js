@@ -81,16 +81,35 @@ export function getUrlWithRandomNum(url) {
   return loc.href;
 }
 
-export function requestSource(url, type, credentials, onload, onerror) {
+export function requestSource(url, type, onload, onerror) {
+  const retryWithCookie = (requestId) => {
+    // 如果获取失败，带上cookie再请求一次
+    const xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
+    xhr.$$type = type;
+    xhr.$$requestWillBeSent = () => {}; // 去掉发送日志
+    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign({}, params, { requestId, url })); // 复用原有requestId和url
+    xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        typeof onload === 'function' && onload(xhr);
+      } else {
+        typeof onerror === 'function' && onerror(xhr);
+      }
+    };
+    xhr.open('GET', getUrlWithRandomNum(url));
+    xhr.send();
+  };
+
   const xhr = new XMLHttpRequest();
-  xhr.withCredentials = !!credentials;
   xhr.$$type = type;
-  xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
+  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(params);
+  xhr.onerror = () => retryWithCookie(xhr.$$request.requestId);
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {
       typeof onload === 'function' && onload(xhr);
     } else {
-      typeof onerror === 'function' && onerror(xhr);
+      retryWithCookie(xhr.$$request.requestId);
     }
   };
   xhr.open('GET', url);

@@ -162,17 +162,21 @@ export default class Network extends BaseDomain {
           request.hasPostData = !!data;
         }
 
-        instance.socketSend({
-          method: Event.requestWillBeSent,
-          params: {
-            requestId,
-            request,
-            documentURL: location.href,
-            timestamp: getTimestamp(),
-            wallTime: Date.now(),
-            type: this.$$type || 'XHR',
-          }
-        });
+        const requestWillBeSentEvent = (params) => instance.socketSend({ method: Event.requestWillBeSent, params });
+        const requestWillBeSentParams = {
+          requestId,
+          request,
+          documentURL: location.href,
+          timestamp: getTimestamp(),
+          wallTime: Date.now(),
+          type: this.$$type || 'XHR',
+        };
+
+        if (typeof this.$$requestWillBeSent === 'function') {
+          this.$$requestWillBeSent(requestWillBeSentParams, requestWillBeSentEvent);
+        } else {
+          requestWillBeSentEvent(requestWillBeSentParams);
+        }
 
         // 监听事件
         this.addEventListener('readystatechange', () => {
@@ -181,7 +185,9 @@ export default class Network extends BaseDomain {
             if (this.readyState === 4) {
               const headers = this.getAllResponseHeaders();
               const responseHeaders = Network.formatResponseHeader(headers);
-              instance.sendNetworkEvent({
+
+              const responseHasBeenReceivedEvent = (params) => instance.sendNetworkEvent(params);
+              const responseHasBeenReceivedParams = {
                 requestId,
                 url: getAbsoultPath(url),
                 headers: responseHeaders,
@@ -190,8 +196,14 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: this.responseText.length || Number(this.getResponseHeader('Content-Length')),
-              });
+                encodedDataLength: Number(this.getResponseHeader('Content-Length')) || this.responseText.length,
+              };
+
+              if (typeof this.$$responseHasBeenReceived === 'function') {
+                this.$$responseHasBeenReceived(responseHasBeenReceivedParams, responseHasBeenReceivedEvent);
+              } else {
+                responseHasBeenReceivedEvent(responseHasBeenReceivedParams);
+              }
             }
           });
         });
@@ -292,7 +304,7 @@ export default class Network extends BaseDomain {
               type: 'Fetch',
               blockedCookies: [],
               headers: responseHeaders,
-              encodedDataLength: responseBody.length || Number(headers.get('Content-Length')),
+              encodedDataLength: Number(headers.get('Content-Length')) || responseBody.length,
             });
 
             instance.responseText.set(requestId, responseBody);

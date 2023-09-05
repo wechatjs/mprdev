@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { formatErrorStack, getAbsoultPath, getUrlWithRandomNum, randomNum, requestSource } from '../common/utils';
+import { formatErrorStack, getAbsoultPath, randomNum, requestSource } from '../common/utils';
 import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -456,10 +456,7 @@ export default class Debugger extends BaseDomain {
       };
       Debugger.scriptIds.set(scriptId, url);
       Debugger.scriptUrls.set(url, scriptId);
-      // 先不带credentials请求一次，如果失败了再带credentials请求一次
-      requestSource(url, 'Script', false, onload, () => {
-        requestSource(getUrlWithRandomNum(url), 'Script', true, onload);
-      });
+      requestSource(url, 'Script', onload, onerror);
     }
   }
 

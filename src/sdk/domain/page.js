@@ -1,7 +1,7 @@
 import html2canvas from 'html2canvas';
 import BaseDomain from './domain';
 import { Event } from './protocol';
-import { getUrlWithRandomNum, requestSource } from '../common/utils';
+import { requestSource } from '../common/utils';
 
 export default class Page extends BaseDomain {
   namespace = 'Page';
@@ -116,10 +116,7 @@ export default class Page extends BaseDomain {
       const onerror = () => {
         this.frame.set(location.href, document.documentElement.outerHTML);
       };
-      // 先不带credentials请求一次，如果失败了再带credentials请求一次
-      requestSource(location.href, 'Document', false, onload, () => {
-        requestSource(getUrlWithRandomNum(location.href), 'Document', true, onload, onerror);
-      });
+      requestSource(location.href, 'Document', onload, onerror);
     }
   }
 
