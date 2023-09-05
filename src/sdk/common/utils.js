@@ -82,13 +82,22 @@ export function getUrlWithRandomNum(url) {
 }
 
 export function requestSource(url, type, onload, onerror) {
+  const entries = Array.from(performance.getEntries());
+  const entry = entries.find((e) => e.name === url);
+  const now = performance.now();
+  const wallTime = (Date.now() - now) / 1000;
+  const timestamp = (entry?.connectEnd || 1) / 1000;
+  const getLoadedTimestamp = () => (entry?.responseEnd || (timestamp + performance.now() - now)) / 1000;
+  const getReceivedTimestamp = () => (entry?.responseStart || (getLoadedTimestamp() * 1000)) / 1000;
+  const getResponseTimestamp = () => ({ receivedTimestamp: getReceivedTimestamp(), loadedTimestamp: getLoadedTimestamp() });
+
   const retryWithCookie = (requestId) => {
     // 如果获取失败，带上cookie再请求一次
     const xhr = new XMLHttpRequest();
     xhr.withCredentials = true;
     xhr.$$type = type;
     xhr.$$requestWillBeSent = () => {}; // 去掉发送日志
-    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign({}, params, { requestId, url })); // 复用原有requestId和url
+    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign({}, params, getResponseTimestamp(), { requestId, url })); // 复用原有requestId和url
     xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -103,7 +112,8 @@ export function requestSource(url, type, onload, onerror) {
 
   const xhr = new XMLHttpRequest();
   xhr.$$type = type;
-  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(params);
+  xhr.$$requestWillBeSent = (params, emitEvent) => emitEvent(Object.assign({}, params, { wallTime, timestamp })); // 还原真实的请求时间
+  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(Object.assign({}, params, getResponseTimestamp()));
   xhr.onerror = () => retryWithCookie(xhr.$$request.requestId);
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {

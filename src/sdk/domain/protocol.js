@@ -115,6 +115,7 @@ export const Event = {
   responseReceivedExtraInfo: 'Network.responseReceivedExtraInfo',
   responseReceived: 'Network.responseReceived',
   loadingFinished: 'Network.loadingFinished',
+  loadingFailed: 'Network.loadingFailed',
 
   screencastFrame: 'Page.screencastFrame',
 

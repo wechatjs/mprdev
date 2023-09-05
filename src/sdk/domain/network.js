@@ -4,7 +4,8 @@ import { Event } from './protocol';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
 
-const getTimestamp = () => Date.now() / 1000;
+const getWallTime = () => Date.now() / 1000;
+const getTimestamp = () => performance.now() / 1000;
 
 export default class Network extends BaseDomain {
   namespace = 'Network';
@@ -168,7 +169,7 @@ export default class Network extends BaseDomain {
           request,
           documentURL: location.href,
           timestamp: getTimestamp(),
-          wallTime: Date.now(),
+          wallTime: getWallTime(),
           type: this.$$type || 'XHR',
         };
 
@@ -272,7 +273,7 @@ export default class Network extends BaseDomain {
             requestId,
             documentURL: location.href,
             timestamp: getTimestamp(),
-            wallTime: Date.now(),
+            wallTime: getWallTime(),
             type: 'Fetch',
             request: sendRequest,
           }
@@ -331,8 +332,8 @@ export default class Network extends BaseDomain {
    */
   sendNetworkEvent(params) {
     const {
-      requestId, headers, headersText, type, url,
-      status, statusText, encodedDataLength,
+      requestId, headers, headersText, type, url, status, statusText,
+      encodedDataLength, receivedTimestamp, loadedTimestamp,
     } = params;
 
     this.socketSend({
@@ -345,18 +346,30 @@ export default class Network extends BaseDomain {
       params: {
         type,
         requestId,
-        timestamp: getTimestamp(),
+        timestamp: receivedTimestamp || getTimestamp(),
         response: { url, status, statusText, headers }
       },
     });
 
-    this.socketSend({
-      method: Event.loadingFinished,
-      params: {
-        requestId,
-        encodedDataLength,
-        timestamp: getTimestamp(),
-      },
-    });
+    if (status < 300) {
+      this.socketSend({
+        method: Event.loadingFinished,
+        params: {
+          requestId,
+          encodedDataLength,
+          timestamp: loadedTimestamp || getTimestamp(),
+        },
+      });
+    } else {
+      this.socketSend({
+        method: Event.loadingFailed,
+        params: {
+          type,
+          requestId,
+          errorText: statusText,
+          timestamp: loadedTimestamp || getTimestamp(),
+        },
+      });
+    }
   }
 }
