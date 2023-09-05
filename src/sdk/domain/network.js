@@ -6,6 +6,7 @@ import JDB from '../common/jdb';
 
 const getWallTime = () => Date.now() / 1000;
 const getTimestamp = () => performance.now() / 1000;
+const getHttpResLen = (s, st, h, bl) => `HTTP/1.1 ${s} ${st}\n${h}\n\n\n`.length + bl; // 计算统计响应大小的
 
 export default class Network extends BaseDomain {
   namespace = 'Network';
@@ -197,7 +198,7 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: Number(this.getResponseHeader('Content-Length')) || this.responseText.length,
+                encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || this.responseText.length),
               };
 
               if (typeof this.$$responseHasBeenReceived === 'function') {
@@ -305,7 +306,7 @@ export default class Network extends BaseDomain {
               type: 'Fetch',
               blockedCookies: [],
               headers: responseHeaders,
-              encodedDataLength: Number(headers.get('Content-Length')) || responseBody.length,
+              encodedDataLength: getHttpResLen(status, statusText, headersText, Number(headers.get('Content-Length')) || responseBody.length),
             });
 
             instance.responseText.set(requestId, responseBody);
