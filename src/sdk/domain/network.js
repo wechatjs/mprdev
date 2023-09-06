@@ -120,6 +120,18 @@ export default class Network extends BaseDomain {
   }
 
   /**
+   * 设置缓存禁用
+   * @public
+   * @param {Object} params
+   * @param {Boolean} params.cacheDisabled 是否禁用缓存
+   */
+  setCacheDisabled({ cacheDisabled }) {
+    if (cacheDisabled) {
+      console.warn('[RemoteDev][Network]', 'Cache disabled is unsupported');
+    }
+  }
+
+  /**
    * 获取请求的唯一标识id
    * @private
    */

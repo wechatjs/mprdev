@@ -59,6 +59,7 @@ export default {
     'setCookie',
     'deleteCookies',
     'getResponseBody',
+    'setCacheDisabled',
   ],
   Overlay: [
     'enable',
