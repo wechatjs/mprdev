@@ -403,25 +403,13 @@ export default class Network extends BaseDomain {
       },
     });
 
-    if (status && status < 300) {
-      this.socketSend({
-        method: Event.loadingFinished,
-        params: {
-          requestId,
-          encodedDataLength: fromDiskCache ? 0 : encodedDataLength,
-          timestamp: loadedTimestamp || getTimestamp(),
-        },
-      });
-    } else {
-      this.socketSend({
-        method: Event.loadingFailed,
-        params: {
-          type,
-          requestId,
-          errorText: statusText,
-          timestamp: loadedTimestamp || getTimestamp(),
-        },
-      });
-    }
+    this.socketSend({
+      method: Event.loadingFinished,
+      params: {
+        requestId,
+        encodedDataLength: fromDiskCache ? 0 : encodedDataLength,
+        timestamp: loadedTimestamp || getTimestamp(),
+      },
+    });
   }
 }
