@@ -384,7 +384,7 @@ export default class Network extends BaseDomain {
           statusText,
           headers,
           fromDiskCache,
-          timing: !timing ? {} : Object.assign({
+          timing: !timing ? null : Object.assign({
             receiveHeadersEnd: 0,
             sendStart: 0,
             sendEnd: 0,
