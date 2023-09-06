@@ -87,7 +87,7 @@ export function requestSource(url, type, onload, onerror) {
   const entry = entries.find((e) => e.name === url);
   const cached = !!entry && !entry.nextHopProtocol;
   const wallTime = (Date.now() - now) / 1000;
-  const timestamp = (entry?.connectEnd || entry?.fetchStart || 1) / 1000;
+  const timestamp = (entry?.connectEnd || entry?.fetchStart || now) / 1000;
   const getLoadedTimestamp = () => (entry?.responseEnd || (timestamp + performance.now() - now)) / 1000;
   const getResponseParams = () => ({
     receivedTimestamp: getLoadedTimestamp(),
