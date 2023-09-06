@@ -108,13 +108,13 @@ export default class Network extends BaseDomain {
   }
 
   /**
- * 设置cookie
- * @public
- * @param {Object} params
- * @param {String} params.name cookie的名称
- * @param {String} params.value cookie的值
- * @param {String} params.path 路径
- */
+   * 设置cookie
+   * @public
+   * @param {Object} params
+   * @param {String} params.name cookie的名称
+   * @param {String} params.value cookie的值
+   * @param {String} params.path 路径
+   */
   setCookie({ name, value, path }) {
     jsCookie.set(name, value, { path });
   }
@@ -334,7 +334,7 @@ export default class Network extends BaseDomain {
   sendNetworkEvent(params) {
     const {
       requestId, headers, headersText, type, url, status, statusText,
-      encodedDataLength, receivedTimestamp, loadedTimestamp,
+      encodedDataLength, fromDiskCache, receivedTimestamp, loadedTimestamp,
     } = params;
 
     this.socketSend({
@@ -348,7 +348,7 @@ export default class Network extends BaseDomain {
         type,
         requestId,
         timestamp: receivedTimestamp || getTimestamp(),
-        response: { url, status, statusText, headers }
+        response: { url, status, statusText, headers, fromDiskCache }
       },
     });
 
@@ -357,7 +357,7 @@ export default class Network extends BaseDomain {
         method: Event.loadingFinished,
         params: {
           requestId,
-          encodedDataLength,
+          encodedDataLength: fromDiskCache ? 0 : encodedDataLength,
           timestamp: loadedTimestamp || getTimestamp(),
         },
       });
