@@ -87,16 +87,21 @@ export function requestSource(url, type, onload, onerror) {
   const entry = entries.find((e) => e.name === url);
   const cached = !!entry && !entry.nextHopProtocol;
   const wallTime = (Date.now() - now) / 1000;
-  const connectEnd = (entry?.connectEnd || entry?.fetchStart || now);
-  const timestamp = connectEnd / 1000;
+  const fetchStart = (entry?.fetchStart || now);
+  const timestamp = fetchStart / 1000;
+  console.error(entry);
   const getResponseParams = (params) => Object.assign({}, params, {
-    timestamp: (entry?.responseEnd || (connectEnd + performance.now() - now)) / 1000,
+    timestamp: (entry?.responseEnd || (fetchStart + performance.now() - now)) / 1000,
     fromDiskCache: cached,
     timing: entry?.nextHopProtocol ? {
       requestTime: timestamp,
-      receiveHeadersEnd: entry?.responseStart - connectEnd,
-      sendStart: entry?.requestStart - connectEnd,
-      sendEnd: entry?.requestStart - connectEnd,
+      receiveHeadersEnd: entry?.responseStart - fetchStart,
+      sendStart: entry?.requestStart - fetchStart,
+      sendEnd: entry?.requestStart - fetchStart,
+      dnsStart: entry?.domainLookupStart - fetchStart,
+      dnsEnd: entry?.domainLookupEnd - fetchStart,
+      connectStart: entry?.connectStart - fetchStart,
+      connectEnd: entry?.connectEnd - fetchStart,
     } : params.timing,
   });
 
