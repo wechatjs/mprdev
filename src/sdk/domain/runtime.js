@@ -194,7 +194,7 @@ export default class Runtime extends BaseDomain {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        res.result = objectFormat(oriEval(expression), { preview: generatePreview });
+        res.result = objectFormat(oriEval(expression.trim()), { preview: generatePreview });
       } catch (err) {
         if (!silent) {
           res.result = objectFormat(err.toString(), { preview: generatePreview });
@@ -219,7 +219,7 @@ export default class Runtime extends BaseDomain {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        const callFunction = oriEval(`(function(){return ${functionDeclaration}})()`);
+        const callFunction = oriEval(`(function(){return ${functionDeclaration.trim()}})()`);
         const callReturn = callOnObject({ objectId, callFunction, callArguments });
         res.result = objectFormat(callReturn, { preview: generatePreview });
       } catch (err) {
