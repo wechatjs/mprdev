@@ -89,7 +89,6 @@ export function requestSource(url, type, onload, onerror) {
   const wallTime = (Date.now() - now) / 1000;
   const fetchStart = (entry?.fetchStart || now);
   const timestamp = fetchStart / 1000;
-  console.error(entry);
   const getResponseParams = (params) => Object.assign({}, params, {
     timestamp: (entry?.responseEnd || (fetchStart + performance.now() - now)) / 1000,
     fromDiskCache: cached,
