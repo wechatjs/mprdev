@@ -88,8 +88,17 @@ export function requestSource(url, type, onload, onerror) {
   const wallTime = (Date.now() - now) / 1000;
   const timestamp = (entry?.connectEnd || entry?.fetchStart || 1) / 1000;
   const getLoadedTimestamp = () => (entry?.responseEnd || (timestamp + performance.now() - now)) / 1000;
-  const getReceivedTimestamp = () => (entry?.responseStart || entry?.fetchStart || (getLoadedTimestamp() * 1000)) / 1000;
-  const getResponseParams = () => ({ receivedTimestamp: getReceivedTimestamp(), loadedTimestamp: getLoadedTimestamp(), fromDiskCache: !entry.transferSize });
+  const getResponseParams = () => ({
+    receivedTimestamp: getLoadedTimestamp(),
+    loadedTimestamp: getLoadedTimestamp(),
+    fromDiskCache: !entry.transferSize,
+    timing: {
+      requestTime: timestamp,
+      receiveHeadersEnd: entry?.responseStart - timestamp * 1000,
+      sendStart: entry?.requestStart - timestamp * 1000,
+      sendEnd: entry?.requestStart - timestamp * 1000,
+    },
+  });
 
   const retryWithCookie = (requestId) => {
     // 如果获取失败，带上cookie再请求一次

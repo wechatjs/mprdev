@@ -4,7 +4,7 @@ import { Event } from './protocol';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
 
-const getWallTime = () => Date.now() / 1000;
+const getWallTime = (now) => Date.now() / 1000 - now;
 const getTimestamp = () => performance.now() / 1000;
 const getHttpResLen = (s, st, h, bl) => `HTTP/1.1 ${s} ${st}\n${h}\n\n\n`.length + bl; // 计算统计响应大小的
 
@@ -176,13 +176,14 @@ export default class Network extends BaseDomain {
           request.hasPostData = !!data;
         }
 
+        const requestTime = getTimestamp();
         const requestWillBeSentEvent = (params) => instance.socketSend({ method: Event.requestWillBeSent, params });
         const requestWillBeSentParams = {
           requestId,
           request,
           documentURL: location.href,
-          timestamp: getTimestamp(),
-          wallTime: getWallTime(),
+          timestamp: requestTime,
+          wallTime: getWallTime(requestTime),
           type: this.$$type || 'XHR',
         };
 
@@ -193,10 +194,13 @@ export default class Network extends BaseDomain {
         }
 
         // 监听事件
+        let receiveHeadersEnd;
         this.addEventListener('readystatechange', () => {
           return JDB.runInNativeEnv(() => {
-            // 请求完成后，获取到http响应头
-            if (this.readyState === 4) {
+            if (this.readyState === 3) {
+              receiveHeadersEnd = (getTimestamp() - requestTime) * 1000 - 0.1;
+            } else if (this.readyState === 4) {
+              // 请求完成后，获取到http响应头
               const headers = this.getAllResponseHeaders();
               const responseHeaders = Network.formatResponseHeader(headers);
 
@@ -211,6 +215,12 @@ export default class Network extends BaseDomain {
                 status: this.status,
                 statusText: this.statusText,
                 encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || this.responseText.length),
+                timing: {
+                  requestTime,
+                  receiveHeadersEnd,
+                  sendStart: 0.1,
+                  sendEnd: 0.2,
+                },
               };
 
               if (typeof this.$$responseHasBeenReceived === 'function') {
@@ -268,6 +278,7 @@ export default class Network extends BaseDomain {
 
         url = getAbsoultPath(url);
         const requestId = instance.getRequestId();
+        const requestTime = getTimestamp();
         const sendRequest = {
           url,
           method,
@@ -285,8 +296,8 @@ export default class Network extends BaseDomain {
           params: {
             requestId,
             documentURL: location.href,
-            timestamp: getTimestamp(),
-            wallTime: getWallTime(),
+            timestamp: requestTime,
+            wallTime: getWallTime(requestTime),
             type: 'Fetch',
             request: sendRequest,
           }
@@ -304,6 +315,7 @@ export default class Network extends BaseDomain {
             });
 
             let responseBody = ''
+            const responseTime = getTimestamp();
             const contentType = headers.get('Content-Type');
             if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
               responseBody = response.clone().text();
@@ -319,6 +331,12 @@ export default class Network extends BaseDomain {
               blockedCookies: [],
               headers: responseHeaders,
               encodedDataLength: getHttpResLen(status, statusText, headersText, Number(headers.get('Content-Length')) || responseBody.length),
+              timing: {
+                requestTime,
+                receiveHeadersEnd: (responseTime - requestTime) * 1000 - 0.1,
+                sendStart: 0.1,
+                sendEnd: 0.2,
+              },
             });
 
             instance.responseText.set(requestId, responseBody);
@@ -345,7 +363,7 @@ export default class Network extends BaseDomain {
    */
   sendNetworkEvent(params) {
     const {
-      requestId, headers, headersText, type, url, status, statusText,
+      requestId, headers, headersText, type, url, status, statusText, timing,
       encodedDataLength, fromDiskCache, receivedTimestamp, loadedTimestamp,
     } = params;
 
@@ -360,11 +378,32 @@ export default class Network extends BaseDomain {
         type,
         requestId,
         timestamp: receivedTimestamp || getTimestamp(),
-        response: { url, status, statusText, headers, fromDiskCache }
+        response: {
+          url,
+          status,
+          statusText,
+          headers,
+          fromDiskCache,
+          timing: !timing ? {} : Object.assign({
+            receiveHeadersEnd: 0,
+            sendStart: 0,
+            sendEnd: 0,
+            pushStart: 0,
+            pushEnd: 0,
+            proxyStart: -1,
+            proxyEnd: -1,
+            dnsStart: -1,
+            dnsEnd: -1,
+            connectStart: -1,
+            connectEnd: -1,
+            sslStart: -1,
+            sslEnd: -1,
+          }, timing),
+        },
       },
     });
 
-    if (status < 300) {
+    if (status && status < 300) {
       this.socketSend({
         method: Event.loadingFinished,
         params: {
