@@ -85,20 +85,19 @@ export function requestSource(url, type, onload, onerror) {
   const now = performance.now();
   const entries = Array.from(performance.getEntries());
   const entry = entries.find((e) => e.name === url);
-  const cached = !!entry && !entry.nextHopProtocol;
   const wallTime = (Date.now() - now) / 1000;
   const timestamp = (entry?.connectEnd || entry?.fetchStart || now) / 1000;
   const getLoadedTimestamp = () => (entry?.responseEnd || (timestamp + performance.now() - now)) / 1000;
   const getResponseParams = () => ({
     receivedTimestamp: getLoadedTimestamp(),
     loadedTimestamp: getLoadedTimestamp(),
-    fromDiskCache: cached,
-    timing: cached ? null : {
+    fromDiskCache: !!entry && !entry.nextHopProtocol,
+    timing: entry?.nextHopProtocol ? {
       requestTime: timestamp,
       receiveHeadersEnd: entry?.responseStart - timestamp * 1000,
       sendStart: entry?.requestStart - timestamp * 1000,
       sendEnd: entry?.requestStart - timestamp * 1000,
-    },
+    } : null,
   });
 
   const retryWithCookie = (requestId) => {
