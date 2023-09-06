@@ -89,15 +89,15 @@ export function requestSource(url, type, onload, onerror) {
   const wallTime = (Date.now() - now) / 1000;
   const connectEnd = (entry?.connectEnd || entry?.fetchStart || now);
   const timestamp = connectEnd / 1000;
-  const getResponseParams = () => ({
+  const getResponseParams = (params) => Object.assign({}, params, {
     timestamp: (entry?.responseEnd || (connectEnd + performance.now() - now)) / 1000,
     fromDiskCache: cached,
-    timing: cached ? null : {
+    timing: entry?.nextHopProtocol ? {
       requestTime: timestamp,
-      receiveHeadersEnd: entry?.responseStart && (entry?.responseStart - connectEnd) || (performance.now() - connectEnd - 0.1),
-      sendStart: entry?.requestStart && (entry?.requestStart - connectEnd) || 0.1,
-      sendEnd: entry?.requestStart && (entry?.requestStart - connectEnd) || 0.2,
-    },
+      receiveHeadersEnd: entry?.responseStart - connectEnd,
+      sendStart: entry?.requestStart - connectEnd,
+      sendEnd: entry?.requestStart - connectEnd,
+    } : params.timing,
   });
 
   const retryWithCookie = (requestId) => {
@@ -106,7 +106,7 @@ export function requestSource(url, type, onload, onerror) {
     xhr.withCredentials = true;
     xhr.$$type = type;
     xhr.$$requestWillBeSent = () => {}; // 去掉发送日志
-    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign({}, params, getResponseParams(), { requestId, url })); // 复用原有requestId和url
+    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign(getResponseParams(params), { requestId, url })); // 复用原有requestId和url
     xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -122,7 +122,7 @@ export function requestSource(url, type, onload, onerror) {
   const xhr = new XMLHttpRequest();
   xhr.$$type = type;
   xhr.$$requestWillBeSent = (params, emitEvent) => emitEvent(Object.assign({}, params, { wallTime, timestamp })); // 还原真实的请求时间
-  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(Object.assign({}, params, getResponseParams()));
+  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(getResponseParams(params));
   xhr.onerror = () => retryWithCookie(xhr.$$request.requestId);
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {

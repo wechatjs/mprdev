@@ -166,9 +166,6 @@ export default class Network extends BaseDomain {
 
     XMLHttpRequest.prototype.send = function (data) {
       return JDB.runInNativeEnv(() => {
-        // 调用原始的send方法
-        xhrSend.call(this, data);
-
         const request = this.$$request;
         const { requestId, url, method } = request;
         if (method.toLowerCase() === 'post') {
@@ -194,11 +191,11 @@ export default class Network extends BaseDomain {
         }
 
         // 监听事件
-        let receiveHeadersEnd;
+        let sendStart;
         this.addEventListener('readystatechange', () => {
           return JDB.runInNativeEnv(() => {
-            if (this.readyState === 3) {
-              receiveHeadersEnd = (getTimestamp() - requestTime) * 1000 - 0.1;
+            if (this.readyState === 2) {
+              sendStart = (getTimestamp() - requestTime) * 1000 / 2;
             } else if (this.readyState === 4) {
               // 请求完成后，获取到http响应头
               const headers = this.getAllResponseHeaders();
@@ -217,9 +214,9 @@ export default class Network extends BaseDomain {
                 encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || this.responseText.length),
                 timing: {
                   requestTime,
-                  receiveHeadersEnd,
-                  sendStart: 0.1,
-                  sendEnd: 0.2,
+                  receiveHeadersEnd: (getTimestamp() - requestTime) * 1000 - 0.01,
+                  sendEnd: sendStart + 0.01,
+                  sendStart,
                 },
               };
 
@@ -228,18 +225,17 @@ export default class Network extends BaseDomain {
               } else {
                 responseHasBeenReceivedEvent(responseHasBeenReceivedParams);
               }
+
+              if (this.responseType === '' || this.responseType === 'text') {
+                // 请求结束后缓存响应结果，在getResponseBody时会用到
+                instance.responseText.set(this.$$request.requestId, this.responseText);
+              }
             }
           });
         });
 
-        this.addEventListener('load', () => {
-          return JDB.runInNativeEnv(() => {
-            if (this.responseType === '' || this.responseType === 'text') {
-              // 请求结束后缓存响应结果，在getResponseBody时会用到
-              instance.responseText.set(this.$$request.requestId, this.responseText);
-            }
-          });
-        });
+        // 调用原始的send方法
+        xhrSend.call(this, data);
       });
     };
 
@@ -316,6 +312,7 @@ export default class Network extends BaseDomain {
 
             let responseBody = ''
             const responseTime = getTimestamp();
+            const sendStart = (responseTime - requestTime) * 1000 / 2;
             const contentType = headers.get('Content-Type');
             if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
               responseBody = response.clone().text();
@@ -333,9 +330,9 @@ export default class Network extends BaseDomain {
               encodedDataLength: getHttpResLen(status, statusText, headersText, Number(headers.get('Content-Length')) || responseBody.length),
               timing: {
                 requestTime,
-                receiveHeadersEnd: (responseTime - requestTime) * 1000 - 0.1,
-                sendStart: 0.1,
-                sendEnd: 0.2,
+                receiveHeadersEnd: sendStart * 2 - 0.01,
+                sendEnd: sendStart + 0.01,
+                sendStart,
               },
             });
 
