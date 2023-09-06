@@ -85,19 +85,19 @@ export function requestSource(url, type, onload, onerror) {
   const now = performance.now();
   const entries = Array.from(performance.getEntries());
   const entry = entries.find((e) => e.name === url);
+  const cached = !!entry && !entry.nextHopProtocol;
   const wallTime = (Date.now() - now) / 1000;
-  const timestamp = (entry?.connectEnd || entry?.fetchStart || now) / 1000;
-  const getLoadedTimestamp = () => (entry?.responseEnd || (timestamp + performance.now() - now)) / 1000;
+  const connectEnd = (entry?.connectEnd || entry?.fetchStart || now);
+  const timestamp = connectEnd / 1000;
   const getResponseParams = () => ({
-    receivedTimestamp: getLoadedTimestamp(),
-    loadedTimestamp: getLoadedTimestamp(),
-    fromDiskCache: !!entry && !entry.nextHopProtocol,
-    timing: entry?.nextHopProtocol ? {
+    timestamp: (entry?.responseEnd || (connectEnd + performance.now() - now)) / 1000,
+    fromDiskCache: cached,
+    timing: cached ? null : {
       requestTime: timestamp,
-      receiveHeadersEnd: entry?.responseStart - timestamp * 1000,
-      sendStart: entry?.requestStart - timestamp * 1000,
-      sendEnd: entry?.requestStart - timestamp * 1000,
-    } : null,
+      receiveHeadersEnd: entry?.responseStart && (entry?.responseStart - connectEnd) || (performance.now() - connectEnd - 0.1),
+      sendStart: entry?.requestStart && (entry?.requestStart - connectEnd) || 0.1,
+      sendEnd: entry?.requestStart && (entry?.requestStart - connectEnd) || 0.2,
+    },
   });
 
   const retryWithCookie = (requestId) => {

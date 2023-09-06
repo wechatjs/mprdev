@@ -363,8 +363,8 @@ export default class Network extends BaseDomain {
    */
   sendNetworkEvent(params) {
     const {
-      requestId, headers, headersText, type, url, status, statusText, timing,
-      encodedDataLength, fromDiskCache, receivedTimestamp, loadedTimestamp,
+      requestId, headers, headersText, type, url, status, statusText,
+      encodedDataLength, fromDiskCache, timestamp, timing,
     } = params;
 
     this.socketSend({
@@ -377,7 +377,7 @@ export default class Network extends BaseDomain {
       params: {
         type,
         requestId,
-        timestamp: receivedTimestamp || getTimestamp(),
+        timestamp: timestamp || getTimestamp(),
         response: {
           url,
           status,
@@ -408,7 +408,7 @@ export default class Network extends BaseDomain {
       params: {
         requestId,
         encodedDataLength: fromDiskCache ? 0 : encodedDataLength,
-        timestamp: loadedTimestamp || getTimestamp(),
+        timestamp: timestamp || getTimestamp(),
       },
     });
   }
