@@ -12,6 +12,6 @@ jobs:
       - name: Setup node environment
         uses: actions/setup-node@v3.4.1
       - name: Install node modules
-        run: npm install
+        run: npm install --registry=https://registry.npmjs.org
       - name: Build code
         run: npm run build
