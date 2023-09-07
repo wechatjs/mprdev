@@ -27,17 +27,6 @@ export default class Runtime extends BaseDomain {
 
   isEnabled = false;
 
-  socketSend = (type, data) => {
-    if (type === 'console') {
-      this.cacheConsole.push(data);
-    } else if (type === 'error') {
-      this.cacheError.push(data);
-    }
-    if (this.isEnabled) {
-      this.send(data);
-    }
-  };
-
   constructor(options) {
     super(options);
     this.hookConsole();
@@ -322,5 +311,20 @@ export default class Runtime extends BaseDomain {
     // 全局监听错误
     window.addEventListener('error', (e) => exceptionThrown(e.error));
     window.addEventListener('unhandledrejection', (e) => exceptionThrown(e.reason));
+  }
+
+  /**
+   * 缓存并发送数据
+   * @private
+   */
+  socketSend(type, data) {
+    if (type === 'console') {
+      this.cacheConsole.push(data);
+    } else if (type === 'error') {
+      this.cacheError.push(data);
+    }
+    if (this.isEnabled) {
+      this.send(data);
+    }
   }
 }

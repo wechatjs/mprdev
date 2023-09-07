@@ -366,6 +366,7 @@ export default class Network extends BaseDomain {
 
   /**
    * 拦截Image请求
+   * @private
    */
   hookImage() {
     const instance = this;
@@ -386,6 +387,7 @@ export default class Network extends BaseDomain {
 
   /**
    * 发送图片network相关协议
+   * @private
    */
   sendImgNetworkEvent(url, responseTime, success) {
     const instance = this;
@@ -453,6 +455,7 @@ export default class Network extends BaseDomain {
 
   /**
    * 发送network相关的协议
+   * @private
    */
   sendNetworkEvent(params) {
     const {
@@ -509,6 +512,7 @@ export default class Network extends BaseDomain {
 
   /**
    * 缓存并发送数据
+   * @private
    */
   socketSend(data) {
     this.cacheRequest.push(data);
