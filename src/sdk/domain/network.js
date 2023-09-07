@@ -81,17 +81,19 @@ export default class Network extends BaseDomain {
    * @param {Number} params.requestId 请求唯一标识id
    */
   getResponseBody({ requestId }) {
-    const body = this.responseText.get(requestId);
-    const base64Match = body?.match(/^data:.+;base64,/);
-    if (base64Match?.index === 0) {
-      return {
-        body: body.substring(base64Match[0].length),
-        base64Encoded: true,
-      };
+    let body = this.responseText.get(requestId);
+    const dataURLMatch = body?.match(/^data:.+?,/);
+    const base64Encoded = dataURLMatch?.index === 0;
+    if (base64Encoded) {
+      const prefix = dataURLMatch[0];
+      body = body.substring(prefix.length);
+      if (!prefix.includes('base64')) {
+        body = window.btoa(decodeURIComponent(body));
+      }
     }
     return {
       body,
-      base64Encoded: false,
+      base64Encoded,
     };
   }
 
@@ -393,8 +395,25 @@ export default class Network extends BaseDomain {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
-    oriFetch(requestUrl, { responseType: 'blob' })
+    const dataURLMatch = url.match((/^data:(.+?),/));
+
+    let imgInfoRequest;
+    if (dataURLMatch) {
+      imgInfoRequest = Promise.resolve({
+        headers: new Map([['Content-Type', dataURLMatch[1]]]),
+        status: 200,
+        statusText: '',
+        blob: () => Promise.resolve(url),
+      });
+    } else {
+      imgInfoRequest = oriFetch(requestUrl, { responseType: 'blob' }).catch(() => {
+        console.error('[RemoteDev][Network]', `Failed to get image request information of "${url}"`);
+      });
+    }
+
+    imgInfoRequest
       .then((response) => {
+        if (!response) return; // 如果没有，就是请求失败了，不处理了
         const { headers, status: fetchStatus, statusText } = response;
         const responseEnd = getTimestamp();
         const responseHeaders = {};
@@ -447,9 +466,14 @@ export default class Network extends BaseDomain {
               sendStart,
             },
           });
-          const reader = new FileReader();
-          reader.onload = () => instance.responseText.set(requestId, reader.result);
-          reader.readAsDataURL(blob);
+
+          if (typeof blob === 'string') {
+            instance.responseText.set(requestId, blob);
+          } else {
+            const reader = new FileReader();
+            reader.onload = () => instance.responseText.set(requestId, reader.result);
+            reader.readAsDataURL(blob);
+          }
         });
       });
   }
