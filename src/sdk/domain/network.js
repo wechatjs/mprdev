@@ -372,19 +372,53 @@ export default class Network extends BaseDomain {
    */
   hookImage() {
     const instance = this;
-    const handleImage = (e, success) => {
-      if (e.target.tagName.toLowerCase() === 'img') {
-        const url = e.target.src;
-        const responseTime = getTimestamp();
-        if (this.isEnabled) {
-          instance.sendImgNetworkEvent(url, responseTime, success);
-        } else {
-          this.cacheImgRequest.push({ url, responseTime, success });
-        }
+
+    const onImageLoad = (url, success) => {
+      const responseTime = getTimestamp();
+      if (this.isEnabled) {
+        instance.sendImgNetworkEvent(url, responseTime, success);
+      } else {
+        this.cacheImgRequest.push({ url, responseTime, success });
       }
     };
-    document.addEventListener('load', (e) => handleImage(e, true), true);
-    document.addEventListener('error', (e) => handleImage(e, false), true);
+
+    const handleImage = (img) => {
+      if (!img.$$loadListened) {
+        img.$$loadListened = 1;
+        img.addEventListener('load', () => onImageLoad(img.getAttribute('src'), true));
+        img.addEventListener('error', () => onImageLoad(img.getAttribute('src'), false));
+      }
+      if (img.getAttribute('src') && img.complete) {
+        onImageLoad(img.getAttribute('src'), true);
+      }
+    };
+
+    const init = () => {
+      const imgList = document.getElementsByTagName('img');
+      Array.from(imgList).forEach(handleImage);
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'loaded' || document.readyState === 'interactive') {
+      init();
+    } else {
+      document.addEventListener('DOMContentLoaded', init);
+    }
+
+    const observer = new MutationObserver((mutationList) => {
+      return JDB.runInNativeEnv(() => {
+        mutationList.forEach((mutation) => {
+          const { type, addedNodes } = mutation;
+          if (type === 'childList' && addedNodes.length) {
+            addedNodes.forEach((node) => {
+              if (node.tagName?.toLowerCase() === 'img') {
+                handleImage(node);
+              }
+            });
+          }
+        });
+      });
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   /**
@@ -414,6 +448,7 @@ export default class Network extends BaseDomain {
     imgInfoRequest
       .then((response) => {
         if (!response) return; // 如果没有，就是请求失败了，不处理了
+
         const { headers, status: fetchStatus, statusText } = response;
         const responseEnd = getTimestamp();
         const responseHeaders = {};

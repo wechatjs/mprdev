@@ -97,8 +97,9 @@ export function getImgRequestUrl(url) {
   if (url.match(/^http:\/\/localhost:\d+\/hevc/)) {
     const loc = new URL(url);
     const oriUrl = loc.searchParams.get('url');
-    return decodeURIComponent(oriUrl);
+    url = decodeURIComponent(oriUrl || url);
   }
+  url = url.replace(/^http:\/\//, '//');
   return url;
 }
 
