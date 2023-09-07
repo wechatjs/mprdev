@@ -1,5 +1,5 @@
 import jsCookie from 'js-cookie';
-import { getAbsoultPath, key2UpperCase } from '../common/utils';
+import { getAbsoultPath, getImgRequestUrl, key2UpperCase } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
@@ -392,7 +392,8 @@ export default class Network extends BaseDomain {
   sendImgNetworkEvent(url, responseTime, success) {
     const instance = this;
     const requestStart = getTimestamp();
-    oriFetch(url, { responseType: 'blob' })
+    const requestUrl = getImgRequestUrl(url);
+    oriFetch(requestUrl, { responseType: 'blob' })
       .then((response) => {
         const { headers, status: fetchStatus, statusText } = response;
         const responseEnd = getTimestamp();
@@ -480,7 +481,7 @@ export default class Network extends BaseDomain {
           statusText,
           headers,
           fromDiskCache,
-          mimeType: (headers['Content-Type'] || headers['content-type']).split(';')[0],
+          mimeType: (headers['Content-Type'] || headers['content-type'] || '').split(';')[0],
           timing: !timing ? null : Object.assign({
             receiveHeadersEnd: 0,
             sendStart: 0,

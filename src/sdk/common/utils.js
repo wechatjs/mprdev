@@ -53,7 +53,19 @@ export function getPropertyDescriptor(obj, key) {
 }
 
 export function formatErrorStack(error, callFrames) {
-  const stack = callFrames.map((cf) => `    at ${cf.functionName} (${cf.url}:${cf.lineNumber + 1}:${cf.columnNumber + 1})`).join('\n');
+  const stack = callFrames.map((cf) => {
+    let line = `    at ${cf.functionName}`;
+    if (cf.url) {
+      line += ` (${cf.url}`;
+      if (cf.lineNumber + 1) {
+        line += `:${cf.lineNumber + 1}`;
+        if (cf.columnNumber + 1) {
+          line += `:${cf.columnNumber + 1}`;
+        }
+      }
+      line += `)`;
+    }
+  }).join('\n');
   return `${error.name}: ${error.message}\n${stack}`;
 }
 
@@ -79,6 +91,15 @@ export function getUrlWithRandomNum(url) {
   const loc = new URL(url);
   loc.searchParams.append('r', randomNum());
   return loc.href;
+}
+
+export function getImgRequestUrl(url) {
+  if (url.match(/^http:\/\/localhost:\d+\/hevc/)) {
+    const loc = new URL(url);
+    const oriUrl = loc.searchParams.get('url');
+    return decodeURIComponent(oriUrl);
+  }
+  return url;
 }
 
 export function requestSource(url, type, onload, onerror) {
