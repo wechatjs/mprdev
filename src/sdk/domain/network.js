@@ -387,9 +387,9 @@ export default class Network extends BaseDomain {
         img.$$loadListened = 1;
         img.addEventListener('load', () => onImageLoad(img.getAttribute('src'), true));
         img.addEventListener('error', () => onImageLoad(img.getAttribute('src'), false));
-      }
-      if (img.getAttribute('src') && img.complete) {
-        onImageLoad(img.getAttribute('src'), true);
+        if (img.getAttribute('src') && img.complete) {
+          onImageLoad(img.getAttribute('src'), true);
+        }
       }
     };
 
@@ -419,6 +419,14 @@ export default class Network extends BaseDomain {
       });
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
+
+    const oriImgSrcDptor = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
+    Object.defineProperty(Image.prototype, 'src', Object.assign({}, oriImgSrcDptor, {
+      set(val) {
+        oriImgSrcDptor.set.call(this, val);
+        handleImage(this);
+      },
+    }));
   }
 
   /**
