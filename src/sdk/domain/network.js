@@ -4,6 +4,7 @@ import { Event } from './protocol';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
 
+const oriFetch = window.fetch;
 const getWallTime = (now) => Date.now() / 1000 - now;
 const getTimestamp = () => performance.now() / 1000;
 const getHttpResLen = (s, st, h, bl) => `HTTP/1.1 ${s} ${st}\n${h}\n\n\n`.length + bl; // 计算统计响应大小的
@@ -17,22 +18,19 @@ export default class Network extends BaseDomain {
   // 请求响应的集合
   responseText = new Map();
 
+  // 图片缓存的请求
+  cacheImgRequest = [];
+
   // 用户缓存的请求
   cacheRequest = [];
 
   isEnabled = false;
 
-  socketSend = (data) => {
-    this.cacheRequest.push(data);
-    if (this.isEnabled) {
-      this.send(data);
-    }
-  };
-
   constructor(options) {
     super(options);
     this.hookXhr();
     this.hookFetch();
+    this.hookImage();
   }
 
   /**
@@ -69,8 +67,11 @@ export default class Network extends BaseDomain {
    * @public
    */
   enable() {
-    this.isEnabled = true;
     this.cacheRequest.forEach((data) => this.send(data));
+    if (!this.isEnabled) {
+      this.isEnabled = true;
+      this.cacheImgRequest.forEach(({ url, responseTime, success }) => this.sendImgNetworkEvent(url, responseTime, success));
+    }
   }
 
   /**
@@ -80,8 +81,16 @@ export default class Network extends BaseDomain {
    * @param {Number} params.requestId 请求唯一标识id
    */
   getResponseBody({ requestId }) {
+    const body = this.responseText.get(requestId);
+    const base64Match = body?.match(/^data:.+;base64,/);
+    if (base64Match?.index === 0) {
+      return {
+        body: body.substring(base64Match[0].length),
+        base64Encoded: true,
+      };
+    }
     return {
-      body: this.responseText.get(requestId),
+      body,
       base64Encoded: false,
     };
   }
@@ -211,7 +220,7 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || this.responseText.length),
+                encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || 0),
                 timing: {
                   requestTime,
                   receiveHeadersEnd: (getTimestamp() - requestTime) * 1000 - 0.01,
@@ -310,13 +319,9 @@ export default class Network extends BaseDomain {
               headersText += `${key}: ${val}\r\n`;
             });
 
-            let responseBody = ''
             const responseTime = getTimestamp();
             const sendStart = (responseTime - requestTime) * 1000 / 2;
             const contentType = headers.get('Content-Type');
-            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
-              responseBody = response.clone().text();
-            }
 
             instance.sendNetworkEvent({
               url,
@@ -327,7 +332,7 @@ export default class Network extends BaseDomain {
               type: 'Fetch',
               blockedCookies: [],
               headers: responseHeaders,
-              encodedDataLength: getHttpResLen(status, statusText, headersText, Number(headers.get('Content-Length')) || responseBody.length),
+              encodedDataLength: getHttpResLen(status, statusText, headersText, Number(headers.get('Content-Length')) || 0),
               timing: {
                 requestTime,
                 receiveHeadersEnd: sendStart * 2 - 0.01,
@@ -336,7 +341,11 @@ export default class Network extends BaseDomain {
               },
             });
 
-            instance.responseText.set(requestId, responseBody);
+            if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
+              response.clone().text().then((responseBody) => {
+                instance.responseText.set(requestId, responseBody);
+              });
+            }
 
             return response;
           });
@@ -353,6 +362,93 @@ export default class Network extends BaseDomain {
         });
       });
     };
+  }
+
+  /**
+   * 拦截Image请求
+   */
+  hookImage() {
+    const instance = this;
+    const handleImage = (e, success) => {
+      if (e.target.tagName.toLowerCase() === 'img') {
+        const url = e.target.src;
+        const responseTime = getTimestamp();
+        if (this.isEnabled) {
+          instance.sendImgNetworkEvent(url, responseTime, success);
+        } else {
+          this.cacheImgRequest.push({ url, responseTime, success });
+        }
+      }
+    };
+    document.addEventListener('load', (e) => handleImage(e, true), true);
+    document.addEventListener('error', (e) => handleImage(e, false), true);
+  }
+
+  /**
+   * 发送图片network相关协议
+   */
+  sendImgNetworkEvent(url, responseTime, success) {
+    const instance = this;
+    const requestStart = getTimestamp();
+    oriFetch(url, { responseType: 'blob' })
+      .then((response) => {
+        const { headers, status: fetchStatus, statusText } = response;
+        const responseEnd = getTimestamp();
+        const responseHeaders = {};
+        let headersText = '';
+        headers.forEach((val, key) => {
+          key = key2UpperCase(key);
+          responseHeaders[key] = val;
+          headersText += `${key}: ${val}\r\n`;
+        });
+
+        const status = success ? 200 : fetchStatus;
+        const requestId = instance.getRequestId();
+        const requestTime = responseTime - responseEnd + requestStart;
+        const sendStart = (responseTime - requestTime) * 1000 / 4;
+        const sendRequest = {
+          url,
+          method: 'GET',
+          requestId,
+          headers: Network.getDefaultHeaders(),
+        };
+
+        instance.socketSend({
+          method: Event.requestWillBeSent,
+          params: {
+            requestId,
+            documentURL: location.href,
+            timestamp: requestTime,
+            wallTime: getWallTime(requestTime),
+            type: 'Image',
+            request: sendRequest,
+          },
+        });
+
+        response.blob().then((blob) => {
+          instance.sendNetworkEvent({
+            url,
+            requestId,
+            status,
+            statusText,
+            headersText,
+            type: 'Image',
+            blockedCookies: [],
+            timestamp: responseTime,
+            headers: responseHeaders,
+            encodedDataLength: getHttpResLen(status, statusText, headersText, blob.size || 0),
+            timing: {
+              requestTime,
+              receiveHeadersEnd: sendStart * 2 - 0.01,
+              sendEnd: sendStart + 0.01,
+              sendStart,
+            },
+          });
+          const reader = new FileReader();
+          reader.onload = () => instance.responseText.set(requestId, reader.result);
+          reader.readAsDataURL(blob);
+        });
+      });
   }
 
   /**
@@ -381,6 +477,7 @@ export default class Network extends BaseDomain {
           statusText,
           headers,
           fromDiskCache,
+          mimeType: (headers['Content-Type'] || headers['content-type']).split(';')[0],
           timing: !timing ? null : Object.assign({
             receiveHeadersEnd: 0,
             sendStart: 0,
@@ -408,5 +505,15 @@ export default class Network extends BaseDomain {
         timestamp: timestamp || getTimestamp(),
       },
     });
+  }
+
+  /**
+   * 缓存并发送数据
+   */
+  socketSend(data) {
+    this.cacheRequest.push(data);
+    if (this.isEnabled) {
+      this.send(data);
+    }
   }
 }

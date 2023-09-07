@@ -101,7 +101,7 @@ export function requestSource(url, type, onload, onerror) {
       dnsEnd: entry?.domainLookupEnd - fetchStart,
       connectStart: entry?.connectStart - fetchStart,
       connectEnd: entry?.connectEnd - fetchStart,
-    } : params.timing,
+    } : (entry ? null : params.timing),
   });
 
   const retryWithCookie = (requestId) => {
