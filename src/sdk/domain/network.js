@@ -498,7 +498,9 @@ export default class Network extends BaseDomain {
       });
     } else {
       imgInfoRequest = oriFetch(requestUrl, { responseType: 'blob' }).catch(() => {
-        console.error('[RemoteDev][Network]', `Failed to get image request information of "${url}"`);
+        if (success) {
+          console.error('[RemoteDev][Network]', `Failed to get image request information of "${url}"`);
+        }
       });
     }
 
