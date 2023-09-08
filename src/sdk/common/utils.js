@@ -105,20 +105,22 @@ export function getImgRequestUrl(url) {
 
 export function getResponseParams(params, entry, requestTime, responseTime) {
   const now = requestTime * 1000;
-  const cached = !!entry && (!entry.nextHopProtocol && entry.duration < 5);
+  const cached = !!entry && (!entry.nextHopProtocol && entry.duration < 30);
   const fetchStart = entry?.fetchStart || now;
   return Object.assign({}, params, {
     timestamp: responseTime,
     fromDiskCache: cached,
     timing: entry?.nextHopProtocol ? {
       requestTime,
-      receiveHeadersEnd: entry?.responseStart - fetchStart,
-      sendStart: entry?.requestStart - fetchStart,
-      sendEnd: entry?.requestStart - fetchStart,
-      dnsStart: entry?.domainLookupStart - fetchStart || -1,
-      dnsEnd: entry?.domainLookupEnd - fetchStart || -1,
-      connectStart: entry?.connectStart - fetchStart || -1,
-      connectEnd: entry?.connectEnd - fetchStart || -1,
+      receiveHeadersEnd: entry?.responseStart && entry?.responseStart - fetchStart,
+      sendStart: entry?.requestStart && entry?.requestStart - fetchStart,
+      sendEnd: entry?.requestStart && entry?.requestStart - fetchStart,
+      dnsStart: entry?.domainLookupStart && entry?.domainLookupStart - fetchStart || -1,
+      dnsEnd: entry?.domainLookupEnd && entry?.domainLookupEnd - fetchStart || -1,
+      connectStart: entry?.connectStart && entry?.connectStart - fetchStart || -1,
+      connectEnd: entry?.connectEnd && entry?.connectEnd - fetchStart || -1,
+      sslStart: entry?.secureConnectionStart && entry?.secureConnectionStart - fetchStart || -1,
+      sslEnd: entry?.secureConnectionStart && entry?.connectEnd - fetchStart || -1,
     } : (entry ? null : params.timing),
   });
 };
