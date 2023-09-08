@@ -527,6 +527,10 @@ export default class Network extends BaseDomain {
           headers: Network.getDefaultHeaders(),
         };
 
+        if (!success) {
+          console.error(`GET ${url} ${status}`);
+        }
+
         instance.socketSend({
           method: Event.requestWillBeSent,
           params: {
