@@ -75,7 +75,7 @@ export default class Network extends BaseDomain {
     this.cacheRequest.forEach((data) => this.send(data));
     if (!this.isEnabled) {
       this.isEnabled = true;
-      this.cacheImgRequest.forEach(({ url, entry, responseTime, success }) => this.sendImgNetworkEvent(url, entry, responseTime, success));
+      this.cacheImgRequest.forEach((args) => this.sendImgNetworkEvent(...args));
     }
   }
 
@@ -420,31 +420,38 @@ export default class Network extends BaseDomain {
   hookImage() {
     const instance = this;
 
-    const onImageLoad = (url, success) => {
+    const onImageLoad = (img, success) => {
+      const url = img.getAttribute('src') && img.src;
       const responseTime = getTimestamp();
       const entrys = Array.from(performance.getEntries?.() || []).reverse();
       const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
-      if (this.isEnabled) {
-        instance.sendImgNetworkEvent(url, entry, responseTime, success);
+      const inDoc = document.documentElement.contains(img);
+      if (inDoc) {
+        img.$$appendChecked = 1;
       } else {
-        this.cacheImgRequest.push({ url, entry, responseTime, success });
+        delete img.$$appendChecked;
+      }
+      if (this.isEnabled) {
+        instance.sendImgNetworkEvent(url, entry, responseTime, inDoc, success);
+      } else {
+        this.cacheImgRequest.push([url, entry, responseTime, inDoc, success]);
       }
     };
 
     const handleImage = (img) => {
       if (!img.$$loadListened) {
         img.$$loadListened = 1;
-        img.addEventListener('load', () => onImageLoad(img.getAttribute('src') && img.src, true));
-        img.addEventListener('error', () => onImageLoad(img.getAttribute('src') && img.src, false));
-        if (img.getAttribute('src') && img.complete) {
-          onImageLoad(img.getAttribute('src') && img.src, true);
-        }
+        img.addEventListener('load', () => onImageLoad(img, true));
+        img.addEventListener('error', () => onImageLoad(img, false));
+      }
+      if (!img.$$appendChecked && img.getAttribute('src') && img.src && img.complete) {
+        onImageLoad(img, true);
       }
     };
 
     const init = () => {
       const imgList = document.getElementsByTagName('img');
-      Array.from(imgList).forEach(handleImage);
+      Array.from(imgList).forEach((img) => handleImage(img));
     };
 
     if (document.readyState === 'complete' || document.readyState === 'loaded' || document.readyState === 'interactive') {
@@ -482,19 +489,19 @@ export default class Network extends BaseDomain {
    * 发送图片network相关协议
    * @private
    */
-  sendImgNetworkEvent(url, entry, responseTime, success) {
+  sendImgNetworkEvent(url, entry, responseTime, inDoc, success) {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
     const dataURLMatch = url.match((/^data:(.+?),/));
 
     let imgInfoRequest;
-    if (dataURLMatch) {
+    if (!inDoc || dataURLMatch) {
       imgInfoRequest = Promise.resolve({
-        headers: new Map([['Content-Type', dataURLMatch[1]]]),
-        status: 200,
-        statusText: '',
-        blob: () => Promise.resolve(url),
+        headers: new Map([['Content-Type', !inDoc ? 'text/plain' : dataURLMatch[1]]]),
+        status: !inDoc && !success ? 404 : 200,
+        statusText: !inDoc && !success ? 'Not Found' : '',
+        blob: () => Promise.resolve(!inDoc ? '' : url),
       });
     } else {
       imgInfoRequest = oriFetch(requestUrl, { responseType: 'blob' }).catch(() => {
@@ -507,7 +514,15 @@ export default class Network extends BaseDomain {
     imgInfoRequest
       .then((response) => {
         if (!success) {
-          console.error(`GET ${url} ${response?.status || 404}`);
+          let errMsg = `GET ${url} ${response?.status || 404}`;
+          if (response?.status) {
+            if (response?.statusText) {
+              errMsg += ` (${response.statusText})`;
+            }
+          } else {
+            errMsg += ' (Not Found)';
+          }
+          console.error(errMsg);
         }
 
         if (!response) return; // 如果没有，就是请求失败了，不处理了
