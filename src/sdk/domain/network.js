@@ -1,5 +1,5 @@
 import jsCookie from 'js-cookie';
-import { getAbsoultPath, getImgRequestUrl, key2UpperCase } from '../common/utils';
+import { getAbsoultPath, getImgRequestUrl, getResponseParams, key2UpperCase } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import JDB from '../common/jdb';
@@ -24,6 +24,10 @@ export default class Network extends BaseDomain {
   // 用户缓存的请求
   cacheRequest = [];
 
+  // 网络性能监控
+  networkPerfObserver = null;
+  networkPerfCallbacks = new Set();
+
   isEnabled = false;
 
   constructor(options) {
@@ -31,6 +35,7 @@ export default class Network extends BaseDomain {
     this.hookXhr();
     this.hookFetch();
     this.hookImage();
+    this.registerPerfObserver();
   }
 
   /**
@@ -70,7 +75,7 @@ export default class Network extends BaseDomain {
     this.cacheRequest.forEach((data) => this.send(data));
     if (!this.isEnabled) {
       this.isEnabled = true;
-      this.cacheImgRequest.forEach(({ url, responseTime, success }) => this.sendImgNetworkEvent(url, responseTime, success));
+      this.cacheImgRequest.forEach(({ url, entry, responseTime, success }) => this.sendImgNetworkEvent(url, entry, responseTime, success));
     }
   }
 
@@ -139,6 +144,22 @@ export default class Network extends BaseDomain {
   setCacheDisabled({ cacheDisabled }) {
     if (cacheDisabled) {
       console.warn('[RemoteDev][Network]', 'Cache disabled is unsupported');
+    }
+  }
+
+  registerPerfObserver() {
+    if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.indexOf('resource') !== -1) {
+      this.networkPerfObserver = new PerformanceObserver((perf) => {
+        return JDB.runInNativeEnv(() => {
+          const cbs = Array.from(this.networkPerfCallbacks);
+          cbs.forEach((cb) => {
+            if (cb(Array.from(perf.getEntries()))) {
+              this.networkPerfCallbacks.delete(cb);
+            }
+          });
+        });
+      });
+      this.networkPerfObserver.observe({ entryTypes: ['resource'] });
     }
   }
 
@@ -211,6 +232,7 @@ export default class Network extends BaseDomain {
               // 请求完成后，获取到http响应头
               const headers = this.getAllResponseHeaders();
               const responseHeaders = Network.formatResponseHeader(headers);
+              const responseTime = getTimestamp();
 
               const responseHasBeenReceivedEvent = (params) => instance.sendNetworkEvent(params);
               const responseHasBeenReceivedParams = {
@@ -233,6 +255,16 @@ export default class Network extends BaseDomain {
 
               if (typeof this.$$responseHasBeenReceived === 'function') {
                 this.$$responseHasBeenReceived(responseHasBeenReceivedParams, responseHasBeenReceivedEvent);
+              } else if (instance.networkPerfObserver) {
+                instance.networkPerfCallbacks.add((entrys) => {
+                  const entry = entrys.find((e) => e.initiatorType === 'xmlhttprequest' && e.name === url);
+                  if (entry) {
+                    const now = requestTime * 1000;
+                    const fetchStart = entry?.fetchStart || now;
+                    responseHasBeenReceivedEvent(getResponseParams(responseHasBeenReceivedParams, entry, requestTime, ((entry?.responseEnd || responseTime * 1000) - fetchStart + now) / 1000));
+                    return true;
+                  }
+                });
               } else {
                 responseHasBeenReceivedEvent(responseHasBeenReceivedParams);
               }
@@ -325,7 +357,8 @@ export default class Network extends BaseDomain {
             const sendStart = (responseTime - requestTime) * 1000 / 2;
             const contentType = headers.get('Content-Type');
 
-            instance.sendNetworkEvent({
+            const responseHasBeenReceivedEvent = (params) => instance.sendNetworkEvent(params);
+            const responseHasBeenReceivedParams = {
               url,
               requestId,
               status,
@@ -341,7 +374,21 @@ export default class Network extends BaseDomain {
                 sendEnd: sendStart + 0.01,
                 sendStart,
               },
-            });
+            };
+
+            if (instance.networkPerfObserver) {
+              instance.networkPerfCallbacks.add((entrys) => {
+                const entry = entrys.find((e) => e.initiatorType === 'fetch' && e.name === url);
+                if (entry) {
+                  const now = requestTime * 1000;
+                  const fetchStart = entry?.fetchStart || now;
+                  responseHasBeenReceivedEvent(getResponseParams(responseHasBeenReceivedParams, entry, requestTime, ((entry?.responseEnd || responseTime * 1000) - fetchStart + now) / 1000));
+                  return true;
+                }
+              });
+            } else {
+              responseHasBeenReceivedEvent(responseHasBeenReceivedParams);
+            }
 
             if (['application/json', 'application/javascript', 'text/plain', 'text/html', 'text/css'].some((type) => contentType.includes(type))) {
               response.clone().text().then((responseBody) => {
@@ -375,20 +422,22 @@ export default class Network extends BaseDomain {
 
     const onImageLoad = (url, success) => {
       const responseTime = getTimestamp();
+      const entrys = Array.from(performance.getEntries?.() || []).reverse();
+      const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
       if (this.isEnabled) {
-        instance.sendImgNetworkEvent(url, responseTime, success);
+        instance.sendImgNetworkEvent(url, entry, responseTime, success);
       } else {
-        this.cacheImgRequest.push({ url, responseTime, success });
+        this.cacheImgRequest.push({ url, entry, responseTime, success });
       }
     };
 
     const handleImage = (img) => {
       if (!img.$$loadListened) {
         img.$$loadListened = 1;
-        img.addEventListener('load', () => onImageLoad(img.getAttribute('src'), true));
-        img.addEventListener('error', () => onImageLoad(img.getAttribute('src'), false));
+        img.addEventListener('load', () => onImageLoad(img.getAttribute('src') && img.src, true));
+        img.addEventListener('error', () => onImageLoad(img.getAttribute('src') && img.src, false));
         if (img.getAttribute('src') && img.complete) {
-          onImageLoad(img.getAttribute('src'), true);
+          onImageLoad(img.getAttribute('src') && img.src, true);
         }
       }
     };
@@ -433,7 +482,7 @@ export default class Network extends BaseDomain {
    * 发送图片network相关协议
    * @private
    */
-  sendImgNetworkEvent(url, responseTime, success) {
+  sendImgNetworkEvent(url, entry, responseTime, success) {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
@@ -491,7 +540,7 @@ export default class Network extends BaseDomain {
         });
 
         response.blob().then((blob) => {
-          instance.sendNetworkEvent({
+          const params = {
             url,
             requestId,
             status,
@@ -501,14 +550,21 @@ export default class Network extends BaseDomain {
             blockedCookies: [],
             timestamp: responseTime,
             headers: responseHeaders,
-            encodedDataLength: getHttpResLen(status, statusText, headersText, blob.size || 0),
+            encodedDataLength: blob.size,
             timing: {
               requestTime,
               receiveHeadersEnd: sendStart * 2 - 0.01,
               sendEnd: sendStart + 0.01,
               sendStart,
             },
-          });
+          };
+          if (entry) {
+            const now = requestTime * 1000;
+            const fetchStart = entry.fetchStart || now;
+            instance.sendNetworkEvent(getResponseParams(params, entry, requestTime, ((entry.responseEnd || responseTime * 1000) - fetchStart + now) / 1000));
+          } else {
+            instance.sendNetworkEvent(params);
+          }
 
           if (typeof blob === 'string') {
             instance.responseText.set(requestId, blob);

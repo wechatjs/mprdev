@@ -103,29 +103,35 @@ export function getImgRequestUrl(url) {
   return url;
 }
 
-export function requestSource(url, type, onload, onerror) {
-  const now = performance.now();
-  const entries = Array.from(performance.getEntries());
-  const entry = entries.find((e) => e.name === url);
-  const cached = !!entry && !entry.nextHopProtocol;
-  const wallTime = (Date.now() - now) / 1000;
-  const fetchStart = (entry?.fetchStart || now);
-  const timestamp = fetchStart / 1000;
-  const accept = type === 'Document' ? 'text/html' : '*/*';
-  const getResponseParams = (params) => Object.assign({}, params, {
-    timestamp: (entry?.responseEnd || (fetchStart + performance.now() - now)) / 1000,
+export function getResponseParams(params, entry, requestTime, responseTime) {
+  const now = requestTime * 1000;
+  const cached = !!entry && (!entry.nextHopProtocol && entry.duration < 5);
+  const fetchStart = entry?.fetchStart || now;
+  return Object.assign({}, params, {
+    timestamp: responseTime,
     fromDiskCache: cached,
     timing: entry?.nextHopProtocol ? {
-      requestTime: timestamp,
+      requestTime,
       receiveHeadersEnd: entry?.responseStart - fetchStart,
       sendStart: entry?.requestStart - fetchStart,
       sendEnd: entry?.requestStart - fetchStart,
-      dnsStart: entry?.domainLookupStart - fetchStart,
-      dnsEnd: entry?.domainLookupEnd - fetchStart,
-      connectStart: entry?.connectStart - fetchStart,
-      connectEnd: entry?.connectEnd - fetchStart,
+      dnsStart: entry?.domainLookupStart - fetchStart || -1,
+      dnsEnd: entry?.domainLookupEnd - fetchStart || -1,
+      connectStart: entry?.connectStart - fetchStart || -1,
+      connectEnd: entry?.connectEnd - fetchStart || -1,
     } : (entry ? null : params.timing),
   });
+};
+
+export function requestSource(url, type, onload, onerror) {
+  const now = performance.now();
+  const entries = Array.from(performance.getEntries?.() || []);
+  const entry = entries.find((e) => e.name === url);
+  const wallTime = (Date.now() - now) / 1000;
+  const fetchStart = entry?.fetchStart || now;
+  const timestamp = fetchStart / 1000;
+  const accept = type === 'Document' ? 'text/html' : '*/*';
+  const getResParams = (params) => getResponseParams(params, entry, timestamp, (entry?.responseEnd || (fetchStart + performance.now() - now)) / 1000);
 
   const retryWithCookie = (requestId) => {
     // 如果获取失败，带上cookie再请求一次
@@ -133,7 +139,7 @@ export function requestSource(url, type, onload, onerror) {
     xhr.withCredentials = true;
     xhr.$$type = type;
     xhr.$$requestWillBeSent = () => {}; // 去掉发送日志
-    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign(getResponseParams(params), { requestId, url })); // 复用原有requestId和url
+    xhr.$$responseHasBeenReceived = (params, emitEvent) => emitEvent(Object.assign(getResParams(params), { requestId, url })); // 复用原有requestId和url
     xhr.onerror = () => typeof onerror === 'function' && onerror(xhr);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -150,7 +156,7 @@ export function requestSource(url, type, onload, onerror) {
   const xhr = new XMLHttpRequest();
   xhr.$$type = type;
   xhr.$$requestWillBeSent = (params, emitEvent) => emitEvent(Object.assign({}, params, { wallTime, timestamp })); // 还原真实的请求时间
-  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(getResponseParams(params));
+  xhr.$$responseHasBeenReceived = (params, emitEvent) => xhr.status >= 200 && xhr.status < 300 && emitEvent(getResParams(params));
   xhr.onerror = () => retryWithCookie(xhr.$$request.requestId);
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {
