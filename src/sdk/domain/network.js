@@ -504,6 +504,10 @@ export default class Network extends BaseDomain {
 
     imgInfoRequest
       .then((response) => {
+        if (!success) {
+          console.error(`GET ${url} ${response?.status || 404}`);
+        }
+
         if (!response) return; // 如果没有，就是请求失败了，不处理了
 
         const { headers, status: fetchStatus, statusText } = response;
@@ -526,10 +530,6 @@ export default class Network extends BaseDomain {
           requestId,
           headers: Network.getDefaultHeaders(),
         };
-
-        if (!success) {
-          console.error(`GET ${url} ${status}`);
-        }
 
         instance.socketSend({
           method: Event.requestWillBeSent,
