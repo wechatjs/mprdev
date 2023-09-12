@@ -45,7 +45,7 @@ export function getPropertyNames(obj) {
   let keys = Object.getOwnPropertyNames(obj);
   while (depth-- && obj.__proto__) {
     obj = obj.__proto__;
-    keys = keys.concat(Object.getOwnPropertyNames(obj));
+    keys = keys.concat(Object.getOwnPropertyNames(obj).filter(k => !keys.includes(k) && !k.startsWith('$$$_sb_')));
   }
   return keys;
 }
@@ -60,6 +60,8 @@ export function getPropertyDescriptor(obj, key) {
   return dptor;
 }
 
+window.kkk = getPropertyNames;
+
 export function getPreview(val, opts = {}) {
   const { length = 5 } = opts;
   // TODO: 这两种数据类型待处理
@@ -68,7 +70,11 @@ export function getPreview(val, opts = {}) {
   // }
 
   const properties = [];
-  const keys = getPropertyNames(val);
+  const keys = getPropertyNames(val).filter((key) => {
+    return key !== '__proto__' && (
+      Object.getOwnPropertyDescriptor(val, key) || getPropertyDescriptor(val.__proto__, key)?.get
+    );
+  });
   keys.slice(0, length).forEach((key) => {
     let subVal;
     try {
@@ -159,7 +165,7 @@ export function objectFormat(val, opts = {}) {
     // html的Element
     const ctorName = val.constructor?.name || 'Element';
     res.className = ctorName;
-    res.description = ctorName;
+    res.description = val.tagName?.toLowerCase?.() || ctorName;
   } else {
     let ctorName = 'Object';
     try {

@@ -260,26 +260,79 @@ export default class Runtime extends BaseDomain {
   hookConsole() {
     const methods = {
       log: 'log',
-      warn: 'warning',
+      debug: 'debug',
       info: 'info',
       error: 'error',
+      warn: 'warning',
+      dir: 'dir',
+      dirxml: 'dirxml',
+      table: 'log', // TODO: 支持table
+      trace: 'trace',
+      clear: 'clear',
+      group: 'startGroup',
+      groupCollapsed: 'startGroupCollapsed',
+      groupEnd: 'endGroup',
+      assert: 'assert',
+      count: 'count',
+      timeEnd: 'timeEnd',
+      countReset: null,
+      time: null,
     };
+
+    const timeStore = {};
+    const countStore = {};
 
     Object.keys(methods).forEach((key) => {
       const nativeConsoleFunc = window.console[key];
       window.console[key] = (...args) => {
         return JDB.runInNativeEnv(() => {
           const callFrames = Runtime.getCallFrames();
-          this.socketSend('console', {
-            method: Event.consoleAPICalled,
-            params: {
-              type: methods[key],
-              args: args.map((arg) => objectFormat(arg, { preview: true })),
-              executionContextId: 1,
-              timestamp: Date.now(),
-              stackTrace: { callFrames },
+          const needEvent = methods[key] && (key !== 'assert' || !args[0]); // assert第一个参数为false才抛事件
+          let calledType = methods[key];
+          let calledArgs = [];
+
+          if (key === 'time') {
+            const timeKey = args[0]?.toString?.() || 'default';
+            timeStore[timeKey] = performance.now() + 1; // 加1防止等于0，虽然概率微乎其微
+          } else if (key === 'timeEnd') {
+            const timeKey = args[0]?.toString?.() || 'default';
+            const timeStart = timeStore[timeKey];
+            if (timeStart) {
+              calledArgs = [objectFormat(`${timeKey}: ${performance.now() - timeStart - 1} ms`)];
+              delete timeStore[timeKey];
+            } else {
+              calledType = 'warning';
+              calledArgs = [objectFormat(`Timer '${timeKey}' does not exist`)];
             }
-          });
+          } else if (key === 'count') {
+            const countKey = args[0]?.toString?.() || 'default';
+            const count = countStore[countKey] = (countStore[countKey] || 0) + 1;
+            calledArgs = [objectFormat(`${countKey}: ${count}`)];
+          } else if (key === 'countReset') {
+            delete countStore[args[0]?.toString?.() || 'default'];
+          } else if (key === 'assert') {
+            calledArgs = args.length === 1
+              ? [objectFormat(`console.${key}`)]
+              : args.slice(1).map((arg) => objectFormat(arg, { preview: true }));
+          } else if (methods[key]) {
+            calledArgs = ['clear', 'groupEnd'].includes(key) || ['trace', 'group', 'groupCollapsed'].includes(key) && args.length === 0
+              ? [objectFormat(`console.${key}`)]
+              : args.map((arg) => objectFormat(arg, { preview: true }));
+          }
+
+          if (needEvent) {
+            this.socketSend('console', {
+              method: Event.consoleAPICalled,
+              params: {
+                type: calledType,
+                args: calledArgs,
+                executionContextId: 1,
+                timestamp: Date.now(),
+                stackTrace: { callFrames },
+              },
+            });
+          }
+
           return nativeConsoleFunc(...args);
         });
       };
