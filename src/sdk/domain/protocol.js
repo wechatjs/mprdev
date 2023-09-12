@@ -84,6 +84,7 @@ export default {
     'getProperties',
     'releaseObject',
     'callFunctionOn',
+    'globalLexicalScopeNames',
   ],
   Emulation: [
     'setTouchEmulationEnabled'

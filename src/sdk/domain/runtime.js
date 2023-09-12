@@ -1,4 +1,4 @@
-import { objectFormat, objectRelease, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
+import { objectFormat, objectRelease, getObjectProperties, getPropertyNames, exceptionFormat, callOnObject } from '../common/remote-obj';
 import { formatErrorStack } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
@@ -242,6 +242,15 @@ export default class Runtime extends BaseDomain {
    */
   releaseObject(params) {
     objectRelease(params);
+  }
+
+  /**
+   * 获取全局变量
+   */
+  globalLexicalScopeNames() {
+    return {
+      names: getPropertyNames(window),
+    };
   }
 
   /**
