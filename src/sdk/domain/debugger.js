@@ -59,18 +59,15 @@ export default class Debugger extends BaseDomain {
    * @param {Number} params.callFrameId 调用帧id
    * @param {String} params.expression 表达式字符串
    * @param {Boolean} params.generatePreview 是否生成预览
-   * @param {Boolean} params.silent 是否需要抛错误
    */
-  evaluateOnCallFrame({ callFrameId, expression, generatePreview, silent }) {
+  evaluateOnCallFrame({ callFrameId, expression, generatePreview }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
         res.result = objectFormat(JDB.eval(expression, callFrameId), { preview: generatePreview });
       } catch (err) {
-        if (!silent) {
-          res.result = objectFormat(err.toString(), { preview: generatePreview });
-          res.exceptionDetails = exceptionFormat(err.toString());
-        }
+        res.result = objectFormat(err.toString(), { preview: generatePreview });
+        res.exceptionDetails = exceptionFormat(err.toString());
       }
       return res;
     });
