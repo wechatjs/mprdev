@@ -241,8 +241,16 @@ export function getObjectProperties(params) {
       property.writable = descriptor.writable;
       property.value = objectFormat(descriptor.value, { preview: generatePreview });
     } else {
-      property.get = objectFormat(descriptor.get, { preview: generatePreview });
-      property.set = objectFormat(descriptor.set, { preview: generatePreview });
+      if (descriptor.get) {
+        try {
+          property.value = objectFormat(descriptor.get.call(curObject), { preview: generatePreview });
+          property.writable = false;
+        } catch { /* empty */ }
+      }
+      if (!property.value) {
+        property.get = objectFormat(descriptor.get, { preview: generatePreview });
+        property.set = objectFormat(descriptor.set, { preview: generatePreview });
+      }
     }
 
     ret.result.push(property);
