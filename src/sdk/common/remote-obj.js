@@ -40,9 +40,20 @@ export function getType(val) {
   };
 }
 
+export function getPropertyNames(obj) {
+  let depth = 10; // 只找10层，避免循环引用
+  let keys = Object.getOwnPropertyNames(obj);
+  while (depth-- && obj.__proto__) {
+    obj = obj.__proto__;
+    keys = keys.concat(Object.getOwnPropertyNames(obj));
+  }
+  return keys;
+}
+
 export function getPropertyDescriptor(obj, key) {
+  let depth = 10; // 只找10层，避免循环引用
   let dptor = Object.getOwnPropertyDescriptor(obj, key);
-  while (!dptor && obj.__proto__) {
+  while (depth-- && !dptor && obj.__proto__) {
     obj = obj.__proto__;
     dptor = Object.getOwnPropertyDescriptor(obj, key);
   }
@@ -56,8 +67,8 @@ export function getPreview(val, opts = {}) {
 
   // }
 
-  const keys = Object.keys(val);
   const properties = [];
+  const keys = getPropertyNames(val);
   keys.slice(0, length).forEach((key) => {
     let subVal;
     try {
@@ -203,14 +214,8 @@ export function getObjectProperties(params) {
   // ownProperties标识是否为对象自身的属性
   const { objectId, accessorPropertiesOnly, ownProperties, generatePreview, nonIndexedPropertiesOnly } = params;
   const curObject = objects.get(objectId);
+  const keys = getPropertyNames(curObject);
   const ret = { result: [] };
-  // eslint-disable-next-line no-proto
-  let keys = Object.getOwnPropertyNames(curObject);
-  let proto = curObject;
-  while (proto.__proto__) {
-    proto = proto.__proto__;
-    keys = keys.concat(proto ? Object.getOwnPropertyNames(proto) : []);
-  }
 
   for (const key of keys) {
     let descriptor = Object.getOwnPropertyDescriptor(curObject, key);
