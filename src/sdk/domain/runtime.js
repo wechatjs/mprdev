@@ -177,13 +177,14 @@ export default class Runtime extends BaseDomain {
    * @param {Object} params
    * @param {String} params.expression 表达式字符串
    * @param {Boolean} params.generatePreview 是否生成预览
+   * @param {Boolean} params.returnByValue 是否直接返回值
    * @param {Boolean} params.silent 是否需要抛错误
    */
-  evaluate({ expression, generatePreview, silent }) {
+  evaluate({ expression, generatePreview, returnByValue, silent }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        res.result = objectFormat(oriEval(expression.trim()), { preview: generatePreview });
+        res.result = objectFormat(oriEval(expression.trim()), { preview: generatePreview, value: returnByValue });
       } catch (err) {
         if (!silent) {
           res.result = objectFormat(err.toString(), { preview: generatePreview });
@@ -202,15 +203,16 @@ export default class Runtime extends BaseDomain {
    * @param {String} params.objectId 绑定的对象id
    * @param {Array} params.arguments 调用参数
    * @param {Boolean} params.generatePreview 是否生成预览
+   * @param {Boolean} params.returnByValue 是否直接返回值
    * @param {Boolean} params.silent 是否需要抛错误
    */
-  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, generatePreview, silent }) {
+  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, generatePreview, returnByValue, silent }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
         const callFunction = oriEval(`(function(){return ${functionDeclaration.trim()}})()`);
         const callReturn = callOnObject({ objectId, callFunction, callArguments });
-        res.result = objectFormat(callReturn, { preview: generatePreview });
+        res.result = objectFormat(callReturn, { preview: generatePreview, value: returnByValue });
       } catch (err) {
         if (!silent) {
           res.result = objectFormat(err.toString(), { preview: generatePreview });

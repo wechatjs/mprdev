@@ -1,6 +1,7 @@
 let currentId = 1;
 const objectIds = new Map();
 const objects = new Map();
+const funcToString = Function.prototype.toString;
 
 export function getIdByObject(object) {
   let id = objectIds.get(object);
@@ -37,6 +38,15 @@ export function getType(val) {
     type: typeof val,
     subtype: getSubType(val),
   };
+}
+
+export function getPropertyDescriptor(obj, key) {
+  let dptor = Object.getOwnPropertyDescriptor(obj, key);
+  while (!dptor && obj.__proto__) {
+    obj = obj.__proto__;
+    dptor = Object.getOwnPropertyDescriptor(obj, key);
+  }
+  return dptor;
 }
 
 export function getPreview(val, opts = {}) {
@@ -87,31 +97,35 @@ export function getPreview(val, opts = {}) {
     overflow: keys.length > length,
     properties,
   };
-};
+}
 
 export function objectFormat(val, opts = {}) {
   if (val === undefined) return { type: 'undefined' };
   if (val === null) return { type: 'object', subtype: 'null', value: val };
 
   const { type, subtype } = getType(val);
+  if (type === 'string' || type === 'boolean' || opts.value) return { type, value: val };
   if (type === 'number') return { type, value: val, description: String(val) };
-  if (type === 'string' || type === 'boolean') return { type, value: val };
   if (type === 'symbol') return { type, objectId: getIdByObject(val), description: String(val) };
 
   const res = { type, subtype, objectId: getIdByObject(val) };
   // 对部分不同的数据类型需要单独处理
-  // function类型
   if (type === 'function') {
+    // function类型
+    let description = 'Function';
+    try {
+      description = funcToString.call(val);
+    } catch { /* empty */ }
     res.className = 'Function';
-    res.description = 'Function';
+    res.description = description;
     opts.preview && (res.preview = {
       type,
       subtype,
       description: 'Function',
       ...getPreview(val),
     });
-    // 数组类型
   } else if (subtype === 'array') {
+    // 数组类型
     res.className = 'Array';
     res.description = `Array(${val.length})`;
     opts.preview && (res.preview = {
@@ -120,8 +134,8 @@ export function objectFormat(val, opts = {}) {
       description: `Array(${val.length})`,
       ...getPreview(val, { length: 100 }),
     });
-    // Error类型
   } else if (subtype === 'error') {
+    // Error类型
     res.className = 'Error';
     res.description = val.stack;
     opts.preview && (res.preview = {
@@ -130,8 +144,8 @@ export function objectFormat(val, opts = {}) {
       description: val.stack,
       ...getPreview(val),
     });
-    // html的Element
   } else if (subtype === 'node') {
+    // html的Element
     const ctorName = val.constructor?.name || 'Element';
     res.className = ctorName;
     res.description = ctorName;
@@ -174,9 +188,9 @@ export function callOnObject(params) {
   const args = [];
   for (let i = 0; i < callArguments.length; i++) {
     const rawArg = callArguments[i];
-    if (rawArg.value) {
+    if ('value' in rawArg) {
       args.push(rawArg.value);
-    } else if (rawArg.objectId) {
+    } else if ('objectId' in rawArg) {
       args.push(getObjectById(rawArg.objectId));
     }
   }
@@ -187,46 +201,47 @@ export function callOnObject(params) {
 // 获取对象属性，层级可以无限深
 export function getObjectProperties(params) {
   // ownProperties标识是否为对象自身的属性
-  const { objectId, accessorPropertiesOnly, ownProperties, generatePreview } = params;
+  const { objectId, accessorPropertiesOnly, ownProperties, generatePreview, nonIndexedPropertiesOnly } = params;
   const curObject = objects.get(objectId);
   const ret = { result: [] };
   // eslint-disable-next-line no-proto
-  const proto = curObject.__proto__;
-
-  const keys = Object.getOwnPropertyNames(curObject)
-    .concat(proto ? Object.getOwnPropertyNames(proto) : []);
+  let keys = Object.getOwnPropertyNames(curObject);
+  let proto = curObject;
+  while (proto.__proto__) {
+    proto = proto.__proto__;
+    keys = keys.concat(proto ? Object.getOwnPropertyNames(proto) : []);
+  }
 
   for (const key of keys) {
     let descriptor = Object.getOwnPropertyDescriptor(curObject, key);
-    if (!descriptor && !ownProperties) descriptor = Object.getOwnPropertyDescriptor(proto, key);
+    const isOwn = !!descriptor;
+    if (!descriptor && !ownProperties) descriptor = getPropertyDescriptor(curObject.__proto__, key);
     if (!descriptor || !descriptor.get && !descriptor.set && accessorPropertiesOnly) continue;
+    if (nonIndexedPropertiesOnly && /^\d+$/.test(key)) continue;
 
     const property = {
       name: key,
-      isOwn: ownProperties,
+      isOwn,
       enumerable: descriptor.enumerable,
       configurable: descriptor.configurable,
     };
 
-    if (descriptor.get) {
-      property.get = objectFormat(descriptor.get, { preview: generatePreview });
-    }
-    if (descriptor.set) {
-      property.set = objectFormat(descriptor.set, { preview: generatePreview });
-    }
     if (!descriptor.get && !descriptor.set) {
       property.writable = descriptor.writable;
       property.value = objectFormat(descriptor.value, { preview: generatePreview });
+    } else {
+      property.get = objectFormat(descriptor.get, { preview: generatePreview });
+      property.set = objectFormat(descriptor.set, { preview: generatePreview });
     }
 
     ret.result.push(property);
   }
 
   // 追加__proto__原型
-  if (ownProperties && proto) {
+  if (ownProperties && curObject.__proto__) {
     ret.internalProperties = [{
       name: '[[Prototype]]',
-      value: objectFormat(proto),
+      value: objectFormat(curObject.__proto__),
     }];
   }
 
