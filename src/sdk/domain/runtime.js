@@ -1,4 +1,4 @@
-import { objectFormat, objectRelease, getObjectProperties, getPropertyNames, exceptionFormat, callOnObject } from '../common/remote-obj';
+import { objectFormat, objectRelease, objectGroupRelease, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
 import { checkSideEffect, formatErrorStack } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
@@ -176,11 +176,12 @@ export default class Runtime extends BaseDomain {
    * @public
    * @param {Object} params
    * @param {String} params.expression 表达式字符串
+   * @param {String} params.objectGroup 对象组
    * @param {Boolean} params.generatePreview 是否生成预览
    * @param {Boolean} params.returnByValue 是否直接返回值
    * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  evaluate({ expression, generatePreview, returnByValue, throwOnSideEffect }) {
+  evaluate({ expression, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
@@ -188,9 +189,9 @@ export default class Runtime extends BaseDomain {
         if (throwOnSideEffect && checkSideEffect(code)) {
           throw new EvalError('Possible side-effect in debug-evaluate');
         }
-        res.result = objectFormat(oriEval(code), { preview: generatePreview, value: returnByValue });
+        res.result = objectFormat(oriEval(code), { preview: generatePreview, group: objectGroup, value: returnByValue });
       } catch (err) {
-        res.result = objectFormat(err.toString(), { preview: generatePreview });
+        res.result = objectFormat(err.toString(), { preview: generatePreview, group: objectGroup });
         res.exceptionDetails = exceptionFormat(err);
       }
       return res;
@@ -204,10 +205,11 @@ export default class Runtime extends BaseDomain {
    * @param {String} params.functionDeclaration 函数声明字符串
    * @param {String} params.objectId 绑定的对象id
    * @param {Array} params.arguments 调用参数
+   * @param {String} params.objectGroup 对象组
    * @param {Boolean} params.generatePreview 是否生成预览
    * @param {Boolean} params.returnByValue 是否直接返回值
    */
-  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, generatePreview, returnByValue }) {
+  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, objectGroup, generatePreview, returnByValue }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
@@ -217,9 +219,9 @@ export default class Runtime extends BaseDomain {
         }
         const callFunction = oriEval(code);
         const callReturn = callOnObject({ objectId, callFunction, callArguments });
-        res.result = objectFormat(callReturn, { preview: generatePreview, value: returnByValue });
+        res.result = objectFormat(callReturn, { preview: generatePreview, group: objectGroup, value: returnByValue });
       } catch (err) {
-        res.result = objectFormat(err.toString(), { preview: generatePreview });
+        res.result = objectFormat(err.toString(), { preview: generatePreview, group: objectGroup });
         res.exceptionDetails = exceptionFormat(err);
       }
       return res;
@@ -251,6 +253,14 @@ export default class Runtime extends BaseDomain {
    */
   releaseObject(params) {
     objectRelease(params);
+  }
+
+  /**
+   * 释放对象组
+   * @public
+   */
+  releaseObjectGroup(params) {
+    objectGroupRelease(params);
   }
 
   /**

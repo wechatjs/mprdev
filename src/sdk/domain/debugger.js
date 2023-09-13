@@ -58,11 +58,12 @@ export default class Debugger extends BaseDomain {
    * @param {Object} params
    * @param {Number} params.callFrameId 调用帧id
    * @param {String} params.expression 表达式字符串
+   * @param {String} params.objectGroup 对象组
    * @param {Boolean} params.generatePreview 是否生成预览
    * @param {Boolean} params.returnByValue 是否直接返回值
    * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  evaluateOnCallFrame({ callFrameId, expression, generatePreview, returnByValue, throwOnSideEffect }) {
+  evaluateOnCallFrame({ callFrameId, expression, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
@@ -70,9 +71,9 @@ export default class Debugger extends BaseDomain {
         if (throwOnSideEffect && checkSideEffect(code)) {
           throw new EvalError('Possible side-effect in debug-evaluate');
         }
-        res.result = objectFormat(JDB.eval(code, callFrameId), { preview: generatePreview, value: returnByValue });
+        res.result = objectFormat(JDB.eval(code, callFrameId), { preview: generatePreview, group: objectGroup, value: returnByValue });
       } catch (err) {
-        res.result = objectFormat(err.toString(), { preview: generatePreview });
+        res.result = objectFormat(err.toString(), { preview: generatePreview, group: objectGroup });
         res.exceptionDetails = exceptionFormat(err);
       }
       return res;

@@ -1,9 +1,10 @@
 let currentId = 1;
 const objectIds = new Map();
 const objects = new Map();
+const objectGroups = new Map();
 const funcToString = Function.prototype.toString;
 
-export function getIdByObject(object) {
+export function getIdByObject(object, opts = {}) {
   let id = objectIds.get(object);
   if (id) return id;
 
@@ -11,7 +12,15 @@ export function getIdByObject(object) {
   id = `${currentId++}`;
   objects.set(id, object);
   objectIds.set(object, id);
+  if (opts.group) {
+    const group = objectGroups.get(opts.group) || [];
+    objectGroups.set(opts.group, group.concat(id));
+  }
   return id;
+}
+
+export function getObjectById(objectId) {
+  return objects.get(objectId);
 }
 
 export function getRealType(val) {
@@ -59,8 +68,6 @@ export function getPropertyDescriptor(obj, key) {
   }
   return dptor;
 }
-
-window.kkk = getPropertyNames;
 
 export function getPreview(val, opts = {}) {
   const { length = 5 } = opts;
@@ -123,9 +130,9 @@ export function objectFormat(val, opts = {}) {
   const { type, subtype } = getType(val);
   if (type === 'string' || type === 'boolean' || opts.value) return { type, value: val };
   if (type === 'number') return { type, value: val, description: String(val) };
-  if (type === 'symbol') return { type, objectId: getIdByObject(val), description: String(val) };
+  if (type === 'symbol') return { type, objectId: getIdByObject(val, opts), description: String(val) };
 
-  const res = { type, subtype, objectId: getIdByObject(val) };
+  const res = { type, subtype, objectId: getIdByObject(val, opts) };
   // 对部分不同的数据类型需要单独处理
   if (type === 'function') {
     // function类型
@@ -220,7 +227,7 @@ export function callOnObject(params) {
 export function getObjectProperties(params) {
   // ownProperties标识是否为对象自身的属性
   const { objectId, accessorPropertiesOnly, ownProperties, generatePreview, nonIndexedPropertiesOnly } = params;
-  const curObject = objects.get(objectId);
+  const curObject = objects.get(objectId) || {};
   const keys = getPropertyNames(curObject);
   const ret = { result: [] };
 
@@ -275,6 +282,11 @@ export function objectRelease({ objectId }) {
   objectIds.delete(object, objectId);
 }
 
-export function getObjectById(objectId) {
-  return objects.get(objectId);
+// 释放对象组
+export function objectGroupRelease({ objectGroup }) {
+  const group = objectGroups.get(objectGroup);
+  if (group?.length) {
+    group.forEach((objectId) => objectRelease({ objectId }));
+    objectGroups.delete(objectGroup);
+  }
 }

@@ -81,9 +81,10 @@ export default {
   Runtime: [
     'enable',
     'evaluate',
+    'callFunctionOn',
     'getProperties',
     'releaseObject',
-    'callFunctionOn',
+    'releaseObjectGroup',
     'globalLexicalScopeNames',
   ],
   Emulation: [
