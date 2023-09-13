@@ -275,7 +275,7 @@ export default class Runtime extends BaseDomain {
       assert: 'assert',
       count: 'count',
       timeEnd: 'timeEnd',
-      timeLog: 'timeLog',
+      timeLog: 'log',
       countReset: null,
       time: null,
     };
