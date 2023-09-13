@@ -275,6 +275,7 @@ export default class Runtime extends BaseDomain {
       assert: 'assert',
       count: 'count',
       timeEnd: 'timeEnd',
+      timeLog: 'timeLog',
       countReset: null,
       time: null,
     };
@@ -294,12 +295,14 @@ export default class Runtime extends BaseDomain {
           if (key === 'time') {
             const timeKey = args[0]?.toString?.() || 'default';
             timeStore[timeKey] = performance.now() + 1; // 加1防止等于0，虽然概率微乎其微
-          } else if (key === 'timeEnd') {
+          } else if (key === 'timeLog' || key === 'timeEnd') {
             const timeKey = args[0]?.toString?.() || 'default';
             const timeStart = timeStore[timeKey];
             if (timeStart) {
               calledArgs = [objectFormat(`${timeKey}: ${performance.now() - timeStart - 1} ms`)];
-              delete timeStore[timeKey];
+              if (key === 'timeEnd') {
+                delete timeStore[timeKey];
+              }
             } else {
               calledType = 'warning';
               calledArgs = [objectFormat(`Timer '${timeKey}' does not exist`)];
