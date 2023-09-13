@@ -1,5 +1,5 @@
 import { objectFormat, objectRelease, getObjectProperties, getPropertyNames, exceptionFormat, callOnObject } from '../common/remote-obj';
-import { formatErrorStack } from '../common/utils';
+import { checkSideEffect, formatErrorStack } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
 import BaseDomain from './domain';
@@ -178,15 +178,20 @@ export default class Runtime extends BaseDomain {
    * @param {String} params.expression 表达式字符串
    * @param {Boolean} params.generatePreview 是否生成预览
    * @param {Boolean} params.returnByValue 是否直接返回值
+   * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  evaluate({ expression, generatePreview, returnByValue }) {
+  evaluate({ expression, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        res.result = objectFormat(oriEval(expression.trim()), { preview: generatePreview, value: returnByValue });
+        const code = expression.trim();
+        if (throwOnSideEffect && checkSideEffect(code)) {
+          throw new EvalError('Possible side-effect in debug-evaluate');
+        }
+        res.result = objectFormat(oriEval(code), { preview: generatePreview, value: returnByValue });
       } catch (err) {
         res.result = objectFormat(err.toString(), { preview: generatePreview });
-        res.exceptionDetails = exceptionFormat(err.toString());
+        res.exceptionDetails = exceptionFormat(err);
       }
       return res;
     });
@@ -206,12 +211,16 @@ export default class Runtime extends BaseDomain {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        const callFunction = oriEval(`(function(){return ${functionDeclaration.trim()}})()`);
+        const code = `(function(){return ${functionDeclaration.trim()}})()`;
+        if (throwOnSideEffect && checkSideEffect(code)) {
+          throw new EvalError('Possible side-effect in debug-evaluate');
+        }
+        const callFunction = oriEval(code);
         const callReturn = callOnObject({ objectId, callFunction, callArguments });
         res.result = objectFormat(callReturn, { preview: generatePreview, value: returnByValue });
       } catch (err) {
         res.result = objectFormat(err.toString(), { preview: generatePreview });
-        res.exceptionDetails = exceptionFormat(err.toString());
+        res.exceptionDetails = exceptionFormat(err);
       }
       return res;
     });
@@ -229,7 +238,7 @@ export default class Runtime extends BaseDomain {
       } catch (err) {
         res = {
           result: objectFormat(err.toString(), { preview: params.generatePreview }),
-          exceptionDetails: exceptionFormat(err.toString()),
+          exceptionDetails: exceptionFormat(err),
         };
       }
       return res;
@@ -246,10 +255,11 @@ export default class Runtime extends BaseDomain {
 
   /**
    * 获取全局变量
+   * @public
    */
   globalLexicalScopeNames() {
     return {
-      names: getPropertyNames(window),
+      names: [],
     };
   }
 

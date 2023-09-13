@@ -190,9 +190,10 @@ export function objectFormat(val, opts = {}) {
   return res;
 }
 
-export function exceptionFormat(text) {
+export function exceptionFormat(err) {
   return {
-    text: `Uncaught ${text}`,
+    text: `Uncaught ${err.toString()}`,
+    exception: objectFormat(err),
     exceptionId: 999,
     lineNumber: 0,
     columnNumber: 0,

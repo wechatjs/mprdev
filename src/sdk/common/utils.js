@@ -30,6 +30,16 @@ export function isMobile() {
   return /ios|iphone|ipod|android/.test(navigator.userAgent.toLowerCase());
 }
 
+export function checkSideEffect(code) {
+  // 代码补全需要执行代码，但如果有副作用的时候需要中断掉。js很难做到副作用检查，所以只能简单检查是否有副作用
+  if (/^[a-zA-Z0-9]*$/.test(code)) {
+    // 如果是单独一个变量，就认为没有
+    return false;
+  }
+  // 默认都认为有副作用
+  return true;
+}
+
 export function docReady(callback) {
   if (typeof callback !== 'function') return;
   if (document.readyState === 'loading') {

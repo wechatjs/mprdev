@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { formatErrorStack, getAbsoultPath, randomNum, requestSource } from '../common/utils';
+import { checkSideEffect, formatErrorStack, getAbsoultPath, randomNum, requestSource } from '../common/utils';
 import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -59,15 +59,21 @@ export default class Debugger extends BaseDomain {
    * @param {Number} params.callFrameId 调用帧id
    * @param {String} params.expression 表达式字符串
    * @param {Boolean} params.generatePreview 是否生成预览
+   * @param {Boolean} params.returnByValue 是否直接返回值
+   * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  evaluateOnCallFrame({ callFrameId, expression, generatePreview }) {
+  evaluateOnCallFrame({ callFrameId, expression, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {
-        res.result = objectFormat(JDB.eval(expression, callFrameId), { preview: generatePreview });
+        const code = expression.trim();
+        if (throwOnSideEffect && checkSideEffect(code)) {
+          throw new EvalError('Possible side-effect in debug-evaluate');
+        }
+        res.result = objectFormat(JDB.eval(code, callFrameId), { preview: generatePreview, value: returnByValue });
       } catch (err) {
         res.result = objectFormat(err.toString(), { preview: generatePreview });
-        res.exceptionDetails = exceptionFormat(err.toString());
+        res.exceptionDetails = exceptionFormat(err);
       }
       return res;
     });

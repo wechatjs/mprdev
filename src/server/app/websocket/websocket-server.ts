@@ -75,7 +75,7 @@ export default class WebSocketServer {
         if (this.verbose) {
           console.log(`${channel.id} - 调试目标已新增,  当前数量为 ${channel.targets.length}`);
           console.log('调试目标信息:');
-          console.log(channel.targets.slice(-1)[0].info);
+          console.log(channel.targets.slice(-1)[0]?.info);
         }
         break;
       case ChannelEventName.TARGET_REMOVE:
@@ -87,7 +87,7 @@ export default class WebSocketServer {
         if (this.verbose) {
           console.log(`${channel.id} - 开发端已新增,  当前数量为 ${channel.devtools.length}`);
           console.log('开发端信息:');
-          console.log(channel.targets.slice(-1)[0].info);
+          console.log(channel.targets.slice(-1)[0]?.info);
         }
         break;
       case ChannelEventName.DEVTOOL_REMOVE:
