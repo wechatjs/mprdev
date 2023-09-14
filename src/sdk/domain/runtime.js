@@ -183,7 +183,7 @@ export default class Runtime extends BaseDomain {
    */
   evaluate({ expression, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
-      let res = {};
+      let res;
       try {
         const code = expression.trim();
         if (throwOnSideEffect && checkSideEffect(code)) {
@@ -238,7 +238,7 @@ export default class Runtime extends BaseDomain {
    */
   callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
-      const res = {};
+      let res;
       try {
         const code = `(function(){return ${functionDeclaration.trim()}})()`;
         if (throwOnSideEffect && checkSideEffect(code)) {
@@ -246,10 +246,35 @@ export default class Runtime extends BaseDomain {
         }
         const callFunction = oriEval(code);
         const callReturn = callOnObject({ objectId, callFunction, callArguments });
-        res.result = objectFormat(callReturn, { preview: generatePreview, group: objectGroup, value: returnByValue });
+        if (callReturn instanceof Promise) {
+          res = getPromiseState(callReturn)
+            .then(([promiseState, promiseResult]) => ({
+              result: objectFormat(callReturn, {
+                preview: generatePreview,
+                group: objectGroup,
+                value: returnByValue,
+                pstate: promiseState,
+                presult: promiseResult,
+              }),
+            }))
+            .catch((err) => ({
+              result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+              exceptionDetails: exceptionFormat(err),
+            }));
+        } else {
+          res = {
+            result: objectFormat(callReturn, {
+              preview: generatePreview,
+              group: objectGroup,
+              value: returnByValue,
+            }),
+          };
+        }
       } catch (err) {
-        res.result = objectFormat(err.toString(), { preview: generatePreview, group: objectGroup });
-        res.exceptionDetails = exceptionFormat(err);
+        res = {
+          result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+          exceptionDetails: exceptionFormat(err),
+        };
       }
       return res;
     });

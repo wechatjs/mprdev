@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { checkSideEffect, formatErrorStack, getAbsoultPath, randomNum, requestSource } from '../common/utils';
+import { checkSideEffect, formatErrorStack, getAbsoultPath, getPromiseState, randomNum, requestSource } from '../common/utils';
 import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -65,16 +65,42 @@ export default class Debugger extends BaseDomain {
    */
   evaluateOnCallFrame({ callFrameId, expression, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
-      const res = {};
+      let res;
       try {
         const code = expression.trim();
         if (throwOnSideEffect && checkSideEffect(code)) {
           throw new EvalError('Possible side-effect in debug-evaluate');
         }
-        res.result = objectFormat(JDB.eval(code, callFrameId), { preview: generatePreview, group: objectGroup, value: returnByValue });
+        const callReturn = JDB.eval(code, callFrameId);
+        if (callReturn instanceof Promise) {
+          res = getPromiseState(callReturn)
+            .then(([promiseState, promiseResult]) => ({
+              result: objectFormat(callReturn, {
+                preview: generatePreview,
+                group: objectGroup,
+                value: returnByValue,
+                pstate: promiseState,
+                presult: promiseResult,
+              }),
+            }))
+            .catch((err) => ({
+              result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+              exceptionDetails: exceptionFormat(err),
+            }));
+        } else {
+          res = {
+            result: objectFormat(callReturn, {
+              preview: generatePreview,
+              group: objectGroup,
+              value: returnByValue
+            }),
+          };
+        }
       } catch (err) {
-        res.result = objectFormat(err.toString(), { preview: generatePreview, group: objectGroup });
-        res.exceptionDetails = exceptionFormat(err);
+        res = {
+          result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+          exceptionDetails: exceptionFormat(err),
+        };
       }
       return res;
     });

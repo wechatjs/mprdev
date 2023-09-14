@@ -270,11 +270,6 @@ export function objectFormat(val, opts = {}) {
     });
   }
 
-  // TODO: 这两种数据类型待处理
-  // if (subtype === 'map' || subtype === 'set') {
-
-  // }
-
   return res;
 }
 
