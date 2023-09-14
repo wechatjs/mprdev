@@ -69,91 +69,94 @@ export function getPropertyDescriptor(obj, key) {
   return dptor;
 }
 
-export function getPreview(val, opts = {}) {
-  const { length = 5 } = opts;
-  // TODO: 这两种数据类型待处理
-  // if (subtype === 'map' || subtype === 'set') {
-
-  // }
-
-  const properties = [];
-  const keys = getPropertyNames(val).filter((key) => {
-    const ownDptor = Object.getOwnPropertyDescriptor(val, key);
-    if (ownDptor) {
-      return ownDptor.enumerable;
-    }
-    const protoDptor = getPropertyDescriptor(val.__proto__, key);
-    if (protoDptor?.get) {
-      return protoDptor.enumerable;
-    }
-    return false;
-  });
-  keys.slice(0, length).forEach((key) => {
-    let subVal;
-    try {
-      subVal = val[key];
-    } catch { /* empty */ }
-
-    const { type, subtype } = getType(subVal);
-    if (type === 'object') {
-      if (subtype === 'array') {
-        subVal = `Array(${subVal.length})`;
-      } else if (subtype === 'null') {
-        subVal = 'null';
-      } else if (['date', 'regexp'].includes(subtype)) {
-        subVal = subVal.toString();
-      } else if (subtype === 'node') {
-        subVal = `#${subVal.nodeName}`;
-      } else if (subVal instanceof Set) {
-        subVal = `Set(${subVal.size})`
-      } else if (subVal instanceof Map) {
-        subVal = `Map(${subVal.size})`
-      } else {
-        subVal = 'Object';
-        try {
-          // try catch一下，防止访问window的constructor报跨域错误
-          subVal = subVal.constructor?.name || 'Object';
-        } catch { /* empty */ }
-      }
+export function getPreviewProp(key, subVal) {
+  const { type, subtype } = getType(subVal);
+  if (type === 'object') {
+    if (subtype === 'array') {
+      subVal = `Array(${subVal.length})`;
+    } else if (subtype === 'null') {
+      subVal = 'null';
+    } else if (['date', 'regexp'].includes(subtype)) {
+      subVal = subVal.toString();
+    } else if (subtype === 'node') {
+      subVal = `#${subVal.nodeName}`;
+    } else if (subVal instanceof Set) {
+      subVal = `Set(${subVal.size})`
+    } else if (subVal instanceof Map) {
+      subVal = `Map(${subVal.size})`
     } else {
-      subVal = subVal === undefined ? 'undefined' : subVal.toString();
+      subVal = 'Object';
+      try {
+        // try catch一下，防止访问window的constructor报跨域错误
+        subVal = subVal.constructor?.name || 'Object';
+      } catch { /* empty */ }
     }
-    properties.push({
-      name: key,
-      type,
-      subtype,
-      value: subVal,
-    });
-  });
-
-  const res = { overflow: keys.length > length, properties };
-  
-  let count = 0;
-  const entries = [];
-  if (val instanceof Set) {
-    for (const subVal of val.values()) {
-      if (++count > length) {
-        break;
-      }
-      entries.push({
-        value: objectFormat(subVal),
-      });
-    }
-  } else if (val instanceof Map) {
-    for (const subVal of val.entries()) {
-      if (++count > length) {
-        break;
-      }
-      entries.push({
-        key: objectFormat(subVal[0]),
-        value: objectFormat(subVal[1]),
-      });
-    }
+  } else {
+    subVal = subVal === undefined ? 'undefined' : subVal.toString();
   }
-  if (entries.length) {
-    res.entries = entries;
-    if (count > length) {
-      res.overflow = true;
+  return {
+    name: key,
+    type,
+    subtype,
+    value: subVal,
+  };
+}
+
+export function getPreview(val, opts = {}) {
+  const { length = 5, pstate, presult } = opts;
+  const res = { overflow: false, properties: [] };
+
+  if (pstate) {
+    res.properties.push(getPreviewProp('[[PromiseState]]', pstate));
+    res.properties.push(getPreviewProp('[[PromiseResult]]', presult));
+  } else {
+    const keys = getPropertyNames(val).filter((key) => {
+      const ownDptor = Object.getOwnPropertyDescriptor(val, key);
+      if (ownDptor) {
+        return ownDptor.enumerable;
+      }
+      const protoDptor = getPropertyDescriptor(val.__proto__, key);
+      if (protoDptor?.get) {
+        return protoDptor.enumerable;
+      }
+      return false;
+    });
+    res.overflow = keys.length > length;
+    keys.slice(0, length).forEach((key) => {
+      let subVal;
+      try {
+        subVal = val[key];
+      } catch { /* empty */ }
+      res.properties.push(getPreviewProp(key, subVal));
+    });
+
+    let count = 0;
+    const entries = [];
+    if (val instanceof Set) {
+      for (const subVal of val.values()) {
+        if (++count > length) {
+          break;
+        }
+        entries.push({
+          value: objectFormat(subVal),
+        });
+      }
+    } else if (val instanceof Map) {
+      for (const subVal of val.entries()) {
+        if (++count > length) {
+          break;
+        }
+        entries.push({
+          key: objectFormat(subVal[0]),
+          value: objectFormat(subVal[1]),
+        });
+      }
+    }
+    if (entries.length) {
+      res.entries = entries;
+      if (count > length) {
+        res.overflow = true;
+      }
     }
   }
 
@@ -241,6 +244,15 @@ export function objectFormat(val, opts = {}) {
       subtype,
       description: `Map(${val.size})`,
       ...getPreview(val),
+    });
+  } else if (val instanceof Promise) {
+    res.className = 'Promise';
+    res.description = 'Promise';
+    opts.preview && (res.preview = {
+      type,
+      subtype,
+      description: 'Promise',
+      ...getPreview(val, opts),
     });
   } else {
     let ctorName = 'Object';
@@ -369,11 +381,11 @@ export function getObjectProperties(params, opts = {}) {
     } else if (curObject instanceof Promise) {
       ret.internalProperties.push({
         name: '[[PromiseState]]',
-        value: objectFormat(opts.promiseState || 'pending'),
+        value: objectFormat(opts.pstate || 'pending'),
       });
       ret.internalProperties.push({
         name: '[[PromiseResult]]',
-        value: objectFormat(opts.promiseResult || undefined),
+        value: objectFormat(opts.presult || undefined),
       });
     }
   }
