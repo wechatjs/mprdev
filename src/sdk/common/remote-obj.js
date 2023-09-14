@@ -106,6 +106,8 @@ export function getPreview(val, opts = {}) {
         subVal = `#${subVal.nodeName}`;
       } else if (subVal instanceof Set) {
         subVal = `Set(${subVal.size})`
+      } else if (subVal instanceof Map) {
+        subVal = `Map(${subVal.size})`
       } else {
         subVal = 'Object';
         try {
@@ -137,6 +139,16 @@ export function getPreview(val, opts = {}) {
         value: objectFormat(subVal),
       });
     }
+  } else if (val instanceof Map) {
+    for (const subVal of val.entries()) {
+      if (++count > length) {
+        break;
+      }
+      entries.push({
+        key: objectFormat(subVal[0]),
+        value: objectFormat(subVal[1]),
+      });
+    }
   }
   if (entries.length) {
     res.entries = entries;
@@ -152,7 +164,8 @@ export function objectFormat(val, opts = {}) {
   if (val === undefined) return { type: 'undefined' };
   if (val === null) return { type: 'object', subtype: 'null', value: val };
 
-  const { type, subtype } = getType(val);
+  const { type, subtype: valSubtype } = getType(val);
+  const subtype = val.$$$_sb_subtype || valSubtype;
   if (type === 'string' || type === 'boolean' || opts.value) return { type, value: val };
   if (type === 'number') return { type, value: val, description: String(val) };
   if (type === 'symbol') return { type, objectId: getIdByObject(val, opts), description: String(val) };
@@ -194,10 +207,21 @@ export function objectFormat(val, opts = {}) {
       ...getPreview(val),
     });
   } else if (subtype === 'node') {
-    // html的Element
+    // html的元素
     const ctorName = val.constructor?.name || 'Element';
     res.className = ctorName;
     res.description = val.tagName?.toLowerCase?.() || ctorName;
+  } else if (subtype === 'internal#entry') {
+    // 内部entry元素，用于展示map的元素
+    const description = `${val.key} => ${val.value}`;
+    res.className = 'Object';
+    res.description = description;
+    opts.preview && (res.preview = {
+      type,
+      subtype,
+      description,
+      ...getPreview(val),
+    });
   } else if (val instanceof Set) {
     // 集合类型
     res.className = 'Set';
@@ -206,6 +230,16 @@ export function objectFormat(val, opts = {}) {
       type,
       subtype,
       description: `Set(${val.size})`,
+      ...getPreview(val),
+    });
+  } else if (val instanceof Map) {
+    // 映射类型
+    res.className = 'Map';
+    res.description = `Map(${val.size})`;
+    opts.preview && (res.preview = {
+      type,
+      subtype,
+      description: `Map(${val.size})`,
       ...getPreview(val),
     });
   } else {
@@ -309,9 +343,28 @@ export function getObjectProperties(params) {
       });
     }
     if (curObject instanceof Set) {
+      const entries = Object.create(null);
+      let count = 0;
+      curObject.forEach((value) => {
+        entries[count++] = value;
+      });
       ret.internalProperties.push({
         name: '[[Entries]]',
-        value: objectFormat(Array.from(curObject)),
+        value: objectFormat(entries),
+      });
+    } else if (curObject instanceof Map) {
+      const entries = Object.create(null);
+      let count = 0;
+      curObject.forEach((value, key) => {
+        const entry = Object.create(null);
+        entry.$$$_sb_subtype = 'internal#entry'
+        entry.key = key;
+        entry.value = value;
+        entries[count++] = entry;
+      });
+      ret.internalProperties.push({
+        name: '[[Entries]]',
+        value: objectFormat(entries),
       });
     }
   }
