@@ -53,6 +53,13 @@ export function docReady(callback) {
   }
 }
 
+export function getPromiseState(promise) {
+  const check = {};
+  return Promise.race([promise, check]).then((res) => {
+    return res === check ? ['pending', undefined] : ['fulfilled', res];
+  }).catch((res) => ['rejected', res]);
+}
+
 export function getPropertyDescriptor(obj, key) {
   let dptor;
   let proto = obj;

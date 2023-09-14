@@ -24,8 +24,14 @@ export default class ChromeDomain {
   execute(message = {}) {
     const { id, method, params } = message;
     const methodCall = this.protocol[method];
-    if (typeof methodCall !== 'function') return { id };
-    return { id, result: methodCall(params) };
+    if (typeof methodCall !== 'function') {
+      return { id };
+    }
+    const result = methodCall(params);
+    if (result instanceof Promise) {
+      return result.then((resolved) => ({ id, result: resolved }));
+    }
+    return { id, result };
   }
 
   /**

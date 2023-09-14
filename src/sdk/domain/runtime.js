@@ -1,5 +1,5 @@
-import { objectFormat, objectRelease, objectGroupRelease, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
-import { checkSideEffect, formatErrorStack } from '../common/utils';
+import { objectFormat, objectRelease, objectGroupRelease, getObjectById, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
+import { checkSideEffect, formatErrorStack, getPromiseState } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
 import BaseDomain from './domain';
@@ -232,12 +232,23 @@ export default class Runtime extends BaseDomain {
   /**
    * 获取对象属性
    * @public
+   * @param {Object} params
+   * @param {String} params.objectId 绑定的对象id
+   * @param {String} params.accessorPropertiesOnly 只获取get和set相关的属性
+   * @param {Array} params.ownProperties 只获取自己的属性，不包括原型链上的属性
+   * @param {String} params.generatePreview 是否生成预览
+   * @param {Boolean} params.nonIndexedPropertiesOnly 只获取非index相关属性
    */
   getProperties(params) {
     return JDB.runInSkipOver(() => {
       let res;
       try {
-        res = getObjectProperties(params);
+        const curObject = getObjectById(params.objectId) || {};
+        if (curObject instanceof Promise) {
+          res = getPromiseState(curObject).then(([promiseState, promiseResult]) => getObjectProperties(params, { promiseState, promiseResult }));
+        } else {
+          res = getObjectProperties(params);
+        }
       } catch (err) {
         res = {
           result: objectFormat(err.toString(), { preview: params.generatePreview }),

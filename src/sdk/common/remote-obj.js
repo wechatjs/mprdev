@@ -293,10 +293,10 @@ export function callOnObject(params) {
 }
 
 // 获取对象属性，层级可以无限深
-export function getObjectProperties(params) {
+export function getObjectProperties(params, opts = {}) {
   // ownProperties标识是否为对象自身的属性
   const { objectId, accessorPropertiesOnly, ownProperties, generatePreview, nonIndexedPropertiesOnly } = params;
-  const curObject = objects.get(objectId) || {};
+  const curObject = getObjectById(objectId) || {};
   const keys = getPropertyNames(curObject);
   const ret = { result: [] };
 
@@ -366,6 +366,15 @@ export function getObjectProperties(params) {
         name: '[[Entries]]',
         value: objectFormat(entries),
       });
+    } else if (curObject instanceof Promise) {
+      ret.internalProperties.push({
+        name: '[[PromiseState]]',
+        value: objectFormat(opts.promiseState || 'pending'),
+      });
+      ret.internalProperties.push({
+        name: '[[PromiseResult]]',
+        value: objectFormat(opts.promiseResult || undefined),
+      });
     }
   }
 
@@ -374,7 +383,7 @@ export function getObjectProperties(params) {
 
 // 释放对象
 export function objectRelease({ objectId }) {
-  const object = objects.get(objectId);
+  const object = getObjectById(objectId);
   objects.delete(objectId, object);
   objectIds.delete(object, objectId);
 }

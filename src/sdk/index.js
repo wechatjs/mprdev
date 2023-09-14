@@ -85,7 +85,12 @@ export function init(opts = {}) {
         try {
           const message = JSON.parse(data);
           const ret = domain.execute(message);
-          socket.send(JSON.stringify(ret));
+          if (ret instanceof Promise) {
+            ret.then((resolved) => socket.send(JSON.stringify(resolved)))
+              .catch((err) => console.error('[RemoteDev][Message]', err.toString()));
+          } else {
+            socket.send(JSON.stringify(ret));
+          }
         } catch (err) {
           console.error('[RemoteDev][Message]', err.toString());
         }
