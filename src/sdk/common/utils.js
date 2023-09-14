@@ -1,3 +1,5 @@
+import { exceptionFormat, objectFormat } from './remote-obj';
+
 export function getAbsoultPath(url) {
   if (!url || typeof url !== 'string') return '';
   const absURL = new URL(url, location.href);
@@ -118,6 +120,47 @@ export function getImgRequestUrl(url) {
   }
   url = url.replace(/^http:\/\//, '//');
   return url;
+}
+
+export function getEvaluateResult(code, params, evaluate) {
+  const { objectGroup, generatePreview, returnByValue, throwOnSideEffect } = params;
+  let res;
+  try {
+    if (throwOnSideEffect && checkSideEffect(code)) {
+      throw new EvalError('Possible side-effect in debug-evaluate');
+    }
+    const callReturn = evaluate(code);
+    if (callReturn instanceof Promise) {
+      res = getPromiseState(callReturn)
+        .then(([promiseState, promiseResult]) => ({
+          result: objectFormat(callReturn, {
+            preview: generatePreview,
+            group: objectGroup,
+            value: returnByValue,
+            pstate: promiseState,
+            presult: promiseResult,
+          }),
+        }))
+        .catch((err) => ({
+          result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+          exceptionDetails: exceptionFormat(err),
+        }));
+    } else {
+      res = {
+        result: objectFormat(callReturn, {
+          preview: generatePreview,
+          group: objectGroup,
+          value: returnByValue,
+        }),
+      };
+    }
+  } catch (err) {
+    res = {
+      result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
+      exceptionDetails: exceptionFormat(err),
+    };
+  }
+  return res;
 }
 
 export function getResponseParams(params, entry, requestTime, responseTime) {

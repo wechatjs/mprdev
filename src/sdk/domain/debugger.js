@@ -1,7 +1,7 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { checkSideEffect, formatErrorStack, getAbsoultPath, getPromiseState, randomNum, requestSource } from '../common/utils';
-import { exceptionFormat, getIdByObject, objectFormat } from '../common/remote-obj';
+import { formatErrorStack, getAbsoultPath, getEvaluateResult, randomNum, requestSource } from '../common/utils';
+import { getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
 export default class Debugger extends BaseDomain {
@@ -63,47 +63,8 @@ export default class Debugger extends BaseDomain {
    * @param {Boolean} params.returnByValue 是否直接返回值
    * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  evaluateOnCallFrame({ callFrameId, expression, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
-    return JDB.runInSkipOver(() => {
-      let res;
-      try {
-        const code = expression.trim();
-        if (throwOnSideEffect && checkSideEffect(code)) {
-          throw new EvalError('Possible side-effect in debug-evaluate');
-        }
-        const callReturn = JDB.eval(code, callFrameId);
-        if (callReturn instanceof Promise) {
-          res = getPromiseState(callReturn)
-            .then(([promiseState, promiseResult]) => ({
-              result: objectFormat(callReturn, {
-                preview: generatePreview,
-                group: objectGroup,
-                value: returnByValue,
-                pstate: promiseState,
-                presult: promiseResult,
-              }),
-            }))
-            .catch((err) => ({
-              result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
-              exceptionDetails: exceptionFormat(err),
-            }));
-        } else {
-          res = {
-            result: objectFormat(callReturn, {
-              preview: generatePreview,
-              group: objectGroup,
-              value: returnByValue
-            }),
-          };
-        }
-      } catch (err) {
-        res = {
-          result: objectFormat(err.toString(), { preview: generatePreview, group: objectGroup }),
-          exceptionDetails: exceptionFormat(err),
-        };
-      }
-      return res;
-    });
+  evaluateOnCallFrame(params) {
+    return JDB.runInSkipOver(() => getEvaluateResult(params.expression.trim(), params, (code) => JDB.eval(code, params.callFrameId)));
   }
 
   /**
