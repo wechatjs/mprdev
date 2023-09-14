@@ -208,8 +208,9 @@ export default class Runtime extends BaseDomain {
    * @param {String} params.objectGroup 对象组
    * @param {Boolean} params.generatePreview 是否生成预览
    * @param {Boolean} params.returnByValue 是否直接返回值
+   * @param {Boolean} params.throwOnSideEffect 如果存在副作用，是否报错
    */
-  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, objectGroup, generatePreview, returnByValue }) {
+  callFunctionOn({ functionDeclaration, objectId, arguments: callArguments, objectGroup, generatePreview, returnByValue, throwOnSideEffect }) {
     return JDB.runInSkipOver(() => {
       const res = {};
       try {

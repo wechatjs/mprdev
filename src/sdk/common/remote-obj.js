@@ -104,13 +104,14 @@ export function getPreview(val, opts = {}) {
         subVal = subVal.toString();
       } else if (subtype === 'node') {
         subVal = `#${subVal.nodeName}`;
+      } else if (subVal instanceof Set) {
+        subVal = `Set(${subVal.size})`
       } else {
+        subVal = 'Object';
         try {
           // try catch一下，防止访问window的constructor报跨域错误
           subVal = subVal.constructor?.name || 'Object';
-        } catch {
-          subVal = 'Object';
-        }
+        } catch { /* empty */ }
       }
     } else {
       subVal = subVal === undefined ? 'undefined' : subVal.toString();
@@ -123,10 +124,28 @@ export function getPreview(val, opts = {}) {
     });
   });
 
-  return {
-    overflow: keys.length > length,
-    properties,
-  };
+  const res = { overflow: keys.length > length, properties };
+  
+  let count = 0;
+  const entries = [];
+  if (val instanceof Set) {
+    for (const subVal of val.values()) {
+      if (++count > length) {
+        break;
+      }
+      entries.push({
+        value: objectFormat(subVal),
+      });
+    }
+  }
+  if (entries.length) {
+    res.entries = entries;
+    if (count > length) {
+      res.overflow = true;
+    }
+  }
+
+  return res;
 }
 
 export function objectFormat(val, opts = {}) {
@@ -179,6 +198,16 @@ export function objectFormat(val, opts = {}) {
     const ctorName = val.constructor?.name || 'Element';
     res.className = ctorName;
     res.description = val.tagName?.toLowerCase?.() || ctorName;
+  } else if (val instanceof Set) {
+    // 集合类型
+    res.className = 'Set';
+    res.description = `Set(${val.size})`;
+    opts.preview && (res.preview = {
+      type,
+      subtype,
+      description: `Set(${val.size})`,
+      ...getPreview(val),
+    });
   } else {
     let ctorName = 'Object';
     try {
@@ -270,12 +299,21 @@ export function getObjectProperties(params) {
     ret.result.push(property);
   }
 
-  // 追加__proto__原型
-  if (ownProperties && curObject.__proto__) {
-    ret.internalProperties = [{
-      name: '[[Prototype]]',
-      value: objectFormat(curObject.__proto__),
-    }];
+  // 追加内部对象
+  if (ownProperties && !nonIndexedPropertiesOnly) {
+    ret.internalProperties = [];
+    if (curObject.__proto__) {
+      ret.internalProperties.push({
+        name: '[[Prototype]]',
+        value: objectFormat(curObject.__proto__),
+      });
+    }
+    if (curObject instanceof Set) {
+      ret.internalProperties.push({
+        name: '[[Entries]]',
+        value: objectFormat(Array.from(curObject)),
+      });
+    }
   }
 
   return ret;
