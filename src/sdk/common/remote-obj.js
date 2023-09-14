@@ -213,7 +213,7 @@ export function objectFormat(val, opts = {}) {
     res.description = val.tagName?.toLowerCase?.() || ctorName;
   } else if (subtype === 'internal#entry') {
     // 内部entry元素，用于展示map的元素
-    const description = `${val.key} => ${val.value}`;
+    const description = `${objectFormat(val.key).description} => ${objectFormat(val.value).description}`;
     res.className = 'Object';
     res.description = description;
     opts.preview && (res.preview = {
