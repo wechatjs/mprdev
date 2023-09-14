@@ -51,7 +51,7 @@ export function getType(val) {
 
 export function getPropertyNames(obj) {
   let depth = 10; // 只找10层，避免循环引用
-  let keys = Object.getOwnPropertyNames(obj);
+  let keys = Object.getOwnPropertyNames(obj).filter(k => !k.startsWith('$$$_sb_'));
   while (depth-- && obj.__proto__) {
     obj = obj.__proto__;
     keys = keys.concat(Object.getOwnPropertyNames(obj).filter(k => !keys.includes(k) && !k.startsWith('$$$_sb_')));
@@ -78,9 +78,15 @@ export function getPreview(val, opts = {}) {
 
   const properties = [];
   const keys = getPropertyNames(val).filter((key) => {
-    return key !== '__proto__' && (
-      Object.getOwnPropertyDescriptor(val, key) || getPropertyDescriptor(val.__proto__, key)?.get
-    );
+    const ownDptor = Object.getOwnPropertyDescriptor(val, key);
+    if (ownDptor) {
+      return ownDptor.enumerable;
+    }
+    const protoDptor = getPropertyDescriptor(val.__proto__, key);
+    if (protoDptor?.get) {
+      return protoDptor.enumerable;
+    }
+    return false;
   });
   keys.slice(0, length).forEach((key) => {
     let subVal;
