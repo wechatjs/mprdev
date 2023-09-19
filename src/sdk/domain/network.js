@@ -439,6 +439,10 @@ export default class Network extends BaseDomain {
     };
 
     const handleImage = (img) => {
+      if (img.getAttribute('src') === 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') {
+        // html2canvas会拼命加载这个img，过滤一下
+        return;
+      }
       if (!img.$$loadListened) {
         img.$$loadListened = 1;
         img.addEventListener('load', () => onImageLoad(img, true));
