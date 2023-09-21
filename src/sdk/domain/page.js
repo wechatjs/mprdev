@@ -146,7 +146,8 @@ export default class Page extends BaseDomain {
         this.takeScreenshotByHTML2Canvas();
         return;
       }
-      const img = document.createElement('img');
+      const img = new Image();
+      img.$$ignoreHandle = true;
       img.crossOrigin = 'anonymous';
       img.src = 'data:image/jpeg;base64,' + res.data;
       img.onload = () => {

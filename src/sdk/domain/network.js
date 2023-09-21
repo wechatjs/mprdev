@@ -444,6 +444,9 @@ export default class Network extends BaseDomain {
     };
 
     const handleImage = (img) => {
+      if (img.$$ignoreHandle) {
+        return;
+      }
       if (!img.$$loadListened) {
         img.$$loadListened = 1;
         img.addEventListener('load', () => onImageLoad(img, true));
