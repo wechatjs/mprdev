@@ -20,6 +20,7 @@ export default class Network extends BaseDomain {
 
   // 图片缓存的请求
   cacheImgRequest = [];
+  requestedImgUrls = new Set();
 
   // 用户缓存的请求
   cacheRequest = [];
@@ -421,28 +422,28 @@ export default class Network extends BaseDomain {
     const instance = this;
 
     const onImageLoad = (img, success) => {
-      const url = img.getAttribute('src') && img.src;
-      const responseTime = getTimestamp();
-      const entrys = Array.from(performance.getEntries?.() || []).reverse();
-      const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
       const inDoc = document.documentElement.contains(img);
       if (inDoc) {
         img.$$appendChecked = 1;
       } else {
         delete img.$$appendChecked;
       }
+      const url = img.getAttribute('src') && img.src;
+      if (this.requestedImgUrls.has(url)) {
+        return;
+      }
+      const responseTime = getTimestamp();
+      const entrys = Array.from(performance.getEntries?.() || []).reverse();
+      const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
       if (this.isEnabled) {
         instance.sendImgNetworkEvent(url, entry, responseTime, inDoc, success);
       } else {
         this.cacheImgRequest.push([url, entry, responseTime, inDoc, success]);
       }
+      this.requestedImgUrls.add(url);
     };
 
     const handleImage = (img) => {
-      if (img.getAttribute('src') === 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') {
-        // html2canvas会拼命加载这个img，过滤一下
-        return;
-      }
       if (!img.$$loadListened) {
         img.$$loadListened = 1;
         img.addEventListener('load', () => onImageLoad(img, true));
