@@ -470,6 +470,8 @@ export default class Network extends BaseDomain {
             addedNodes.forEach((node) => {
               if (node.tagName?.toLowerCase() === 'img') {
                 handleImage(node);
+              } else {
+                node.getElementsByTagName?.('img').forEach(handleImage);
               }
             });
           }
