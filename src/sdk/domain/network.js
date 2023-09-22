@@ -212,16 +212,22 @@ export default class Network extends BaseDomain {
           request.hasPostData = !!data;
         }
 
+        const callFrames = Runtime.getCallFrames();
+        const curFrame = callFrames[0];
+        const initiator = curFrame.scriptId
+          ? { type: 'script', stack: { callFrames } }
+          : { type: 'script', url: curFrame.url, lineNumber: curFrame.lineNumber, columnNumber: curFrame.columnNumber };
+
         const requestTime = getTimestamp();
         const requestWillBeSentEvent = (params) => instance.socketSend({ method: Event.requestWillBeSent, params });
         const requestWillBeSentParams = {
           requestId,
           request,
+          initiator,
           documentURL: location.href,
           timestamp: requestTime,
           wallTime: getWallTime(requestTime),
           type: this.$$type || 'XHR',
-          initiator: resourceInitiatorMap[this.$$type] || instance.getInitiator(),
         };
 
         if (typeof this.$$requestWillBeSent === 'function') {
@@ -338,16 +344,22 @@ export default class Network extends BaseDomain {
           sendRequest.hasPostData = !!data;
         }
 
+        const callFrames = Runtime.getCallFrames();
+        const curFrame = callFrames[0];
+        const initiator = curFrame.scriptId
+          ? { type: 'script', stack: { callFrames } }
+          : { type: 'script', url: curFrame.url, lineNumber: curFrame.lineNumber, columnNumber: curFrame.columnNumber };
+
         instance.socketSend({
           method: Event.requestWillBeSent,
           params: {
             requestId,
+            initiator,
             documentURL: location.href,
             timestamp: requestTime,
             wallTime: getWallTime(requestTime),
             type: 'Fetch',
             request: sendRequest,
-            initiator: instance.getInitiator(),
           }
         });
 
@@ -492,33 +504,15 @@ export default class Network extends BaseDomain {
     const oriImgSrcDptor = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
     Object.defineProperty(Image.prototype, 'src', Object.assign({}, oriImgSrcDptor, {
       set(val) {
-        this.$$initiator = instance.getInitiator();
+        const callFrames = Runtime.getCallFrames();
+        const curFrame = callFrames[0];
+        this.$$initiator = curFrame.scriptId
+          ? { type: 'script', stack: { callFrames } }
+          : { type: 'script', url: curFrame.url, lineNumber: curFrame.lineNumber, columnNumber: curFrame.columnNumber };
         oriImgSrcDptor.set.call(this, val);
         handleImage(this);
       },
     }));
-  }
-
-  /**
-   * 获取启动器
-   * @private
-   */
-  getInitiator() {
-    const callFrames = Runtime.getCallFrames();
-    const curFrame = callFrames[0];
-    const scriptId = curFrame.scriptId;
-    if (scriptId) {
-      return {
-        type: 'script',
-        stack: { callFrames },
-      };
-    }
-    return {
-      type: 'script',
-      url: curFrame.url,
-      lineNumber: curFrame.lineNumber,
-      columnNumber: curFrame.columnNumber,
-    };
   }
 
   /**
@@ -587,12 +581,12 @@ export default class Network extends BaseDomain {
           method: Event.requestWillBeSent,
           params: {
             requestId,
+            initiator,
             documentURL: location.href,
             timestamp: requestTime,
             wallTime: getWallTime(requestTime),
             type: 'Image',
             request: sendRequest,
-            initiator,
           },
         });
 
