@@ -508,8 +508,9 @@ export default class Network extends BaseDomain {
         blob: () => Promise.resolve(url),
       });
     } else {
-      imgInfoRequest = oriFetch(requestUrl, { method: 'HEAD', mode: 'no-cors', responseType: 'blob' })
-        .catch(() => success && console.warn('[RemoteDev][Network]', `Failed to get image headers of "${url}"`));
+      imgInfoRequest = oriFetch(requestUrl, { responseType: 'blob' })
+        .catch(() => oriFetch(requestUrl, { responseType: 'blob', mode: 'no-cors' }))
+        .catch(() => success && console.warn('[RemoteDev][Network]', `Failed to get image data of "${url}"`));
     }
 
     imgInfoRequest
@@ -590,20 +591,10 @@ export default class Network extends BaseDomain {
 
           if (typeof blob === 'string') {
             instance.responseText.set(requestId, blob);
-          } else if (blob.size || blob.type) {
+          } else {
             const reader = new FileReader();
             reader.onload = () => instance.responseText.set(requestId, reader.result);
             reader.readAsDataURL(blob);
-          } else {
-            instance.responseText.set(requestId, '');
-            oriFetch(requestUrl, { responseType: 'blob' })
-              .then((res) => res.blob())
-              .then((blob) => {
-                const reader = new FileReader();
-                reader.onload = () => instance.responseText.set(requestId, reader.result);
-                reader.readAsDataURL(blob);
-              })
-              .catch(() => success && console.warn('[RemoteDev][Network]', `Failed to get image data of "${url}"`));
           }
         });
       });
