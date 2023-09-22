@@ -223,11 +223,11 @@ export default class Network extends BaseDomain {
         const requestWillBeSentParams = {
           requestId,
           request,
-          initiator,
           documentURL: location.href,
           timestamp: requestTime,
           wallTime: getWallTime(requestTime),
           type: this.$$type || 'XHR',
+          initiator: resourceInitiatorMap[this.$$type] || initiator,
         };
 
         if (typeof this.$$requestWillBeSent === 'function') {
@@ -565,6 +565,11 @@ export default class Network extends BaseDomain {
           responseHeaders[key] = val;
           headersText += `${key}: ${val}\r\n`;
         });
+
+        if (!headersText) {
+          responseHeaders['Content-Type'] = 'text/plain';
+          headersText = 'Content-Type: text/plain\r\n';
+        }
 
         const status = success ? 200 : (fetchStatus || 200);
         const requestId = instance.getRequestId();
