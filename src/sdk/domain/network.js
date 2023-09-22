@@ -515,7 +515,7 @@ export default class Network extends BaseDomain {
 
     imgInfoRequest
       .then((response) => {
-        if (!success && response?.status !== 200) {
+        if (!success && response && response.status !== 200) {
           let errMsg = `GET ${url} ${response.status || 404}`;
           if (response.status) {
             if (response.statusText) {
