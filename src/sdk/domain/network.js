@@ -258,7 +258,7 @@ export default class Network extends BaseDomain {
                 this.$$responseHasBeenReceived(responseHasBeenReceivedParams, responseHasBeenReceivedEvent);
               } else if (instance.networkPerfObserver) {
                 instance.networkPerfCallbacks.add((entrys) => {
-                  const entry = entrys.find((e) => e.initiatorType === 'xmlhttprequest' && e.name === url);
+                  const entry = entrys.find((e) => e.initiatorType === 'xmlhttprequest' && url.startsWith(e.name));
                   if (entry) {
                     const now = requestTime * 1000;
                     const fetchStart = entry?.fetchStart || now;
@@ -379,7 +379,7 @@ export default class Network extends BaseDomain {
 
             if (instance.networkPerfObserver) {
               instance.networkPerfCallbacks.add((entrys) => {
-                const entry = entrys.find((e) => e.initiatorType === 'fetch' && e.name === url);
+                const entry = entrys.find((e) => e.initiatorType === 'fetch' && url.startsWith(e.name));
                 if (entry) {
                   const now = requestTime * 1000;
                   const fetchStart = entry?.fetchStart || now;
@@ -428,7 +428,7 @@ export default class Network extends BaseDomain {
       }
       const responseTime = getTimestamp();
       const entrys = Array.from(performance.getEntries?.() || []).reverse();
-      const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
+      const entry = entrys.find((e) => e.initiatorType === 'img' && url.startsWith(e.name));
       if (this.isEnabled) {
         instance.sendImgNetworkEvent(url, entry, responseTime, success);
       } else {
