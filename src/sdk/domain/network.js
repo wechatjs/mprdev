@@ -422,12 +422,6 @@ export default class Network extends BaseDomain {
     const instance = this;
 
     const onImageLoad = (img, success) => {
-      const inDoc = document.documentElement.contains(img);
-      if (inDoc) {
-        img.$$appendChecked = 1;
-      } else {
-        delete img.$$appendChecked;
-      }
       const url = img.getAttribute('src') && img.src;
       if (this.requestedImgUrls.has(url)) {
         return;
@@ -436,9 +430,9 @@ export default class Network extends BaseDomain {
       const entrys = Array.from(performance.getEntries?.() || []).reverse();
       const entry = entrys.find((e) => e.initiatorType === 'img' && e.name === url);
       if (this.isEnabled) {
-        instance.sendImgNetworkEvent(url, entry, responseTime, inDoc, success);
+        instance.sendImgNetworkEvent(url, entry, responseTime, success);
       } else {
-        this.cacheImgRequest.push([url, entry, responseTime, inDoc, success]);
+        this.cacheImgRequest.push([url, entry, responseTime, success]);
       }
       this.requestedImgUrls.add(url);
     };
@@ -497,19 +491,19 @@ export default class Network extends BaseDomain {
    * 发送图片network相关协议
    * @private
    */
-  sendImgNetworkEvent(url, entry, responseTime, inDoc, success) {
+  sendImgNetworkEvent(url, entry, responseTime, success) {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
     const dataURLMatch = url.match((/^data:(.+?),/));
 
     let imgInfoRequest;
-    if (!inDoc || dataURLMatch) {
+    if (dataURLMatch) {
       imgInfoRequest = Promise.resolve({
-        headers: new Map([['Content-Type', !inDoc ? 'text/plain' : dataURLMatch[1]]]),
-        status: !inDoc && !success ? 404 : 200,
-        statusText: !inDoc && !success ? 'Not Found' : '',
-        blob: () => Promise.resolve(!inDoc ? '' : url),
+        headers: new Map([['Content-Type', dataURLMatch[1]]]),
+        status: 200,
+        statusText: '',
+        blob: () => Promise.resolve(url),
       });
     } else {
       imgInfoRequest = oriFetch(requestUrl, { responseType: 'blob' }).catch(() => {
@@ -521,10 +515,10 @@ export default class Network extends BaseDomain {
 
     imgInfoRequest
       .then((response) => {
-        if (!success) {
-          let errMsg = `GET ${url} ${response?.status || 404}`;
-          if (response?.status) {
-            if (response?.statusText) {
+        if (!success && response?.status !== 200) {
+          let errMsg = `GET ${url} ${response.status || 404}`;
+          if (response.status) {
+            if (response.statusText) {
               errMsg += ` (${response.statusText})`;
             }
           } else {
