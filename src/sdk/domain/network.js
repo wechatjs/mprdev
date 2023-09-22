@@ -505,12 +505,20 @@ export default class Network extends BaseDomain {
    */
   getInitiator() {
     const callFrames = Runtime.getCallFrames();
-    const url = callFrames[0].url;
+    const curFrame = callFrames[0];
+    const scriptId = curFrame.scriptId;
+    if (scriptId) {
+      return {
+        type: 'script',
+        stack: { callFrames },
+      };
+    }
     return {
       type: 'script',
-      stack: { callFrames },
-      url,
-    }
+      url: curFrame.url,
+      lineNumber: curFrame.lineNumber,
+      columnNumber: curFrame.columnNumber,
+    };
   }
 
   /**
