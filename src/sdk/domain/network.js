@@ -506,7 +506,7 @@ export default class Network extends BaseDomain {
         blob: () => Promise.resolve(url),
       });
     } else {
-      imgInfoRequest = oriFetch(requestUrl, { method: 'HEAD', mode: 'no-cors' })
+      imgInfoRequest = oriFetch(requestUrl, { method: 'HEAD', mode: 'no-cors', responseType: 'blob' })
         .catch(() => success && console.warn('[RemoteDev][Network]', `Failed to get image headers of "${url}"`));
     }
 
@@ -588,7 +588,7 @@ export default class Network extends BaseDomain {
 
           if (typeof blob === 'string') {
             instance.responseText.set(requestId, blob);
-          } else if (blob.size) {
+          } else if (blob.size || blob.type) {
             const reader = new FileReader();
             reader.onload = () => instance.responseText.set(requestId, reader.result);
             reader.readAsDataURL(blob);
