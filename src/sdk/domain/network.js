@@ -2,12 +2,18 @@ import jsCookie from 'js-cookie';
 import { getAbsoultPath, getImgRequestUrl, getResponseParams, key2UpperCase } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
+import Runtime from './runtime';
 import JDB from '../common/jdb';
 
 const oriFetch = window.fetch;
 const getWallTime = (now) => Date.now() / 1000 - now;
 const getTimestamp = () => performance.now() / 1000;
 const getHttpResLen = (s, st, h, bl) => `HTTP/1.1 ${s} ${st}\n${h}\n\n\n`.length + bl; // 计算统计响应大小的
+const resourceInitiatorMap = {
+  'Document': { type: 'other' },
+  'Script': { type: 'parser', url: location.href },
+  'Stylesheet': { type: 'parser', url: location.href },
+};
 
 export default class Network extends BaseDomain {
   namespace = 'Network';
@@ -215,6 +221,7 @@ export default class Network extends BaseDomain {
           timestamp: requestTime,
           wallTime: getWallTime(requestTime),
           type: this.$$type || 'XHR',
+          initiator: resourceInitiatorMap[this.$$type] || { type: 'script', stack: { callFrames: Runtime.getCallFrames() } },
         };
 
         if (typeof this.$$requestWillBeSent === 'function') {
@@ -340,6 +347,7 @@ export default class Network extends BaseDomain {
             wallTime: getWallTime(requestTime),
             type: 'Fetch',
             request: sendRequest,
+            initiator: { type: 'script', stack: { callFrames: Runtime.getCallFrames() } },
           }
         });
 
@@ -427,12 +435,13 @@ export default class Network extends BaseDomain {
         return;
       }
       const responseTime = getTimestamp();
+      const initiator = img.$$initiator || { type: 'other' };
       const entrys = Array.from(performance.getEntries?.() || []).reverse();
       const entry = entrys.find((e) => e.initiatorType === 'img' && url.startsWith(e.name));
       if (this.isEnabled) {
-        instance.sendImgNetworkEvent(url, entry, responseTime, success);
+        instance.sendImgNetworkEvent(url, entry, responseTime, initiator, success);
       } else {
-        this.cacheImgRequest.push([url, entry, responseTime, success]);
+        this.cacheImgRequest.push([url, entry, responseTime, initiator, success]);
       }
       this.requestedImgUrls.add(url);
     };
@@ -483,6 +492,7 @@ export default class Network extends BaseDomain {
     const oriImgSrcDptor = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
     Object.defineProperty(Image.prototype, 'src', Object.assign({}, oriImgSrcDptor, {
       set(val) {
+        this.$$initiator = { type: 'script', stack: { callFrames: Runtime.getCallFrames() } };
         oriImgSrcDptor.set.call(this, val);
         handleImage(this);
       },
@@ -493,7 +503,7 @@ export default class Network extends BaseDomain {
    * 发送图片network相关协议
    * @private
    */
-  sendImgNetworkEvent(url, entry, responseTime, success) {
+  sendImgNetworkEvent(url, entry, responseTime, initiator,success) {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
@@ -560,6 +570,7 @@ export default class Network extends BaseDomain {
             wallTime: getWallTime(requestTime),
             type: 'Image',
             request: sendRequest,
+            initiator,
           },
         });
 
