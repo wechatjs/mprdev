@@ -221,7 +221,7 @@ export default class Network extends BaseDomain {
           timestamp: requestTime,
           wallTime: getWallTime(requestTime),
           type: this.$$type || 'XHR',
-          initiator: resourceInitiatorMap[this.$$type] || { type: 'script', stack: { callFrames: Runtime.getCallFrames() } },
+          initiator: resourceInitiatorMap[this.$$type] || instance.getInitiator(),
         };
 
         if (typeof this.$$requestWillBeSent === 'function') {
@@ -347,7 +347,7 @@ export default class Network extends BaseDomain {
             wallTime: getWallTime(requestTime),
             type: 'Fetch',
             request: sendRequest,
-            initiator: { type: 'script', stack: { callFrames: Runtime.getCallFrames() } },
+            initiator: instance.getInitiator(),
           }
         });
 
@@ -492,7 +492,7 @@ export default class Network extends BaseDomain {
     const oriImgSrcDptor = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
     Object.defineProperty(Image.prototype, 'src', Object.assign({}, oriImgSrcDptor, {
       set(val) {
-        this.$$initiator = { type: 'script', stack: { callFrames: Runtime.getCallFrames() } };
+        this.$$initiator = instance.getInitiator();
         oriImgSrcDptor.set.call(this, val);
         handleImage(this);
       },
@@ -500,10 +500,24 @@ export default class Network extends BaseDomain {
   }
 
   /**
+   * 获取启动器
+   * @private
+   */
+  getInitiator() {
+    const callFrames = Runtime.getCallFrames();
+    const url = callFrames[0].url;
+    return {
+      type: 'script',
+      stack: { callFrames },
+      url,
+    }
+  }
+
+  /**
    * 发送图片network相关协议
    * @private
    */
-  sendImgNetworkEvent(url, entry, responseTime, initiator,success) {
+  sendImgNetworkEvent(url, entry, responseTime, initiator, success) {
     const instance = this;
     const requestStart = getTimestamp();
     const requestUrl = getImgRequestUrl(url);
