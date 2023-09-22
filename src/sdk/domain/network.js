@@ -516,7 +516,7 @@ export default class Network extends BaseDomain {
 
     imgInfoRequest
       .then((response) => {
-        if (!success && response && response.status !== 200) {
+        if (!success && response && response.status >= 400) {
           let errMsg = `GET ${url} ${response.status || 404}`;
           if (response.status) {
             if (response.statusText) {
@@ -540,7 +540,7 @@ export default class Network extends BaseDomain {
           headersText += `${key}: ${val}\r\n`;
         });
 
-        const status = success ? 200 : fetchStatus;
+        const status = success ? 200 : (fetchStatus || 200);
         const requestId = instance.getRequestId();
         const requestTime = responseTime - responseEnd + requestStart;
         const sendStart = (responseTime - requestTime) * 1000 / 4;
