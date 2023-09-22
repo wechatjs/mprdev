@@ -446,7 +446,7 @@ export default class Network extends BaseDomain {
         img.addEventListener('load', () => onImageLoad(img, true));
         img.addEventListener('error', () => onImageLoad(img, false));
       }
-      if (!img.$$appendChecked && img.getAttribute('src') && img.src && img.complete) {
+      if (img.getAttribute('src') && img.src && img.complete) {
         onImageLoad(img, true);
       }
     };
