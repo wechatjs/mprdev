@@ -1,5 +1,5 @@
 const matchUrl = (key) => location.href.match(new RegExp(`(\\\\?|&)${key}=([^&]*)(&|$)`));
-const lang = matchUrl('lang')?.[2];
+export const lang = matchUrl('lang')?.[2];
 
 const wordings = {
   cn: {
@@ -22,7 +22,7 @@ const wordings = {
     InspectByNoSSL: '通过非安全信道调试',
   },
   en: {
-    RemoteDevTools: 'Remote DevTools',
+    RemoteDevTools: 'DevTools',
     Refresh: 'Refresh',
     Search: 'Search',
     Title: 'Title',

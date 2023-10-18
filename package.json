@@ -62,7 +62,7 @@
     "query-string": "^7.1.1",
     "reconnecting-websocket": "^4.4.0",
     "specificity": "^0.4.1",
-    "tdesign-vue": "^0.46.3",
+    "tdesign-vue": "^1.7.0",
     "uuid": "^8.3.2",
     "vdebugger": "^0.1.13",
     "vue": "^2.6.14",

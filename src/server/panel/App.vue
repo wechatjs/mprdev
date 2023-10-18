@@ -2,7 +2,9 @@
   <t-layout class="page">
     <t-header class="header">
       <t-head-menu theme="dark">
-        <div class="logo" slot="logo">{{ I18N.RemoteDevTools }}</div>
+        <div class="logo" slot="logo">
+          {{ I18N.RemoteDevTools }}
+        </div>
         <div class="header-operations" slot="operations">
           <t-button theme="primary" @click="getTargets" :loading="isLoading">{{ I18N.Refresh }}</t-button>
           <t-dropdown
@@ -14,8 +16,10 @@
             @click="handleSortTypeChange"
           >
             <t-button>
-              {{ sortType | filterSortType }}
-              <t-icon name="chevron-down" size="small" />
+              <span class="dropdown-text">
+                {{ sortType | filterSortType }}
+                <t-icon name="chevron-down" size="small" />
+              </span>
             </t-button>
           </t-dropdown>
           <t-input-adornment :prepend="I18N.Search" class="search">
@@ -27,6 +31,17 @@
               :placeholder="'UIN / ' + I18N.Title + ' / ' + I18N.DeviceId + ' / URL'"
             />
           </t-input-adornment>
+          <t-button theme="default" shape="square" @click="switchTheme">
+            <t-icon v-if="theme === 'dark'" name="sunny" />
+            <t-icon v-else name="moon" />
+          </t-button>
+          <t-button theme="default" shape="square" @click="switchLang">
+            <span v-if="lang === 'en'">中</span>
+            <span v-else>EN</span>
+          </t-button>
+          <t-button theme="default" shape="square" @click="openGithub">
+            <t-icon name="logo-github" />
+          </t-button>
         </div>
       </t-head-menu>
     </t-header>
@@ -69,7 +84,7 @@
 </template>
 
 <script>
-import I18N from './i18n';
+import I18N, { lang } from './i18n';
 
 const BASE_URL = '/remote_dev'; // 不需要前缀时留空字符串
 const INTERVAL = 30 * 1000; // 轮询时间间隔
@@ -104,6 +119,9 @@ export default {
     let searchContent = '';
     try { searchContent = window.localStorage.getItem('__remote_dev_search_content__') || '' } catch { /* empty */ }
 
+    let theme = 'light';
+    try { theme = window.localStorage.getItem('__remote_dev_theme_mode__') || 'light' } catch { /* empty */ }
+
     return {
       list: [],
       sortOptions: [
@@ -116,6 +134,8 @@ export default {
       intervalTimer: null,
       isLoading: false,
       searchContent,
+      theme,
+      lang,
       I18N,
     };
   },
@@ -144,6 +164,7 @@ export default {
     }, INTERVAL);
   },
   mounted() {
+    document.documentElement.setAttribute('theme-mode', this.theme);
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         this.getTargets();
@@ -217,6 +238,17 @@ export default {
         { content: I18N.InspectByNoSSL, value: 1, onClick: this.openDevTools.bind(this, target, 'http:') },
       ];
     },
+    switchTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('theme-mode', this.theme);
+      try { window.localStorage.setItem('__remote_dev_theme_mode__', this.theme) } catch { /* empty */ } // 缓存主题
+    },
+    switchLang() {
+      location.search = `?lang=${lang === 'en' ? 'cn' : 'en'}`;
+    },
+    openGithub() {
+      window.open('https://github.com/wechatjs/mprdev', '_blank');
+    },
   }
 }
 </script>
@@ -224,12 +256,12 @@ export default {
 <style scoped>
 .page {
   min-width: 700px;
+  min-height: 100vh;
 }
 
 .logo {
   color: var(--td-brand-color-7);
   font-size: 26px;
-  padding: 0 24px;
   flex-shrink: 0;
 }
 
@@ -248,6 +280,15 @@ export default {
 
 .sort-dropdown {
   margin-left: 24px;
+}
+
+.dropdown-text {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-text .t-icon {
+  margin-left: 4px;
 }
 
 .search {
@@ -333,12 +374,15 @@ export default {
 </style>
 
 <style>
+html, body {
+  min-height: 100vh;
+}
 .searchbar .t-input.t-is-success {
-  border: none;
+  border: 1px solid var(--td-border-level-2-color);
   background-color: var(--td-success-color-1);
 }
 .searchbar .t-input.t-is-error {
-  border: none;
+  border: 1px solid var(--td-border-level-2-color);
   background-color: var(--td-error-color-1);
 }
 </style>
