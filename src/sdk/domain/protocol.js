@@ -60,6 +60,7 @@ export default {
     'deleteCookies',
     'getResponseBody',
     'setCacheDisabled',
+    'setUserAgentOverride',
   ],
   Overlay: [
     'enable',

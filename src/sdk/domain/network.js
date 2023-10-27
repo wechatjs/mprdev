@@ -5,6 +5,7 @@ import BaseDomain from './domain';
 import Runtime from './runtime';
 import JDB from '../common/jdb';
 
+const oriUADptor = Object.getOwnPropertyDescriptor(window.navigator.__proto__, 'userAgent');
 const oriFetch = window.fetch;
 const getWallTime = (now) => Date.now() / 1000 - now;
 const getTimestamp = () => performance.now() / 1000;
@@ -152,6 +153,17 @@ export default class Network extends BaseDomain {
     if (cacheDisabled) {
       console.warn('[RemoteDev][Network]', 'Cache disabled is unsupported');
     }
+  }
+
+  /**
+   * 设置浏览器ua
+   * @public
+   * @param {Object} params
+   * @param {String} params.userAgent 自定义ua
+   */
+  setUserAgentOverride({ userAgent }) {
+    const userAgentDptor = userAgent ? Object.assign({}, oriUADptor, { get: () => userAgent }) : oriUADptor;
+    Object.defineProperty(navigator.__proto__, 'userAgent', userAgentDptor);
   }
 
   registerPerfObserver() {
