@@ -1,5 +1,6 @@
 import nodes from '../common/nodes';
 import JDB from '../common/jdb';
+import BaseDomain from './domain';
 import { docReady } from '../common/utils';
 import { isQuiteMode } from '../common/mode';
 
@@ -18,7 +19,7 @@ wrapper.className = debugClsName;
 wrapper.id = debugClsName;
 docReady(() => document.body.appendChild(wrapper));
 
-export default class Overlay {
+export default class Overlay extends BaseDomain {
   namespace = 'Overlay';
 
   static inspectMode = 'none';

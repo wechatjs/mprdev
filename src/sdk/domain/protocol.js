@@ -89,7 +89,10 @@ export default {
     'globalLexicalScopeNames',
   ],
   Emulation: [
-    'setTouchEmulationEnabled'
+    'setTouchEmulationEnabled',
+  ],
+  Input: [
+    'emulateTouchFromMouseEvent',
   ],
 };
 
