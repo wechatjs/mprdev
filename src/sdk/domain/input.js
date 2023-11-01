@@ -17,11 +17,44 @@ export default class Input extends BaseDomain {
     const target = document.elementFromPoint(x, y) || document.documentElement;
 
     switch (type) {
-      case 'mousePressed': break;
-      case 'mouseReleased': break;
-      case 'mouseMoved': break;
+      case 'mousePressed': this.emitTargetTouchStart(target, x, y); break;
+      case 'mouseReleased': this.emitTargetTouchEnd(target, x, y); break;
+      case 'mouseMoved': this.emitTargetTouchMove(target, x, y); break;
       case 'mouseWheel': this.scrollTarget(target, deltaX, deltaY); break;
     }
+  }
+
+  /**
+   * 触发touchstart事件
+   * @private
+   */
+  emitTargetTouchStart(target, x, y) {
+    this.emitTouchEvent('touchstart', target, x, y);
+    target.$$emulateBaseTouchX = x;
+    target.$$emulateBaseTouchY = y;
+  }
+
+  /**
+   * 触发touchend事件
+   * @private
+   */
+  emitTargetTouchEnd(target, x, y) {
+    this.emitTouchEvent('touchend', target, x, y);
+    if (typeof target.$$emulateBaseTouchX === 'number' && typeof target.$$emulateBaseTouchY === 'number') {
+      this.emitClickEvent(target);
+    }
+    delete target.$$emulateBaseTouchX;
+    delete target.$$emulateBaseTouchY;
+  }
+
+  /**
+   * 触发touchmove事件
+   * @private
+   */
+  emitTargetTouchMove(target, x, y) {
+    this.emitTouchEvent('touchmove', target, x, y);
+    delete target.$$emulateBaseTouchX;
+    delete target.$$emulateBaseTouchY;
   }
 
   /**
@@ -59,5 +92,34 @@ export default class Input extends BaseDomain {
       scrollView = scrollView.parentElement;
     }
     return scrollView;
+  }
+
+  /**
+   * 触发touch相关事件
+   * @private
+   */
+  emitTouchEvent(type, target, x, y) {
+    target.dispatchEvent(new TouchEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      touches: [new Touch({
+        identifier: 1,
+        target: target,
+        clientX: x,
+        clientY: y,
+      })],
+    }));
+  }
+
+  /**
+   * 触发click事件
+   * @private
+   */
+  emitClickEvent(target) {
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    }));
   }
 }
