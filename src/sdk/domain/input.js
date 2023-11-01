@@ -99,15 +99,18 @@ export default class Input extends BaseDomain {
    * @private
    */
   emitTouchEvent(type, target, x, y) {
+    const touch = new Touch({
+      identifier: 1,
+      target: target,
+      clientX: x,
+      clientY: y,
+    });
     target.dispatchEvent(new TouchEvent(type, {
       bubbles: true,
       cancelable: true,
-      touches: [new Touch({
-        identifier: 1,
-        target: target,
-        clientX: x,
-        clientY: y,
-      })],
+      changedTouches: [touch],
+      targetTouches: [touch],
+      touches: [touch],
     }));
   }
 
