@@ -8,7 +8,7 @@ export default class Input extends BaseDomain {
   emulateClickPrevented = false;
   emulateScrollPrevented = false;
   currentScrollView = null;
-  
+
   /**
    * 鼠标模拟touch操作
    * @public
@@ -40,6 +40,7 @@ export default class Input extends BaseDomain {
     this.emulateTouchBaseY = prevent ? 0 : y;
     this.emulateScrollPrevented = prevent;
     this.emulateClickPrevented = prevent;
+
     if (this.currentScrollView) {
       delete this.currentScrollView.$$emulateBaseScrollLeft;
       delete this.currentScrollView.$$emulateBaseScrollTop;
@@ -78,6 +79,7 @@ export default class Input extends BaseDomain {
       this.emitClickEvent(target);
     }
     this.emulateClickPrevented = false;
+
     if (this.currentScrollView) {
       delete this.currentScrollView.$$emulateBaseScrollLeft;
       delete this.currentScrollView.$$emulateBaseScrollTop;
@@ -96,6 +98,7 @@ export default class Input extends BaseDomain {
     scrollView.scrollLeft = scrollLeft - deltaX;
     scrollView.scrollTop = scrollTop - deltaY;
     this.currentScrollView = scrollView;
+
     if (scrollView.$$emulateBaseScrollClearTimer) {
       clearTimeout(scrollView.$$emulateBaseScrollClearTimer);
     }
