@@ -3,6 +3,12 @@ import BaseDomain from './domain';
 export default class Input extends BaseDomain {
   namespace = 'Input';
 
+  emulateTouchBaseX = 0;
+  emulateTouchBaseY = 0;
+  emulateClickPrevented = false;
+  emulateScrollPrevented = false;
+  currentScrollView = null;
+  
   /**
    * 鼠标模拟touch操作
    * @public
@@ -30,10 +36,14 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchStart(target, x, y) {
     const prevent = this.emitTouchEvent('touchstart', target, x, y);
-    if (prevent) {
-      target.$$emulateClickPrevented = true;
-    } else {
-      delete target.$$emulateClickPrevented;
+    this.emulateTouchBaseX = prevent ? 0 : x;
+    this.emulateTouchBaseY = prevent ? 0 : y;
+    this.emulateScrollPrevented = prevent;
+    this.emulateClickPrevented = prevent;
+    if (this.currentScrollView) {
+      delete this.currentScrollView.$$emulateBaseScrollLeft;
+      delete this.currentScrollView.$$emulateBaseScrollTop;
+      this.currentScrollView = null;
     }
   }
 
@@ -42,8 +52,20 @@ export default class Input extends BaseDomain {
    * @private
    */
   emitTargetTouchMove(target, x, y) {
-    this.emitTouchEvent('touchmove', target, x, y);
-    target.$$emulateClickPrevented = true;
+    const prevent = this.emitTouchEvent('touchmove', target, x, y);
+    this.emulateClickPrevented = true;
+    if (prevent) {
+      this.emulateScrollPrevented = true;
+    } else if (!this.emulateScrollPrevented) {
+      const deltaX = x - this.emulateTouchBaseX;
+      const deltaY = y - this.emulateTouchBaseY;
+      const scrollView = this.findScrollView(target, deltaX, deltaY);
+      const scrollLeft = scrollView.$$emulateBaseScrollLeft || (scrollView.$$emulateBaseScrollLeft = scrollView.scrollLeft);
+      const scrollTop = scrollView.$$emulateBaseScrollTop || (scrollView.$$emulateBaseScrollTop = scrollView.scrollTop);
+      scrollView.scrollLeft = scrollLeft - deltaX;
+      scrollView.scrollTop = scrollTop - deltaY;
+      this.currentScrollView = scrollView;
+    }
   }
 
   /**
@@ -52,10 +74,15 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchEnd(target, x, y) {
     this.emitTouchEvent('touchend', target, x, y);
-    if (!target.$$emulateClickPrevented) {
+    if (!this.emulateClickPrevented) {
       this.emitClickEvent(target);
     }
-    delete target.$$emulateClickPrevented;
+    this.emulateClickPrevented = false;
+    if (this.currentScrollView) {
+      delete this.currentScrollView.$$emulateBaseScrollLeft;
+      delete this.currentScrollView.$$emulateBaseScrollTop;
+      this.currentScrollView = null;
+    }
   }
 
   /**
@@ -68,6 +95,7 @@ export default class Input extends BaseDomain {
     const scrollTop = scrollView.$$emulateBaseScrollTop || (scrollView.$$emulateBaseScrollTop = scrollView.scrollTop);
     scrollView.scrollLeft = scrollLeft - deltaX;
     scrollView.scrollTop = scrollTop - deltaY;
+    this.currentScrollView = scrollView;
     if (scrollView.$$emulateBaseScrollClearTimer) {
       clearTimeout(scrollView.$$emulateBaseScrollClearTimer);
     }
@@ -75,6 +103,7 @@ export default class Input extends BaseDomain {
       delete scrollView.$$emulateBaseScrollClearTimer;
       delete scrollView.$$emulateBaseScrollLeft;
       delete scrollView.$$emulateBaseScrollTop;
+      this.currentScrollView = null;
     }, 150);
   }
 
@@ -83,17 +112,20 @@ export default class Input extends BaseDomain {
    * @private
    */
   findScrollView(target, deltaX, deltaY) {
+    if (this.currentScrollView) {
+      return this.currentScrollView;
+    }
     let scrollView = target;
     while (scrollView) {
       const computedStyle = window.getComputedStyle(scrollView);
-      const scrollableY = !!deltaY && (scrollView.scrollHeight > scrollView.scrollTop + scrollView.clientHeight) && (computedStyle.overflowY !== 'hidden');
-      const scrollableX = !!deltaX && (scrollView.scrollWidth > scrollView.scrollLeft + scrollView.clientWidth) && (computedStyle.overflowX !== 'hidden');
+      const scrollableY = !!deltaY && (scrollView.scrollHeight > scrollView.scrollTop + scrollView.clientHeight) && (computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll');
+      const scrollableX = !!deltaX && (scrollView.scrollWidth > scrollView.scrollLeft + scrollView.clientWidth) && (computedStyle.overflowX === 'auto' || computedStyle.overflowX === 'scroll');
       if (scrollableY || scrollableX) {
         break;
       }
       scrollView = scrollView.parentElement;
     }
-    return scrollView;
+    return scrollView || document.documentElement;
   }
 
   /**
