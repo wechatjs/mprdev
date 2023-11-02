@@ -31,9 +31,9 @@ export default class Input extends BaseDomain {
   emitTargetTouchStart(target, x, y) {
     const prevent = this.emitTouchEvent('touchstart', target, x, y);
     if (prevent) {
-      target.$$emulateTouchStartDefaultPrevented = true;
+      target.$$emulateClickPrevented = true;
     } else {
-      delete target.$$emulateTouchStartDefaultPrevented;
+      delete target.$$emulateClickPrevented;
     }
   }
 
@@ -43,7 +43,7 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchMove(target, x, y) {
     this.emitTouchEvent('touchmove', target, x, y);
-    target.$$emulateTouchStartDefaultPrevented = true;
+    target.$$emulateClickPrevented = true;
   }
 
   /**
@@ -52,10 +52,10 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchEnd(target, x, y) {
     this.emitTouchEvent('touchend', target, x, y);
-    if (target.$$emulateTouchStartDefaultPrevented) {
+    if (target.$$emulateClickPrevented) {
       this.emitClickEvent(target);
     }
-    delete target.$$emulateTouchStartDefaultPrevented;
+    delete target.$$emulateClickPrevented;
   }
 
   /**
