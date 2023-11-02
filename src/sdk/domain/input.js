@@ -30,7 +30,7 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchStart(target, x, y) {
     const prevent = this.emitTouchEvent('touchstart', target, x, y);
-    if (!prevent) {
+    if (prevent) {
       target.$$emulateTouchStartDefaultPrevented = true;
     } else {
       delete target.$$emulateTouchStartDefaultPrevented;
