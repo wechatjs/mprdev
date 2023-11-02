@@ -121,8 +121,8 @@ export default class Input extends BaseDomain {
     let scrollView = target;
     while (scrollView) {
       const computedStyle = window.getComputedStyle(scrollView);
-      const scrollableY = !!deltaY && (scrollView.scrollHeight > scrollView.scrollTop + scrollView.clientHeight) && (computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll');
-      const scrollableX = !!deltaX && (scrollView.scrollWidth > scrollView.scrollLeft + scrollView.clientWidth) && (computedStyle.overflowX === 'auto' || computedStyle.overflowX === 'scroll');
+      const scrollableY = !!deltaY && (scrollView.scrollHeight > scrollView.clientHeight) && (computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll');
+      const scrollableX = !!deltaX && (scrollView.scrollWidth > scrollView.clientWidth) && (computedStyle.overflowX === 'auto' || computedStyle.overflowX === 'scroll');
       if (scrollableY || scrollableX) {
         break;
       }
