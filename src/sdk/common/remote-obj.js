@@ -85,11 +85,12 @@ export function getPreviewProp(key, subVal) {
     } else if (subVal instanceof Map) {
       subVal = `Map(${subVal.size})`
     } else {
-      subVal = 'Object';
+      let ctor;
       try {
         // try catch一下，防止访问window的constructor报跨域错误
-        subVal = subVal.constructor?.name || 'Object';
+        ctor = subVal.constructor?.name || 'Object';
       } catch { /* empty */ }
+      subVal = ctor || 'Object';
     }
   } else {
     subVal = subVal === undefined ? 'undefined' : subVal.toString();
@@ -170,6 +171,7 @@ export function objectFormat(val, opts = {}) {
   const { type, subtype: valSubtype } = getType(val);
   let subtype = valSubtype;
   try {
+    // try catch一下，防止访问window的属性报跨域错误
     subtype = val.$$$_sb_subtype || valSubtype;
   } catch { /* empty */ }
   if (type === 'string' || type === 'boolean' || opts.value) return { type, value: val };
