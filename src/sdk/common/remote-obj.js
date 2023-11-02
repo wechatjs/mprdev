@@ -168,7 +168,10 @@ export function objectFormat(val, opts = {}) {
   if (val === null) return { type: 'object', subtype: 'null', value: val };
 
   const { type, subtype: valSubtype } = getType(val);
-  const subtype = val.$$$_sb_subtype || valSubtype;
+  let subtype = valSubtype;
+  try {
+    subtype = val.$$$_sb_subtype || valSubtype;
+  } catch { /* empty */ }
   if (type === 'string' || type === 'boolean' || opts.value) return { type, value: val };
   if (type === 'number') return { type, value: val, description: String(val) };
   if (type === 'symbol') return { type, objectId: getIdByObject(val, opts), description: String(val) };
