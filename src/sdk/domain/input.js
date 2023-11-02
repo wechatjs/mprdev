@@ -85,6 +85,7 @@ export default class Input extends BaseDomain {
 
     this.emulateTouchBaseX = 0;
     this.emulateTouchBaseY = 0;
+    this.emulateScrollPrevented = false;
     this.emulateClickPrevented = false;
     this.emulateTouching = false;
 
