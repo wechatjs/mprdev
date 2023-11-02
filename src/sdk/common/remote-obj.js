@@ -81,16 +81,16 @@ export function getPreviewProp(key, subVal) {
     } else if (subtype === 'node') {
       subVal = `#${subVal.nodeName}`;
     } else if (subVal instanceof Set) {
-      subVal = `Set(${subVal.size})`
+      subVal = `Set(${subVal.size})`;
     } else if (subVal instanceof Map) {
-      subVal = `Map(${subVal.size})`
+      subVal = `Map(${subVal.size})`;
     } else {
-      let ctor;
+      let ctorName = 'Object';
       try {
         // try catch一下，防止访问window的constructor报跨域错误
-        ctor = subVal.constructor?.name || 'Object';
+        ctorName = subVal.constructor?.name || 'Object';
       } catch { /* empty */ }
-      subVal = ctor || 'Object';
+      subVal = ctorName;
     }
   } else {
     subVal = subVal === undefined ? 'undefined' : subVal.toString();
