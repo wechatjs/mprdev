@@ -166,6 +166,10 @@ export default class Network extends BaseDomain {
     Object.defineProperty(navigator.__proto__, 'userAgent', userAgentDptor);
   }
 
+  /**
+   * 注册性能监听
+   * @private
+   */
   registerPerfObserver() {
     if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.indexOf('resource') !== -1) {
       this.networkPerfObserver = new PerformanceObserver((perf) => {

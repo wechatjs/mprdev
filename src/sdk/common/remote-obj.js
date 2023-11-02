@@ -52,20 +52,26 @@ export function getType(val) {
 export function getPropertyNames(obj) {
   let depth = 10; // 只找10层，避免循环引用
   let keys = Object.getOwnPropertyNames(obj).filter(k => !k.startsWith('$$$_sb_'));
-  while (depth-- && obj.__proto__) {
-    obj = obj.__proto__;
-    keys = keys.concat(Object.getOwnPropertyNames(obj).filter(k => !keys.includes(k) && !k.startsWith('$$$_sb_')));
-  }
+  try {
+    // try catch一下，防止访问window的__proto__报跨域错误
+    while (depth-- && obj.__proto__) {
+      obj = obj.__proto__;
+      keys = keys.concat(Object.getOwnPropertyNames(obj).filter(k => !keys.includes(k) && !k.startsWith('$$$_sb_')));
+    }
+  } catch { /* empty */ }
   return keys;
 }
 
 export function getPropertyDescriptor(obj, key) {
   let depth = 10; // 只找10层，避免循环引用
   let dptor = Object.getOwnPropertyDescriptor(obj, key);
-  while (depth-- && !dptor && obj.__proto__) {
-    obj = obj.__proto__;
-    dptor = Object.getOwnPropertyDescriptor(obj, key);
-  }
+  try {
+    // try catch一下，防止访问window的__proto__报跨域错误
+    while (depth-- && !dptor && obj.__proto__) {
+      obj = obj.__proto__;
+      dptor = Object.getOwnPropertyDescriptor(obj, key);
+    }
+  } catch { /* empty */ }
   return dptor;
 }
 
@@ -89,7 +95,12 @@ export function getPreviewProp(key, subVal) {
       try {
         // try catch一下，防止访问window的constructor报跨域错误
         ctorName = subVal.constructor?.name || 'Object';
-      } catch { /* empty */ }
+      } catch {
+        try {
+          // 有可能是iframe的window，尝试猜一下是不是
+          ctorName = subVal.top === window && subVal.window === subVal && typeof subVal.postMessage === 'function' ? 'Window' : 'Object';
+        } catch { /* empty */ }
+      }
       subVal = ctorName;
     }
   } else {
@@ -264,7 +275,12 @@ export function objectFormat(val, opts = {}) {
     try {
       // try catch一下，防止访问window的constructor报跨域错误
       ctorName = val.constructor?.name || 'Object';
-    } catch { /* empty */ }
+    } catch {
+      try {
+        // 有可能是iframe的window，尝试猜一下是不是
+        ctorName = val.top === window && val.window === val && typeof val.postMessage === 'function' ? 'Window' : 'Object';
+      } catch { /* empty */ }
+    }
     res.className = ctorName;
     res.description = ctorName;
     opts.preview && (res.preview = {
@@ -312,10 +328,16 @@ export function getObjectProperties(params, opts = {}) {
   const keys = getPropertyNames(curObject);
   const ret = { result: [] };
 
+  let curProto = null;
+  try {
+    // try catch一下，防止访问window的__proto__报跨域错误
+    curProto = curObject.__proto__ || null;
+  } catch { /* empty */ }
+
   for (const key of keys) {
     let descriptor = Object.getOwnPropertyDescriptor(curObject, key);
     const isOwn = !!descriptor;
-    if (!descriptor && !ownProperties) descriptor = getPropertyDescriptor(curObject.__proto__, key);
+    if (!descriptor && !ownProperties && curProto) descriptor = getPropertyDescriptor(curProto, key);
     if (!descriptor || !descriptor.get && !descriptor.set && accessorPropertiesOnly) continue;
     if (nonIndexedPropertiesOnly && /^\d+$/.test(key)) continue;
 
@@ -348,10 +370,10 @@ export function getObjectProperties(params, opts = {}) {
   // 追加内部对象
   if (ownProperties && !nonIndexedPropertiesOnly) {
     ret.internalProperties = [];
-    if (curObject.__proto__) {
+    if (curProto) {
       ret.internalProperties.push({
         name: '[[Prototype]]',
-        value: objectFormat(curObject.__proto__),
+        value: objectFormat(curProto),
       });
     }
     if (curObject instanceof Set) {
