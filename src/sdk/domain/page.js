@@ -90,7 +90,7 @@ export default class Page extends BaseDomain {
   startScreencast() {
     this.stopScreencast();
     this.sendScreenshot();
-    this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
+    this.intervalTimer = setInterval(this.sendScreenshot.bind(this), this.checkIfTakeScreenshotByJsapi() ? 500 : 2000);
   }
 
   /**
@@ -121,12 +121,20 @@ export default class Page extends BaseDomain {
   }
 
   /**
+   * 检查是否可以使用jsapi截图
+   * @private
+   */
+  checkIfTakeScreenshotByJsapi() {
+    return 'WeixinJSBridge' in window && !this.forceTakeScreenshotByHTML2Canvas;
+  }
+
+  /**
    * 发送屏幕截图
    * @private
    */
   sendScreenshot() {
     if (document.hidden) return;
-    if ('WeixinJSBridge' in window && !this.forceTakeScreenshotByHTML2Canvas) {
+    if (this.checkIfTakeScreenshotByJsapi()) {
       this.takeScreenshotByJsapi();
     } else {
       this.takeScreenshotByHTML2Canvas();
@@ -142,8 +150,13 @@ export default class Page extends BaseDomain {
       action: 'takeSnapshot',
     }, (res) => {
       if (!res || !res.err_msg || res.err_msg.indexOf('ok') === -1) {
+        // 只有微信的可调试版本中极少部分网页才有JSAPI权限，所以调用失败回退到html2canvas
         this.forceTakeScreenshotByHTML2Canvas = true;
-        this.takeScreenshotByHTML2Canvas();
+        this.sendScreenshot();
+        if (this.intervalTimer) {
+          clearInterval(this.intervalTimer);
+          this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
+        }
         return;
       }
       const img = new Image();
