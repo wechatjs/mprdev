@@ -5,6 +5,7 @@ export default class Input extends BaseDomain {
 
   emulateTouchBaseX = 0;
   emulateTouchBaseY = 0;
+  emulateTouching = false;
   emulateClickPrevented = false;
   emulateScrollPrevented = false;
   currentScrollView = null;
@@ -40,6 +41,7 @@ export default class Input extends BaseDomain {
     this.emulateTouchBaseY = prevent ? 0 : y;
     this.emulateScrollPrevented = prevent;
     this.emulateClickPrevented = prevent;
+    this.emulateTouching = true;
 
     if (this.currentScrollView) {
       delete this.currentScrollView.$$emulateBaseScrollLeft;
@@ -74,11 +76,17 @@ export default class Input extends BaseDomain {
    * @private
    */
   emitTargetTouchEnd(target, x, y) {
-    this.emitTouchEvent('touchend', target, x, y);
-    if (!this.emulateClickPrevented) {
-      this.emitClickEvent(target);
+    if (this.emulateTouching) {
+      this.emitTouchEvent('touchend', target, x, y);
+      if (!this.emulateClickPrevented) {
+        this.emitClickEvent(target);
+      }
     }
+
+    this.emulateTouchBaseX = 0;
+    this.emulateTouchBaseY = 0;
     this.emulateClickPrevented = false;
+    this.emulateTouching = false;
 
     if (this.currentScrollView) {
       delete this.currentScrollView.$$emulateBaseScrollLeft;
