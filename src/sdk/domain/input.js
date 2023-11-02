@@ -18,8 +18,8 @@ export default class Input extends BaseDomain {
 
     switch (type) {
       case 'mousePressed': this.emitTargetTouchStart(target, x, y); break;
-      case 'mouseReleased': this.emitTargetTouchEnd(target, x, y); break;
       case 'mouseMoved': this.emitTargetTouchMove(target, x, y); break;
+      case 'mouseReleased': this.emitTargetTouchEnd(target, x, y); break;
       case 'mouseWheel': this.scrollTarget(target, deltaX, deltaY); break;
     }
   }
@@ -29,22 +29,12 @@ export default class Input extends BaseDomain {
    * @private
    */
   emitTargetTouchStart(target, x, y) {
-    this.emitTouchEvent('touchstart', target, x, y);
-    target.$$emulateBaseTouchX = x;
-    target.$$emulateBaseTouchY = y;
-  }
-
-  /**
-   * 触发touchend事件
-   * @private
-   */
-  emitTargetTouchEnd(target, x, y) {
-    this.emitTouchEvent('touchend', target, x, y);
-    if (typeof target.$$emulateBaseTouchX === 'number' && typeof target.$$emulateBaseTouchY === 'number') {
-      this.emitClickEvent(target);
+    const prevent = this.emitTouchEvent('touchstart', target, x, y);
+    if (!prevent) {
+      target.$$emulateTouchStartDefaultPrevented = true;
+    } else {
+      delete target.$$emulateTouchStartDefaultPrevented;
     }
-    delete target.$$emulateBaseTouchX;
-    delete target.$$emulateBaseTouchY;
   }
 
   /**
@@ -53,8 +43,19 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchMove(target, x, y) {
     this.emitTouchEvent('touchmove', target, x, y);
-    delete target.$$emulateBaseTouchX;
-    delete target.$$emulateBaseTouchY;
+    target.$$emulateTouchStartDefaultPrevented = true;
+  }
+
+  /**
+   * 触发touchend事件
+   * @private
+   */
+  emitTargetTouchEnd(target, x, y) {
+    this.emitTouchEvent('touchend', target, x, y);
+    if (target.$$emulateTouchStartDefaultPrevented) {
+      this.emitClickEvent(target);
+    }
+    delete target.$$emulateTouchStartDefaultPrevented;
   }
 
   /**
@@ -62,7 +63,7 @@ export default class Input extends BaseDomain {
    * @private
    */
   scrollTarget(target, deltaX, deltaY) {
-    const scrollView = this.findScrollView(target);
+    const scrollView = this.findScrollView(target, deltaX, deltaY);
     const scrollLeft = scrollView.$$emulateBaseScrollLeft || (scrollView.$$emulateBaseScrollLeft = scrollView.scrollLeft);
     const scrollTop = scrollView.$$emulateBaseScrollTop || (scrollView.$$emulateBaseScrollTop = scrollView.scrollTop);
     scrollView.scrollLeft = scrollLeft - deltaX;
@@ -81,11 +82,12 @@ export default class Input extends BaseDomain {
    * 获取最近的scrollview
    * @private
    */
-  findScrollView(target) {
+  findScrollView(target, deltaX, deltaY) {
     let scrollView = target;
     while (scrollView) {
-      const scrollableY = scrollView.scrollHeight > scrollView.clientHeight;
-      const scrollableX = scrollView.scrollWidth > scrollView.clientWidth;
+      const computedStyle = window.getComputedStyle(scrollView);
+      const scrollableY = !!deltaY && (scrollView.scrollHeight > scrollView.scrollTop + scrollView.clientHeight) && (computedStyle.overflowY !== 'hidden');
+      const scrollableX = !!deltaX && (scrollView.scrollWidth > scrollView.scrollLeft + scrollView.clientWidth) && (computedStyle.overflowX !== 'hidden');
       if (scrollableY || scrollableX) {
         break;
       }
@@ -105,13 +107,15 @@ export default class Input extends BaseDomain {
       clientX: x,
       clientY: y,
     });
-    target.dispatchEvent(new TouchEvent(type, {
+    const event = new TouchEvent(type, {
       bubbles: true,
       cancelable: true,
       changedTouches: [touch],
       targetTouches: [touch],
       touches: [touch],
-    }));
+    });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
   }
 
   /**
@@ -119,10 +123,12 @@ export default class Input extends BaseDomain {
    * @private
    */
   emitClickEvent(target) {
-    target.dispatchEvent(new MouseEvent('click', {
+    const event = new MouseEvent('click', {
       bubbles: true,
       cancelable: true,
       view: window,
-    }));
+    });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
   }
 }
