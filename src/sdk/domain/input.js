@@ -52,7 +52,7 @@ export default class Input extends BaseDomain {
    */
   emitTargetTouchEnd(target, x, y) {
     this.emitTouchEvent('touchend', target, x, y);
-    if (target.$$emulateClickPrevented) {
+    if (!target.$$emulateClickPrevented) {
       this.emitClickEvent(target);
     }
     delete target.$$emulateClickPrevented;
