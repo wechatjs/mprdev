@@ -7,6 +7,7 @@ export default class Page extends BaseDomain {
   namespace = 'Page';
 
   frame = new Map();
+  curScreenshot = null;
 
   static MAINFRAME_ID = 1;
 
@@ -16,7 +17,8 @@ export default class Page extends BaseDomain {
    */
   enable() {
     this.fetchPageHTML();
-    this.listenVisibilityChange();
+
+    document.addEventListener('visibilitychange', this.sendVisibilityResult.bind(this));
   }
 
   /**
@@ -91,6 +93,7 @@ export default class Page extends BaseDomain {
   startScreencast() {
     this.stopScreencast();
     this.sendScreenshot();
+    this.sendVisibilityResult();
     this.intervalTimer = setInterval(this.sendScreenshot.bind(this), this.checkIfTakeScreenshotByJsapi() ? 500 : 2000);
   }
 
@@ -122,17 +125,15 @@ export default class Page extends BaseDomain {
   }
 
   /**
-   * 监听页面是否可见
+   * 获取页面是否可见
    * @private
    */
-  listenVisibilityChange() {
-    document.addEventListener('visibilitychange', () => {
-      this.send({
-        method: Event.screencastVisibilityChanged,
-        params: {
-          visible: !document.hidden
-        }
-      });
+  sendVisibilityResult() {
+    this.send({
+      method: Event.screencastVisibilityChanged,
+      params: {
+        visible: !document.hidden
+      }
     });
   }
 
@@ -149,12 +150,39 @@ export default class Page extends BaseDomain {
    * @private
    */
   sendScreenshot() {
-    if (document.hidden) return;
+    if (document.hidden) {
+      this.sendScreenshotEvent(null, this.checkIfTakeScreenshotByJsapi() ? 0 : -window.scrollY);
+      return;
+    };
     if (this.checkIfTakeScreenshotByJsapi()) {
       this.takeScreenshotByJsapi();
     } else {
       this.takeScreenshotByHTML2Canvas();
     }
+  }
+
+  /**
+   * 发送缓存的截图
+   * @private
+   */
+  sendScreenshotEvent(screenshot, offsetTop = 0) {
+    this.curScreenshot = screenshot || this.curScreenshot || 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    this.send({
+      method: Event.screencastFrame,
+      params: {
+        data: this.curScreenshot,
+        sessionId: 1,
+        metadata: {
+          deviceHeight: window.innerHeight,
+          deviceWidth: window.innerWidth,
+          pageScaleFactor: 1,
+          offsetTop,
+          scrollOffsetX: 0,
+          scrollOffsetY: 0,
+          timestamp: Date.now()
+        }
+      }
+    });
   }
 
   /**
@@ -191,22 +219,7 @@ export default class Page extends BaseDomain {
         canvas.height = cHeight;
         ctx.drawImage(img, 0, cHeight - iHeight, iWidth, iHeight);
         const screenshot = canvas.toDataURL('image/jpeg', 0.8);
-        this.send({
-          method: Event.screencastFrame,
-          params: {
-            data: screenshot.replace(/^data:image\/jpeg;base64,/, ''),
-            sessionId: 1,
-            metadata: {
-              deviceHeight: window.innerHeight,
-              deviceWidth: window.innerWidth,
-              pageScaleFactor: 1,
-              offsetTop: 0,
-              scrollOffsetX: 0,
-              scrollOffsetY: 0,
-              timestamp: Date.now()
-            }
-          }
-        });
+        this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''));
       }
     });
   }
@@ -228,22 +241,7 @@ export default class Page extends BaseDomain {
         return display === 'none' || opacity === 0 || visibility === 'hidden';
       }
     }).then((canvas) => canvas.toDataURL('image/jpeg')).then((screenshot) => {
-      this.send({
-        method: Event.screencastFrame,
-        params: {
-          data: screenshot.replace(/^data:image\/jpeg;base64,/, ''),
-          sessionId: 1,
-          metadata: {
-            deviceHeight: window.innerHeight,
-            deviceWidth: window.innerWidth,
-            pageScaleFactor: 1,
-            offsetTop: curOffsetTop,
-            scrollOffsetX: 0,
-            scrollOffsetY: 0,
-            timestamp: Date.now()
-          }
-        }
-      });
+      this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''), curOffsetTop);
     }).catch(() => {
       console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot by html2canvas');
     });
