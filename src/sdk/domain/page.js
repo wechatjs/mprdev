@@ -220,7 +220,7 @@ export default class Page extends BaseDomain {
         ctx.drawImage(img, 0, cHeight - iHeight, iWidth, iHeight);
         const screenshot = canvas.toDataURL('image/jpeg', 0.8);
         this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''));
-      }
+      };
     });
   }
 
