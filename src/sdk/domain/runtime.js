@@ -1,6 +1,5 @@
 import { objectFormat, objectRelease, objectGroupRelease, getObjectById, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
 import { formatErrorStack, getEvaluateResult, getPromiseState } from '../common/utils';
-import { isQuiteMode } from '../common/mode';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Debugger from './debugger';
@@ -148,16 +147,9 @@ export default class Runtime extends BaseDomain {
     this.cacheConsole.forEach((data) => this.send(data));
     this.cacheError.forEach((data) => this.send(data));
 
-    if (isQuiteMode()) {
-      const noop = () => { };
-      window.alert = noop;
-      window.confirm = noop;
-      window.prompt = noop;
-    } else {
-      window.alert = oriAlert;
-      window.confirm = oriConfirm;
-      window.prompt = oriPrompt;
-    }
+    window.alert = oriAlert;
+    window.confirm = oriConfirm;
+    window.prompt = oriPrompt;
 
     this.send({
       method: Event.executionContextCreated,

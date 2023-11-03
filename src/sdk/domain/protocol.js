@@ -125,6 +125,7 @@ export const Event = {
   loadingFailed: 'Network.loadingFailed',
 
   screencastFrame: 'Page.screencastFrame',
+  screencastVisibilityChanged: 'Page.screencastVisibilityChanged',
 
   executionContextCreated: 'Runtime.executionContextCreated',
   consoleAPICalled: 'Runtime.consoleAPICalled',

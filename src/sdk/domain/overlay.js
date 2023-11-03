@@ -2,7 +2,6 @@ import nodes from '../common/nodes';
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
 import { docReady } from '../common/utils';
-import { isQuiteMode } from '../common/mode';
 
 const wrapper = document.createElement('div');
 const contentBox = document.createElement('div');
@@ -68,7 +67,7 @@ export default class Overlay extends BaseDomain {
    */
   static highlight(node, highlightConfig) {
     if (
-      isQuiteMode() || !node
+      !node
       || [3, 8, 10, 11].includes(node.nodeType)
       || ['link', 'script', 'head', '::before', '::after'].includes(node.nodeName?.toLowerCase())
     ) return;
@@ -209,8 +208,6 @@ export default class Overlay extends BaseDomain {
    * @param {String} params.message 调试信息
    */
   setPausedInDebuggerMessage({ message }) {
-    // debug模式下才允许显示中断信息
-    if (isQuiteMode()) return;
     JDB.setOverlay(message);
   }
 }

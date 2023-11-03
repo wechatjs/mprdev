@@ -16,6 +16,7 @@ export default class Page extends BaseDomain {
    */
   enable() {
     this.fetchPageHTML();
+    this.listenVisibilityChange();
   }
 
   /**
@@ -118,6 +119,21 @@ export default class Page extends BaseDomain {
       };
       requestSource(location.href, 'Document', onload, onerror);
     }
+  }
+
+  /**
+   * 监听页面是否可见
+   * @private
+   */
+  listenVisibilityChange() {
+    document.addEventListener('visibilitychange', () => {
+      this.send({
+        method: Event.screencastVisibilityChanged,
+        params: {
+          visible: !document.hidden
+        }
+      });
+    });
   }
 
   /**
