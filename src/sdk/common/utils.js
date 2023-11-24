@@ -231,3 +231,36 @@ export function requestSource(url, type, onload, onerror) {
   xhr.setRequestHeader('Accept', accept);
   xhr.send();
 }
+
+function prepareStackTrace(_, stack) {
+  if (typeof stack === 'string') {
+    return stack
+      .split('\n')
+      .map(line => {
+        const atIndex = line.indexOf('@');
+        const [columnNumber, lineNumber, ...urlReverse] = line.split(':').reverse()
+
+        const funcName = line.slice(0, atIndex);
+        const url = urlReverse.reverse().join(':').slice(atIndex + 1);
+
+        return {
+          getFileName: () => url,
+          getFunctionName: () => funcName,
+          getLineNumber: () => isNaN(+lineNumber) ? +columnNumber : +lineNumber,
+          getColumnNumber: () => isNaN(+lineNumber) ? undefined : +columnNumber,
+        };
+      });
+  }
+  return stack;
+}
+
+export function getCallSites() {
+	const tmp = Error.prepareStackTrace;
+	Error.prepareStackTrace = prepareStackTrace;
+
+	const { stack } = new Error();
+	Error.prepareStackTrace = tmp;
+
+  if (typeof stack === 'string') return prepareStackTrace(undefined, stack).slice(1);
+	return stack.slice(1);
+}
