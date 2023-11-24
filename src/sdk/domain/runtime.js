@@ -1,9 +1,8 @@
 import { objectFormat, objectRelease, objectGroupRelease, getObjectById, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
-import { formatErrorStack, getEvaluateResult, getPromiseState } from '../common/utils';
+import { formatErrorStack, getEvaluateResult, getPromiseState, getCallSites } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Debugger from './debugger';
-import callsites from 'callsites';
 import JDB from '../common/jdb';
 
 const oriEval = window.eval;
@@ -64,7 +63,7 @@ export default class Runtime extends BaseDomain {
     } else if (Error.captureStackTrace) {
       // Safari不支持captureStackTrace，这里判断下
       let consoleIdx = -1; // 记录hook的console位置，忽略这部分调用栈
-      callFrames = callsites().map((val, idx) => {
+      callFrames = getCallSites().map((val, idx) => {
         const url = val.getFileName();
         const funcName = val.getFunctionName() || '(anonymous)';
         if (funcName.includes('window.console.<computed>')) {

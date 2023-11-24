@@ -231,3 +231,13 @@ export function requestSource(url, type, onload, onerror) {
   xhr.setRequestHeader('Accept', accept);
   xhr.send();
 }
+
+export function getCallSites() {
+	const tmp = Error.prepareStackTrace;
+
+	Error.prepareStackTrace = (_, stack) => typeof stack === 'string' ? stack.split('\n') : stack;
+	const stack = new Error().stack.slice(1);
+
+	Error.prepareStackTrace = tmp;
+	return stack;
+}
