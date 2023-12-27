@@ -6,7 +6,6 @@ export interface TargetInfo {
   targetId: string;
   pageUrl: string;
   ua: string;
-  uin?: string;
   time?: string;
   title: string;
   favicon: string;

@@ -28,7 +28,7 @@
               class="searchbar"
               v-model="searchContent"
               :status="searchStatus"
-              :placeholder="'UIN / ' + I18N.Title + ' / ' + I18N.DeviceId + ' / URL'"
+              :placeholder="I18N.Title + ' / ' + I18N.DeviceId + ' / URL'"
             />
           </t-input-adornment>
           <t-button theme="default" shape="square" @click="switchTheme">
@@ -55,8 +55,6 @@
                 <t-avatar class="favicon" :image="info.favicon" size="small"></t-avatar>
                 <!-- title tooltip:pageUrl -->
                 <t-tooltip class="title" :content="info.pageUrl" show-arrow>{{ info.title || I18N.AnonymousSite }}</t-tooltip>
-                <!-- uin -->
-                <t-tag class="uin" shape="round" size="small" v-if="info.uin && info.uin !== '0'">UIN: {{ info.uin }}</t-tag>
                 <!-- tooltip:ua -->
                 <t-tooltip class="ua" :content="info.ua" show-arrow v-if="info.ua">
                   <t-icon name="help-circle" size="small" />
@@ -91,8 +89,6 @@ const INTERVAL = 30 * 1000; // 轮询时间间隔
 const SORT = { // 排序枚举
   TIME_ASC: 0,
   TIME_DESC: 1,
-  UIN_ASC: 2,
-  UIN_DESC: 3,
 };
 
 export default {
@@ -110,8 +106,6 @@ export default {
       switch (sortType) {
         case SORT.TIME_ASC: return I18N.TimeAscending;
         case SORT.TIME_DESC: return I18N.TimeDescending;
-        case SORT.UIN_ASC: return I18N.UINAscending;
-        case SORT.UIN_DESC: return I18N.UINDescending;
       }
     }
   },
@@ -127,8 +121,6 @@ export default {
       sortOptions: [
         { content: I18N.TimeAscending, value: SORT.TIME_ASC },
         { content: I18N.TimeDescending, value: SORT.TIME_DESC },
-        { content: I18N.UINAscending, value: SORT.UIN_ASC },
-        { content: I18N.UINDescending, value: SORT.UIN_DESC },
       ],
       sortType: SORT.TIME_DESC,
       intervalTimer: null,
@@ -142,7 +134,7 @@ export default {
   computed: {
     displayList() {
       const filterList = this.searchContent
-        ? this.list.filter((info) => `${info.targetId};;;${info.pageUrl};;;${info.title};;;${info.uin}`.includes(this.searchContent))
+        ? this.list.filter((info) => `${info.targetId};;;${info.pageUrl};;;${info.title}`.includes(this.searchContent))
         : this.list;
       return filterList.sort(this.sorterFactory(this.sortType));
     },
@@ -222,11 +214,9 @@ export default {
     // factory
     sorterFactory(type) {
       return (a, b) => {
-        const isAsc = type === SORT.TIME_ASC || type === SORT.UIN_ASC;
-        const isTime = type === SORT.TIME_ASC || type === SORT.TIME_DESC;
-
-        const aValue = isTime ? a.time : a.uin;
-        const bValue = isTime ? b.time : b.uin;
+        const isAsc = type === SORT.TIME_ASC;
+        const aValue = a.time;
+        const bValue = b.time;
         if (aValue < bValue) return isAsc ? -1 : 1;
         else if (aValue > bValue) return isAsc ? 1 : -1;
         return 0;

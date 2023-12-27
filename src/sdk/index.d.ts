@@ -1,7 +1,6 @@
 declare interface InitOptions {
   host?: string | string[]
   port?: number
-  uin?: number
   title?: string
   protocol?: 'wss:' | 'ws:'
 }

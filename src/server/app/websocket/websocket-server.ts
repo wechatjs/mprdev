@@ -41,7 +41,6 @@ export default class WebSocketServer {
             targetId,
             pageUrl,
             ua: searchParams.get('ua'),
-            uin: searchParams.get('uin'),
             time: searchParams.get('time') || `${new Date().toLocaleString()}`,
             title: searchParams.get('title'),
             favicon: searchParams.get('favicon'),

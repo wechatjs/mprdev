@@ -31,11 +31,6 @@ export function getId() {
   return id;
 }
 
-// 获取uin
-function getUin() {
-  return window.user_uin;
-}
-
 // 获取title
 function getTitle() {
   return window.msg_title || window.title || window.cgiData?.title || document.title || '';
@@ -47,7 +42,6 @@ export function init(opts = {}) {
 
   const query = qs.stringify({
     url: location.href,
-    uin: opts.uin || getUin(),
     title: opts.title || getTitle(),
     favicon: getDocumentFavicon(),
     ua: navigator.userAgent,
@@ -202,10 +196,9 @@ if (document.currentScript?.src) {
   const matchUrl = (key) => document.currentScript.src.match(new RegExp(`(\\\\?|&)${escapeRegString(key)}=([^&]*)(&|$)`));
   const host = matchUrl('host')?.[2];
   const port = matchUrl('port')?.[2] * 1;
-  const uin = matchUrl('uin')?.[2] * 1;
   const protocol = matchUrl('protocol')?.[2];
   const title = decodeURIComponent(matchUrl('title')?.[2] || '');
-  if (host || port || uin || title) {
-    docReady(() => init({ host: host.split(','), port, uin, title, protocol }));
+  if (host || port || title) {
+    docReady(() => init({ host: host.split(','), port, title, protocol }));
   }
 }
