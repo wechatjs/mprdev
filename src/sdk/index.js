@@ -51,7 +51,7 @@ export function init(opts = {}) {
 
   if (isCustom) {
     // 自定义调试后端，直接连接
-    getDevUrl = () => opts;
+    getDevUrl = () => `//${opts}`;
   } else {
     // 使用默认调试后端连接策略
     getDevUrl = (host) => {
