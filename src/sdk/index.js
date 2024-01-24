@@ -40,35 +40,39 @@ function getTitle() {
 export function init(opts = {}) {
   if (window.__remote_dev_sdk_inited__ || window !== top) return;
 
-  const query = qs.stringify({
-    url: location.href,
-    title: opts.title || getTitle(),
-    favicon: getDocumentFavicon(),
-    ua: navigator.userAgent,
-    time: Date.now(),
-  });
-
-  const port = opts.port;
+  let socket;
+  let domain;
+  let getDevUrl;
+  let trialIdx = 0;
+  let connectTimeout = null;
+  const isCustom = typeof opts === 'string';
   const hostList = [].concat(opts.host || location.hostname);
   const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
 
-  let socket;
-  let domain;
-  let trialIdx = 0;
-  let connectTimeout = null;
-
-  const getDevUrl = (host) => {
-    const match = host.match(/^(.+?)([\/|\?|#].*)$/);
-    const base = `${match?.[1] || host}${port ? (':' + port) : ''}${match?.[2] || ''}`;
-    return `//${base}/target/${getId()}?${query}`;
-  };
+  if (isCustom) {
+    // 自定义调试后端，直接连接
+    getDevUrl = () => opts;
+  } else {
+    // 使用默认调试后端连接策略
+    getDevUrl = (host) => {
+      const match = host.match(/^(.+?)([\/|\?|#].*)$/);
+      const base = `${match?.[1] || host}${opts.port ? (':' + opts.port) : ''}${match?.[2] || ''}`;
+      return `//${base}/target/${getId()}?${qs.stringify({
+        url: location.href,
+        title: opts.title || getTitle(),
+        favicon: getDocumentFavicon(),
+        ua: navigator.userAgent,
+        time: Date.now(),
+      })}`;
+    };
+  }
 
   const initSocket = () => {
     const host = hostList[trialIdx];
     const devUrl = getDevUrl(host);
 
     const handleMessage = ({ data }) => {
-      if (data === 'connected') {
+      if (!isCustom && data === 'connected') {
         if (!domain) {
           clearTimeout(connectTimeout);
           domain = new ChromeDomain({ socket });
@@ -92,7 +96,7 @@ export function init(opts = {}) {
     };
 
     const handleError = (e) => {
-      if (!domain) {
+      if (!isCustom && !domain) {
         clearTimeout(connectTimeout);
         socket?.close();
         if (++trialIdx < hostList.length) {
@@ -113,7 +117,9 @@ export function init(opts = {}) {
     };
 
     const handleOpen = () => {
-      if (!domain) {
+      if (isCustom) {
+        domain = new ChromeDomain({ socket });
+      } else if (!domain) {
         connectTimeout = setTimeout(() => handleError({ message: 'Open a WebSocket connection timeout'}), 1000);
       }
     };
