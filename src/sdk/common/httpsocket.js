@@ -73,7 +73,7 @@ export default class HttpSocket {
       if (success && this.messages.length) {
         this.pollingMessages();
       } else {
-        setTimeout(() => {
+        this.pollingTimer = setTimeout(() => {
           this.pollingMessages();
         }, 2000);
       }
@@ -104,6 +104,13 @@ export default class HttpSocket {
           callback({ data });
         }
       }
+    }
+  }
+  close() {
+    if (this.sseSocket) {
+      this.sseSocket.close();
+    } else if (this.pollingTimer) {
+      clearTimeout(this.pollingTimer);
     }
   }
 }

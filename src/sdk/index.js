@@ -23,6 +23,10 @@ function getDocumentFavicon() {
 
 // 获取调试id
 export function getId() {
+  const isCustom = typeof window.__remote_dev_sdk_inited__ === 'string';
+
+  if (isCustom || window !== top) return;
+
   let id = sessionStorage.getItem('debug_id');
   if (!id) {
     id = uuid();
@@ -38,7 +42,7 @@ function getTitle() {
 
 // 初始化远程调试
 export function init(opts = {}) {
-  if (window.__remote_dev_sdk_inited__ || window !== top) return;
+  if (window.__remote_dev_sdk_inited__ || window !== top) return false;
 
   let socket;
   let domain;
@@ -133,6 +137,8 @@ export function init(opts = {}) {
   initSocket();
 
   window.__remote_dev_sdk_inited__ = opts;
+
+  return () => socket.close();
 }
 
 // 断点脚本转换工具

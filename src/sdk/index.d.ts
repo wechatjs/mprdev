@@ -5,12 +5,14 @@ declare interface InitOptions {
   protocol?: 'wss:' | 'ws:'
 }
 
+declare function close(): void
+
 export declare const version: string
-export declare function init(opts: InitOptions): void
+export declare function init(opts: InitOptions): close | void
 export declare function debug(script: string, url: string): void
 export declare function debugSrc(scriptSrc: string): void
 export declare function debugCache(check: boolean | ((url: string) => boolean)): void
-export declare function getId(): string
+export declare function getId(): string | void
 
 declare const RemoteDevSdk: {
   version: typeof version
