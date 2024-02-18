@@ -1,6 +1,6 @@
 {
   "name": "mprdev",
-  "version": "0.1.100",
+  "version": "0.2.0",
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
