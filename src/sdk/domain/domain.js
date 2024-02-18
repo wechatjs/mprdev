@@ -1,11 +1,11 @@
 export default class BaseDomain {
   constructor(options) {
-    this.socket = options.socket;
+    this.options = options;
   }
 
   enable() {}
 
   send(data) {
-    this.socket.send(JSON.stringify(data));
+    this.options.socket.send(JSON.stringify(data));
   }
 }

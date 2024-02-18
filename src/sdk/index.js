@@ -21,11 +21,19 @@ function getDocumentFavicon() {
   return iconUrl;
 }
 
+// 获取title
+function getTitle() {
+  return window.msg_title || window.title || window.cgiData?.title || document.title || '';
+}
+
 // 获取调试id
 export function getId() {
-  const isCustom = typeof window.__remote_dev_sdk_inited__ === 'string';
-
-  if (isCustom || window !== top) return;
+  if (
+    window.__remote_dev_sdk_inited__?.target &&
+    typeof window.__remote_dev_sdk_inited__.target === 'string'
+  ) {
+    return window.__remote_dev_sdk_inited__.target;
+  }
 
   let id = sessionStorage.getItem('debug_id');
   if (!id) {
@@ -35,27 +43,22 @@ export function getId() {
   return id;
 }
 
-// 获取title
-function getTitle() {
-  return window.msg_title || window.title || window.cgiData?.title || document.title || '';
-}
-
 // 初始化远程调试
+const domain = new ChromeDomain();
 export function init(opts = {}) {
   if (window.__remote_dev_sdk_inited__ || window !== top) return false;
 
   let socket;
-  let domain;
   let getDevUrl;
   let trialIdx = 0;
   let connectTimeout = null;
-  const isCustom = typeof opts === 'string';
+  const hasTarget = opts.target && typeof opts.target === 'string';
   const hostList = [].concat(opts.host || location.hostname);
   const protocol = opts.protocol || (location.protocol === 'https:' ? 'wss:' : 'ws:');
 
-  if (isCustom) {
+  if (hasTarget) {
     // 自定义调试后端，直接连接
-    getDevUrl = () => `//${opts}`;
+    getDevUrl = () => `//${opts.target}`;
   } else {
     // 使用默认调试后端连接策略
     getDevUrl = (host) => {
@@ -76,10 +79,10 @@ export function init(opts = {}) {
     const devUrl = getDevUrl(host);
 
     const handleMessage = ({ data }) => {
-      if (!isCustom && data === 'connected') {
-        if (!domain) {
+      if (!hasTarget && data === 'connected') {
+        if (!domain.binded) {
           clearTimeout(connectTimeout);
-          domain = new ChromeDomain({ socket });
+          domain.bind({ socket });
         }
         return;
       }
@@ -100,7 +103,7 @@ export function init(opts = {}) {
     };
 
     const handleError = (e) => {
-      if (!isCustom && !domain) {
+      if (!hasTarget && !domain.binded) {
         clearTimeout(connectTimeout);
         socket?.close();
         if (++trialIdx < hostList.length) {
@@ -112,7 +115,7 @@ export function init(opts = {}) {
           const devUrl = getDevUrl(hostList[0]);
           socket = new HttpSocket(`${location.protocol}${devUrl}`);
           socket.addEventListener('message', handleMessage);
-          domain = new ChromeDomain({ socket });
+          domain.bind({ socket });
           console.warn('[RemoteDev][Connection]', 'Failed to open a WebSocket connection and fallback to HTTP');
         }
       } else {
@@ -121,9 +124,9 @@ export function init(opts = {}) {
     };
 
     const handleOpen = () => {
-      if (isCustom) {
-        domain = new ChromeDomain({ socket });
-      } else if (!domain) {
+      if (hasTarget) {
+        domain.bind({ socket });
+      } else if (!domain.binded) {
         connectTimeout = setTimeout(() => handleError({ message: 'Open a WebSocket connection timeout'}), 1000);
       }
     };
@@ -208,9 +211,10 @@ if (document.currentScript?.src) {
   const matchUrl = (key) => document.currentScript.src.match(new RegExp(`(\\\\?|&)${escapeRegString(key)}=([^&]*)(&|$)`));
   const host = matchUrl('host')?.[2];
   const port = matchUrl('port')?.[2] * 1;
+  const target = matchUrl('target')?.[2];
   const protocol = matchUrl('protocol')?.[2];
   const title = decodeURIComponent(matchUrl('title')?.[2] || '');
-  if (host || port || title) {
-    docReady(() => init({ host: host.split(','), port, title, protocol }));
+  if (target || host || port || title) {
+    docReady(() => init({ host: host.split(','), port, title, protocol, target }));
   }
 }

@@ -12,9 +12,29 @@ import protocol from './protocol';
 
 export default class ChromeDomain {
   protocol = {};
+  options = {};
 
-  constructor(options) {
-    this.registerProtocal(options);
+  constructor() {
+    this.registerProtocal(this.options);
+  }
+
+  /**
+   * 是否已经绑定
+   * @public
+   */
+  get binded() {
+    return !!this.options.socket;
+  }
+
+  /**
+   * 绑定配置
+   * @public
+   * @param {Object} options 配置
+   */
+  bind(options) {
+    if (options.socket) {
+      this.options.socket = options.socket;
+    }
   }
 
   /**
