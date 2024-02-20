@@ -1,6 +1,6 @@
 {
   "name": "mprdev",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
@@ -63,7 +63,7 @@
     "specificity": "^0.4.1",
     "tdesign-vue": "^1.7.0",
     "uuid": "^8.3.2",
-    "vdebugger": "^0.1.18",
+    "vdebugger": "^0.1.19",
     "vue": "^2.6.14",
     "ws": "^8.3.0"
   }
