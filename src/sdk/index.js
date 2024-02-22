@@ -218,3 +218,17 @@ if (document.currentScript?.src) {
     docReady(() => init({ host: host.split(','), port, title, protocol, target }));
   }
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const scripts = document.getElementsByTagName('script');
+  for (let i = 0; i < scripts.length; i++) {
+    const script = scripts.item(i);
+    if (script.type === 'text/mprdev') {
+      if (script.src) {
+        debugSrc(script.src);
+      } else {
+        debug(script.innerHTML, location.href);
+      }
+    }
+  }
+}, false);

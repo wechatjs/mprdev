@@ -35,7 +35,25 @@ npx mprdev -h 0.0.0.0 -p 8090
 
 ## 断点
 
-目前，远程调试的断点能力是基于 [`vDebugger`](https://github.com/wechatjs/vdebugger) 实现的断点功能，因此相对于上述“快速开始”中的接入流程外，还需要额外的接入工作。为了实现断点调试，需要让SDK接管需要断点的JS脚本。因此SDK提供了两个接口，用于传入JS脚本源码：
+目前，远程调试的断点能力是基于 [`vDebugger`](https://github.com/wechatjs/vdebugger) 实现的断点功能，因此相对于上述“快速开始”中的接入流程外，还需要额外的接入工作。为了实现断点调试，需要让SDK接管需要断点的JS脚本。
+
+通常情况下，只需要将 `<script>` 的 `type` 属性改写成 `text/mprdev` 即可。不管是 `text/javascript` 还是 `module`，均适用：
+
+```html
+<script src="/test.js"></script>
+<script type="module" src="/module.js"></script>
+<script type="text/javascript">console.log(1)</script>
+```
+
+改写成：
+
+```html
+<script type="text/mprdev" src="/test.js"></script>
+<script type="text/mprdev" src="/module.js"></script>
+<script type="text/mprdev">console.log(1)</script>
+```
+
+如果上述方式不能满足要求，SDK还提供了两个接口，用于传入JS脚本源码：
 
 ```ts
 function debug(script: string, url: string): void // 远程调试断点源码传入
@@ -45,7 +63,7 @@ function debugSrc(scriptSrc: string): void // 远程调试断点源码链接传�
 1. `debug` 接口接受两个参数，分别是断点调试的源码 `script` 和源码对应的链接 `url`，源码对应的链接 `url` 参数用于唯一标识脚本以匹配DevTools服务中断点映射；
 2. `debugSrc` 接口仅接受一个参数，源码对应的链接 `scriptSrc`，含义和 `debug` 的 `url` 相同。不同的地方在于，但该接口会实际通过该链接请求脚本源码来进行断点调试。
 
-举个例子，通常情况下，假设页面HTML中会请求以下链接获取一段JS脚本：
+举个例子，假设页面HTML中会请求以下链接获取一段JS脚本：
 
 ```html
 <script src="/test.js"></script>
@@ -55,9 +73,10 @@ function debugSrc(scriptSrc: string): void // 远程调试断点源码链接传�
 
 ```html
 <script>RemoteDevSdk.debugSrc('/test.js')</script>
+<!-- 等同于 <script type="text/mprdev" src="/test.js"></script> -->
 ```
 
-特别注意，使用 `debugSrc` 接管后，脚本加载将不会阻塞页面渲染，相当于给原来的 `<script>` 加上了defer属性，行为等同于：
+特别注意，使用 `type="text/mprdev"` 或 `debugSrc` 接管后，脚本加载将不会阻塞页面渲染，相当于给原来的 `<script>` 加上了defer属性，行为等同于：
 
 ```html
 <script defer src="/test.js"></script>
