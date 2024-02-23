@@ -60,9 +60,9 @@ function debug(script: string, url: string): void // input source code for remot
 function debugSrc(scriptSrc: string): void // input source url for remote breakpoint debug
 ```
 
-1. The method `debug` accepts two arguments, which are the source code `script` and the corresponding `url`. The `url` argument is used to identify the `script`, in order to match the breakpoint mapping in the DevTools service.
+1. The `debug` method accepts two arguments, which are the source code `script` and the corresponding `url`. The `url` argument is used to identify the `script`, in order to match the breakpoint mapping in the DevTools service.
 
-2. The method `debugSrc` accepts only one argument, which is the source url `scriptSrc`. It has the same meaning of the `url` of the method `debug`, but this method will use it to request the source code for breakpoing debug.
+2. The `debugSrc` method accepts only one argument, which is the source url `scriptSrc`. It has the same meaning of the `url` of the `debug` method, but this method will use it to request the source code for breakpoing debug.
 
 For example, asume that a web page request the link below to import a script:
 
@@ -70,20 +70,20 @@ For example, asume that a web page request the link below to import a script:
 <script src="/test.js"></script>
 ```
 
-In order to take over execution of the script by the SDK, you can modify the page HTML and replace the `<script>` by the method `debugSrc`:
+In order to take over execution of the script by the SDK, you can modify the page HTML and replace the `<script>` by the `debugSrc` method:
 
 ```html
 <script>RemoteDevSdk.debugSrc('/test.js')</script>
 <!-- Equivalent to <script type="text/mprdev" src="/test.js"></script> -->
 ```
 
-Beware that, after taking over by the attribute `type="text/mprdev"` or the method `debugSrc`, loading scripts won't block the page render, which means adding defer to the original `<script>` like:
+Beware that, after taking over by the `type="text/mprdev"` attribute or the `debugSrc` method, loading scripts won't block the page render, which means adding defer to the original `<script>` like:
 
 ```html
 <script defer src="/test.js"></script>
 ```
 
-If script defer can't be accepted, or modifing the page HTML isn't allowed, you can use the method `debug` to wrap source codes before server responses. However, keep in mind to escape codes to ensure the codes are valid JavaScript string. Take [Express](https://expressjs.com/) as an example:
+If script defer can't be accepted, or modifing the page HTML isn't allowed, you can use the `debug` method to wrap source codes before server responses. However, keep in mind to escape codes to ensure the codes are valid JavaScript string. Take [Express](https://expressjs.com/) as an example:
 
 ```js
 app.use('/test.js', (req, res) => {
@@ -91,7 +91,7 @@ app.use('/test.js', (req, res) => {
 });
 ```
 
-Be attention to keep the format as below when wrapping codes by the method `debug`, because the DevTools service will match and filter the wrapper strictly to make sure the source codes can be highlighted as expected:
+Be attention to keep the format as below when wrapping codes by the `debug` method, because the DevTools service will match and filter the wrapper strictly to make sure the source codes can be highlighted as expected:
 
 ```js
 // keep the wrapper format strictly as below ("%code%" is script string and "%url%" is script url)
