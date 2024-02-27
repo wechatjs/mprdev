@@ -79,8 +79,8 @@ export function init(opts = {}) {
     const devUrl = getDevUrl(host);
 
     const handleMessage = ({ data }) => {
-      if (!hasTarget && data === 'connected') {
-        if (!domain.binded) {
+      if (data === 'connected') {
+        if (!hasTarget && !domain.binded) {
           clearTimeout(connectTimeout);
           domain.bind({ socket });
         }
@@ -131,7 +131,7 @@ export function init(opts = {}) {
       }
     };
 
-    socket = new ReconnectingWebSocket(`${protocol}${devUrl}`);
+    socket = new ReconnectingWebSocket(`${protocol}${devUrl}`, undefined, opts.socketOptions || {});
     socket.addEventListener('message', handleMessage);
     socket.addEventListener('error', handleError);
     socket.addEventListener('open', handleOpen);
