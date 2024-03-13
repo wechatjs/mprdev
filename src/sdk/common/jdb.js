@@ -20,9 +20,22 @@ debugMark.appendChild(debugTips);
 docReady(() => document.body.appendChild(debugMark));
 
 const oriFetch = window.fetch;
-const codeFetch = (url) => oriFetch(url).then((res) =>
-  res.ok ? res.text() : oriFetch(getUrlWithRandomNum(url), { credentials: 'include' }).then((res) => res.text())
-);
+const codeFetch = (url) => new Promise((resolve, reject) => {
+  let isTimeout = false;
+  const fetchWithCredentials = () => oriFetch(getUrlWithRandomNum(url), { credentials: 'include' })
+    .then((res) => resolve(res.text()))
+    .catch(reject);
+  const fetchTimeout = setTimeout(() => {
+    isTimeout = true;
+    fetchWithCredentials();
+  }, 5000);
+  oriFetch(url).then((res) => {
+    clearTimeout(fetchTimeout);
+    if (!isTimeout) {
+      res.ok ? resolve(res.text()) : fetchWithCredentials();
+    }
+  }).catch(reject);
+});
 
 const breakpointCacheKey = 'debug_breakpoint_cache';
 let cachedBreakpoints = {};
