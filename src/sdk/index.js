@@ -227,7 +227,11 @@ window.addEventListener('DOMContentLoaded', () => {
       if (script.src) {
         debugSrc(script.src);
       } else {
-        debug(script.innerHTML, location.href);
+        const importUrl = 'VM' + parseInt(Math.random() * 100000);
+        const rawCode = script.innerHTML || 'void 0';
+        JDB.rawCodeCache.set(importUrl, rawCode);
+        debugSrcResList.push({ importUrl, rawCode });
+        debugSrcResHandler();
       }
     }
   }
