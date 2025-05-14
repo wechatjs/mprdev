@@ -21,8 +21,8 @@ npx mprdev -h 0.0.0.0 -p 8090
 前端页面接入SDK的时候，强烈建议通过CDN链接在页面最开头引入，这样能保证SDK能记录到所有的日志和请求，并且这种方式会在全局挂载 `window.RemoteDevSdk` 变量来暴露接口，方便后续使用。其次，在引入SDK后，假设DevTools服务部署在123.123.123.123:8090，那么当前端页面的SDK接入时，将该信息传入 `init` 建立连接：
 
 ```html
-<script src="mprdev"></script>
-<script>RemoteSdkDev.init({ host: '123.123.123.123', port: 8090 })</script>
+<script src="http://123.123.123.123:8090/remote_dev/sdk/index.js"></script>
+<script>RemoteDevSdk.init({ host: '123.123.123.123', port: 8090 })</script>
 ```
 
 最后，访问前端页面，打开DevTools服务，即可开始调试。

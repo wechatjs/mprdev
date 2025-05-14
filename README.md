@@ -22,7 +22,7 @@ We highly recommend you to import the SDK from CDN at the very beginning of your
 
 ```html
 <script src="https://unpkg.com/mprdev"></script>
-<script>RemoteSdkDev.init({ host: '123.123.123.123', port: 8090 })</script>
+<script>RemoteDevSdk.init({ host: '123.123.123.123', port: 8090 })</script>
 ```
 
 Finally, open your web pages and the DevTools serve to enjoy your debugging journey.
