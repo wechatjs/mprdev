@@ -1,6 +1,6 @@
 import nodes from '../common/nodes';
 import * as stylesheet from '../common/stylesheet';
-import { escapeRegString, getAbsoultPath, isMatches, requestSource } from '../common/utils';
+import { escapeRegString, getAbsolutePath, isMatches, requestSource } from '../common/utils';
 import { calculate, compare } from 'specificity';
 import { Event } from './protocol';
 import BaseDomain from './domain';
@@ -184,7 +184,7 @@ export default class CSS extends BaseDomain {
     for (const styleSheetId of this.styles.keys()) {
       const content = this.styles.get(styleSheetId);
       const style = stylesheet.getStyleSheetById(styleSheetId);
-      const sourceURL = getAbsoultPath(style.href || location.href);
+      const sourceURL = getAbsolutePath(style.href || location.href);
       if (sourceURL) {
         this.send({
           method: Event.styleSheetAdded,
@@ -220,7 +220,7 @@ export default class CSS extends BaseDomain {
     styleSheets.forEach((style) => {
       if (!style.styleSheetId) {
         const styleSheetId = this.getStyleSheetId();
-        const sourceURL = getAbsoultPath(style.href);
+        const sourceURL = getAbsolutePath(style.href);
         stylesheet.setStyleSheet(styleSheetId, style);
         style.styleSheetId = styleSheetId;
         if (sourceURL) {

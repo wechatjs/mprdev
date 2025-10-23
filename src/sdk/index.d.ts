@@ -19,6 +19,7 @@ declare const RemoteDevSdk: {
   debugSrc: typeof debugSrc
   debugCache: typeof debugCache
   getId: typeof getId
+  instance: Record<string, Record<string, Function>>
 }
 
 export default RemoteDevSdk

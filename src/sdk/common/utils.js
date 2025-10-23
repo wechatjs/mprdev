@@ -1,6 +1,6 @@
 import { exceptionFormat, objectFormat } from './remote-obj';
 
-export function getAbsoultPath(url) {
+export function getAbsolutePath(url) {
   if (!url || typeof url !== 'string') return '';
   const absURL = new URL(url, location.href);
   return absURL.href;

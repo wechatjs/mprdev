@@ -1,7 +1,7 @@
 import qs from 'query-string';
 import { v4 as uuid } from 'uuid';
 import { version } from '../../package.json';
-import { docReady, escapeRegString, getAbsoultPath } from './common/utils';
+import { docReady, escapeRegString, getAbsolutePath } from './common/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import HttpSocket from './common/httpsocket';
 import ChromeDomain from './domain/index';
@@ -16,7 +16,7 @@ function getDocumentFavicon() {
   });
   let iconUrl = '';
   if (icon) {
-    iconUrl = getAbsoultPath(icon.getAttribute('href'));
+    iconUrl = getAbsolutePath(icon.getAttribute('href'));
   }
   return iconUrl;
 }
@@ -159,7 +159,7 @@ export function debug(rawCode, rawUrl) {
   if (!url || typeof url !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debug"');
   }
-  const importUrl = getAbsoultPath(url);
+  const importUrl = getAbsolutePath(url);
   JDB.rawCodeCache.set(importUrl, rawCode);
   new JDB(rawCode, importUrl);
 }
@@ -182,7 +182,7 @@ export function debugSrc(rawUrl) {
   if (!rawUrl || typeof rawUrl !== 'string') {
     throw new Error('Parameter "url" of the script must be nonempty string for "RemoteDevSdk.debugSrc"');
   }
-  const importUrl = getAbsoultPath(rawUrl);
+  const importUrl = getAbsolutePath(rawUrl);
   const result = { importUrl, rawCode: null };
   debugSrcResList.push(result);
   JDB.getTransCode(importUrl).then((rawCode) => {
@@ -204,8 +204,8 @@ export function debugCache(check) {
   };
 }
 
-export { version }
-export default { version, init, debug, debugSrc, debugCache, getId }
+export { version, domain as instance }
+export default { version, init, debug, debugSrc, debugCache, getId };
 
 if (document.currentScript?.src) {
   const matchUrl = (key) => document.currentScript.src.match(new RegExp(`(\\\\?|&)${escapeRegString(key)}=([^&]*)(&|$)`));
