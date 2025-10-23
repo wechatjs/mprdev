@@ -1,6 +1,6 @@
 import JDB from '../common/jdb';
 import BaseDomain from './domain';
-import { formatErrorStack, getAbsoultPath, getEvaluateResult, randomNum, requestSource } from '../common/utils';
+import { formatErrorStack, getAbsolutePath, getEvaluateResult, randomNum, requestSource } from '../common/utils';
 import { getIdByObject, objectFormat } from '../common/remote-obj';
 import { Event } from './protocol';
 
@@ -272,7 +272,7 @@ export default class Debugger extends BaseDomain {
       Array.from(document.querySelectorAll('script'))
         .map((s) => s.src || s.innerHTML.match(/RemoteDevSdk\.debugSrc\(['|"](.*?)['|"]\)/)?.[1])
         .filter(Boolean)
-        .map((u) => getAbsoultPath(u))
+        .map((u) => getAbsolutePath(u))
         .concat(Array.from(Debugger.scriptUrls.keys()))
     );
     Array.from(scriptUrlSet).forEach((url) => this.fetchScriptSource(url));
@@ -290,7 +290,7 @@ export default class Debugger extends BaseDomain {
       Object.defineProperty(HTMLScriptElement.prototype, 'src', Object.assign({}, oriScriptElProtoSrcDptor, {
         set(src) {
           if (src) {
-            const absSrc = getAbsoultPath(src);
+            const absSrc = getAbsolutePath(src);
             setTimeout(() => {
               if (domainThis.enabledCount) {
                 domainThis.fetchScriptSource(absSrc);

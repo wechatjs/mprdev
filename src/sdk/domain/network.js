@@ -1,5 +1,5 @@
 import jsCookie from 'js-cookie';
-import { getAbsoultPath, getImgRequestUrl, getResponseParams, key2UpperCase } from '../common/utils';
+import { getAbsolutePath, getImgRequestUrl, getResponseParams, key2UpperCase } from '../common/utils';
 import { Event } from './protocol';
 import BaseDomain from './domain';
 import Runtime from './runtime';
@@ -209,7 +209,7 @@ export default class Network extends BaseDomain {
         // 将一些必要的信息挂载到xhr实例上面
         this.$$request = {
           method,
-          url: getAbsoultPath(url),
+          url: getAbsolutePath(url),
           requestId: instance.getRequestId(),
           headers: Network.getDefaultHeaders(),
         };
@@ -267,7 +267,7 @@ export default class Network extends BaseDomain {
               const responseHasBeenReceivedEvent = (params) => instance.sendNetworkEvent(params);
               const responseHasBeenReceivedParams = {
                 requestId,
-                url: getAbsoultPath(url),
+                url: getAbsolutePath(url),
                 headers: responseHeaders,
                 blockedCookies: [],
                 headersText: headers,
@@ -345,7 +345,7 @@ export default class Network extends BaseDomain {
           ({ url, method } = request);
         }
 
-        url = getAbsoultPath(url);
+        url = getAbsolutePath(url);
         const requestId = instance.getRequestId();
         const requestTime = getTimestamp();
         const sendRequest = {
@@ -715,5 +715,160 @@ export default class Network extends BaseDomain {
     if (this.isEnabled) {
       this.send(data);
     }
+  }
+
+  /**
+   * 记录自定义请求准备发送
+   * @public
+   * @param {Object} options
+   * @param {string} url request url
+   * @param {string} options.method request method (optional, default: 'GET')
+   * @param {Object} options.requestHeaders request headers (optional)
+   * @param {string} options.requestBody request body (optional)
+   * @param {string} options.type request type (optional, default: 'XHR')
+   * @param {Object} options.initiator request initiator (optional)
+   * @param {number} options.requestTime request time (optional, default: current performance time)
+   * @return {number} requestId
+   */
+  customRequestWillBeSent(options) {
+    return JDB.runInNativeEnv(() => {
+      if (!options || typeof options !== 'object') {
+        console.error('[RemoteDev][Network] Invalid custom request options:', options);
+        return null;
+      }
+
+      if (!options.url) {
+        console.error('[RemoteDev][Network] Custom request must have a url');
+        return null;
+      }
+
+      const {
+        url,
+        method = 'GET',
+        requestHeaders = {},
+        requestBody = '',
+        type = 'XHR',
+        initiator,
+        requestTime = getTimestamp(),
+      } = options;
+
+      const requestId = this.getRequestId();
+
+      const finalRequestHeaders = {
+        ...Network.getDefaultHeaders(),
+        ...requestHeaders,
+      };
+
+      const request = {
+        url,
+        method: method.toUpperCase(),
+        requestId,
+        headers: finalRequestHeaders,
+      };
+
+      if (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT' || method.toUpperCase() === 'PATCH') {
+        request.postData = requestBody;
+        request.hasPostData = !!requestBody;
+      }
+
+      const finalInitiator = initiator || (() => {
+        const callFrames = Runtime.getCallFrames();
+        const curFrame = callFrames[0];
+        return curFrame.scriptId
+          ? { type: 'script', stack: { callFrames } }
+          : { type: 'script', url: curFrame.url, lineNumber: curFrame.lineNumber, columnNumber: curFrame.columnNumber };
+      })();
+
+      this.socketSend({
+        method: Event.requestWillBeSent,
+        params: {
+          requestId,
+          request,
+          documentURL: location.href,
+          timestamp: requestTime,
+          wallTime: getWallTime(requestTime),
+          type,
+          initiator: finalInitiator,
+        },
+      });
+
+      return requestId;
+    });
+  }
+
+  /**
+   * 记录自定义请求已完成
+   * @public
+   * @param {Object} options
+   * @param {number} options.requestId the `requestId` returned by customRequestWillBeSent
+   * @param {string} options.url request url
+   * @param {number} options.status response status (optional, default: 200)
+   * @param {string} options.statusText response statusText (optional, default: 'OK')
+   * @param {Object} options.responseHeaders response headers (optional)
+   * @param {string} options.responseBody response body (optional)
+   * @param {string} options.type request type (optional, default: 'XHR')
+   * @param {number} options.requestTime request start time
+   * @param {number} options.duration request duration (optional, default: 100)
+   * @param {boolean} options.fromDiskCache response from disk cache (optional, default: false)
+   */
+  customRequestFinished(options) {
+    JDB.runInNativeEnv(() => {
+      if (!options || typeof options !== 'object') {
+        console.error('[RemoteDev][Network] Invalid finish custom request options:', options);
+        return null;
+      }
+
+      if (!options.requestId) {
+        console.error('[RemoteDev][Network] Finish custom request must have a requestId');
+        return null;
+      }
+
+      const {
+        requestId,
+        url,
+        status = 200,
+        statusText = 'OK',
+        responseHeaders = {},
+        responseBody = '',
+        type = 'XHR',
+        requestTime,
+        duration = 100,
+        fromDiskCache = false,
+      } = options;
+
+      const finalResponseHeaders = {
+        'Content-Type': 'application/json',
+        'Content-Length': String(responseBody?.length || 0),
+        ...responseHeaders,
+      };
+
+      const headersText = Object.entries(finalResponseHeaders)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\r\n');
+
+      const responseTime = requestTime + (duration / 1000);
+      const sendStart = requestTime;
+
+      this.sendNetworkEvent({
+        requestId,
+        url,
+        headers: finalResponseHeaders,
+        headersText,
+        type,
+        status,
+        statusText,
+        encodedDataLength: getHttpResLen(status, statusText, headersText, responseBody?.length || 0),
+        fromDiskCache,
+        timestamp: responseTime,
+        timing: {
+          requestTime,
+          receiveHeadersEnd: duration,
+          sendEnd: sendStart + 0.01,
+          sendStart,
+        },
+      });
+
+      this.responseText.set(requestId, responseBody);
+    });
   }
 }

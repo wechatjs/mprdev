@@ -15,7 +15,7 @@ export default class ChromeDomain {
   options = {};
 
   constructor() {
-    this.registerProtocal(this.options);
+    this.registerProtocol(this.options);
   }
 
   /**
@@ -59,7 +59,7 @@ export default class ChromeDomain {
    * 注册协议
    * @private
    */
-  registerProtocal(options) {
+  registerProtocol(options) {
     const domains = [
       new Dom(options),
       new DomStorage(options),
@@ -75,6 +75,7 @@ export default class ChromeDomain {
 
     domains.forEach((domain) => {
       const { namespace } = domain;
+      this[namespace] = domain; // export the domains
       const cmds = protocol[namespace];
       cmds.forEach((cmd) => {
         this.protocol[`${namespace}.${cmd}`] = domain[cmd].bind(domain);

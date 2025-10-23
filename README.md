@@ -101,6 +101,43 @@ RemoteDevSdk.debug(`%code%`, '%url%');
 script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.replace(/\\`/g, '`').replace(/\\\$/g, '$'));
 ```
 
+## Extended Features
+
+### Passing Custom Request Records to the Network Panel
+
+If your requests are not sent through XHR or Fetch interfaces, they may not be captured by the Network panel.  
+The SDK `(version>=0.3.0)` provides two interfaces for recording your custom requests.  
+
+```ts
+// Record that a request is about to be sent
+const requestId = window.RemoteDev.instance.Network.customRequestWillBeSent(requestOptions);
+// Record that a request has been completed
+window.RemoteDev.instance.Network.customRequestFinished(Object.assign({}, responseOptions, { requestId }));
+
+// Interface types
+interface RequestOptions {
+  url: string; // Request URL
+  method?: string; // Request method, default: 'GET'
+  requestHeaders?: Record<string, string>; // Request headers
+  requestBody?: string; // Request body
+  type?: string; // Request type, refer to CDP's Network.ResourceType(https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-ResourceType), default: 'XHR'
+  initiator?: Network.Initiator; // https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Initiator
+  requestTime?: number; // Request initiation time
+}
+interface ResponseOptions {
+  requestId: number; // Unique request ID obtained from the customRequestWillBeSent method
+  url: string; // Request URL
+  status?: number; // HTTP status code
+  statusText?: string; // HTTP status text
+  responseHeaders?: Record<string, string>; // Response headers
+  responseBody?: string; // Response body
+  type?: string; // Request type, refer to CDP's Network.ResourceType(https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-ResourceType), default: 'XHR'
+  requestTime: number; // Request initiation time
+  duration?: number; // Request duration, default: 100
+  fromDiskCache?: boolean; // Whether the request hit cache, default: false
+}
+```
+
 ## SDK API Types
 
 ```ts
@@ -126,6 +163,7 @@ declare const RemoteDevSdk: {
   debugSrc: typeof debugSrc
   debugCache: typeof debugCache
   getId: typeof getId
+  instance: Record<string, Record<string, Function>>
 }
 
 export default RemoteDevSdk

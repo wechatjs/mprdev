@@ -100,6 +100,44 @@ RemoteDevSdk.debug(`%code%`, '%url%');
 script.replace(/RemoteDevSdk\.debug\(`([\s\S]+)`,?.*\);?/, (_, code) => code.replace(/\\`/g, '`').replace(/\\\$/g, '$'));
 ```
 
+## 拓展功能
+
+### 向 Network 面板传入自定义请求记录
+
+如果你的请求不是通过 XHR 或者 Fetch 接口发送的，那么你的请求可能无法被 Network 面板捕获。  
+SDK`(version>=0.3.0)` 提供了两个接口用于记录你的自定义请求。
+
+```ts
+// 记录请求即将发出
+const requestId = window.RemoteDev.instance.Network.customRequestWillBeSent(requestOptions);
+// 记录请求已经完成
+window.RemoteDev.instance.Network.customRequestFinished(Object.assign({}, responseOptions, { requestId }));
+
+// 接口的类型
+interface RequestOptions {
+  url: string; // 请求 url
+  method?: string; // request method, 缺省值: 'GET'
+  requestHeaders?: Record<string, string>; // 请求头
+  requestBody?: string; // 请求体
+  type?: string; // request type, 可以参考 CDP 的 Network.ResourceType(https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-ResourceType)，缺省值: 'XHR'
+  initiator?: Network.Initiator; // https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Initiator
+  requestTime?: number; // 请求发起时间
+}
+interface ResponseOptions {
+  requestId: number; // 从 customRequestWillBeSent 方法获取到的唯一请求 ID
+  url: string; // 请求 url
+  status?: number; // http 状态码
+  statusText?: string; // http 状态
+  responseHeaders?: Record<string, string>; // 响应头
+  responseBody?: string; // 响应体
+  type?: string; // request type, 可以参考 CDP 的 Network.ResourceType(https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-ResourceType)，缺省值: 'XHR'
+  requestTime: number; // 请求发起时间
+  duration?: number; // 请求花费时间, 缺省值: 100
+  fromDiskCache?: boolean; // 是否命中缓存，缺省值: false
+}
+```
+
+
 ## SDK接口类型
 
 ```ts
@@ -125,6 +163,7 @@ declare const RemoteDevSdk: {
   debugSrc: typeof debugSrc
   debugCache: typeof debugCache
   getId: typeof getId
+  instance: Record<string, Record<string, Function>>
 }
 
 export default RemoteDevSdk
