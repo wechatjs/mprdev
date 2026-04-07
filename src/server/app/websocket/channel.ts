@@ -64,6 +64,7 @@ export class Channel {
   }
 
   handleTargetClose(target: Target) {
+    target.destroy();
     this.internalTargets = this.internalTargets.filter(item => item !== target);
     channelService.fireChannelChange(ChannelEventName.TARGET_REMOVE, this);
     // 如果已经没有 target 了，要把对应的所有 devtool 关掉
