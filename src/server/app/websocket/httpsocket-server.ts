@@ -1,6 +1,8 @@
-import { WebSocket, Data } from 'ws';
-import { PassThrough } from 'stream';
 import * as Router from 'koa-router';
+
+import { Data, WebSocket } from 'ws';
+
+import { PassThrough } from 'stream';
 
 /**
  * websocket不可用的环境，留一个http轮询的接入接口
@@ -26,6 +28,57 @@ const initCleaner = () => {
       }
     }, cleanerInterval);
   }
+};
+
+// devtool WebSocket 缓存池
+const devtoolSocketExpiry = 30000; // 空闲30s后销毁
+const devtoolSockets: Record<string, {
+  socket: WebSocket;
+  timer: NodeJS.Timer;
+  onResponse: ((msg: Data) => void) | null;
+}> = {};
+
+// 获取或创建 devtool 的缓存连接
+const getDevtoolSocket = (port: number, mode: string, id: string): Promise<WebSocket> => {
+  const key = `${mode}_${id}`;
+  const cached = devtoolSockets[key];
+  if (cached && cached.socket.readyState === WebSocket.OPEN) {
+    // 刷新过期定时器
+    clearTimeout(cached.timer);
+    cached.timer = setTimeout(() => {
+      cached.socket.close();
+      delete devtoolSockets[key];
+    }, devtoolSocketExpiry);
+    return Promise.resolve(cached.socket);
+  }
+  // 清理旧连接
+  if (cached) {
+    clearTimeout(cached.timer);
+    cached.socket.terminate();
+    delete devtoolSockets[key];
+  }
+  // 创建新连接
+  const socket = new WebSocket(`ws://0.0.0.0:${port}/devtool?mode=${mode}&targetId=${id}`);
+  const entry = {
+    socket,
+    timer: setTimeout(() => {
+      socket.close();
+      delete devtoolSockets[key];
+    }, devtoolSocketExpiry),
+    onResponse: null as ((msg: Data) => void) | null,
+  };
+  devtoolSockets[key] = entry;
+  socket.onmessage = ({ data: msg }) => {
+    entry.onResponse?.(msg);
+  };
+  socket.onclose = () => {
+    clearTimeout(entry.timer);
+    delete devtoolSockets[key];
+  };
+  return new Promise<WebSocket>((resolve, reject) => {
+    socket.onopen = () => resolve(socket);
+    socket.onerror = (err) => reject(err);
+  });
 };
 
 export function listenHttpSocket(router: Router) {
@@ -94,5 +147,46 @@ export function listenHttpSocket(router: Router) {
     data.forEach((message) => socket.send(message));
     // 返回缓存的消息
     ctx.body = JSON.stringify(messages);
+  });
+  // devtool HTTP接口，复用缓存的WebSocket连接
+  router.post('/devtool/:id', async ctx => {
+    const id = ctx.params.id;
+    const data = ctx.request.body as string[];
+    const mode = ctx.query.mode as string;
+    const timeout = 10000; // 超时兜底10s
+
+    try {
+      const socket = await getDevtoolSocket(ctx.socket.localPort, mode, id);
+      const key = `${mode}_${id}`;
+      const messages: Data[] = [];
+
+      // 发送所有CDP命令
+      data.forEach((message) => socket.send(message));
+
+      // 等待收集响应：命令数量匹配或超时
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, timeout);
+        devtoolSockets[key].onResponse = (msg) => {
+          messages.push(msg);
+          if (messages.length >= data.length) {
+            clearTimeout(timer);
+            resolve();
+          }
+        };
+        socket.addEventListener('close', () => {
+          clearTimeout(timer);
+          resolve();
+        }, { once: true });
+      });
+
+      // 清空响应回调
+      if (devtoolSockets[key]) {
+        devtoolSockets[key].onResponse = null;
+      }
+
+      ctx.body = JSON.stringify(messages);
+    } catch {
+      ctx.body = JSON.stringify([]);
+    }
   });
 }
