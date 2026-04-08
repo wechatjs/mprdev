@@ -1,6 +1,6 @@
 {
   "name": "mprdev",
-  "version": "0.4.0-beta.0",
+  "version": "0.4.0-beta.1",
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
@@ -17,7 +17,8 @@
     "dev:sdk": "rollup --watch -c src/sdk/rollup.config.js",
     "dev:svr": "tsc --watch -p src/server/app/tsconfig.json",
     "pub": "npm run build && npm publish --registry https://registry.npmjs.org",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
