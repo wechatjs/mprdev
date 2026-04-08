@@ -56,7 +56,6 @@ export class Channel {
   }
 
   handleTargetMessage(buffer: Buffer) {
-    console.log('???????', this.internalTargets, this.internalDevtools);
     this.sendMessageToOpponent(this.internalDevtools, buffer);
   }
 
@@ -68,13 +67,9 @@ export class Channel {
     target.destroy();
     this.internalTargets = this.internalTargets.filter(item => item !== target);
     channelService.fireChannelChange(ChannelEventName.TARGET_REMOVE, this);
-    // 如果已经没有 target 了，关掉所有 devtool；若也没有 devtool，直接触发 CHANNEL_EMPTY
+    // 如果已经没有 target 了，要把对应的所有 devtool 关掉
     if (this.internalTargets.length === 0) {
-      if (this.internalDevtools.length === 0) {
-        channelService.fireChannelChange(ChannelEventName.CHANNEL_EMPTY, this);
-      } else {
-        this.internalDevtools.forEach(devtool => devtool.ws.close());
-      }
+      this.internalDevtools.forEach(devtool => devtool.ws.close());
     }
   }
 
