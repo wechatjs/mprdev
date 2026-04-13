@@ -63,8 +63,10 @@ export default class HttpSocket {
     };
     socket.onerror = () => {
       this.sseSocket = null;
+      socket.close();
+      // 重连前先重新建立服务端连接
       setTimeout(() => {
-        this.initEventSource();
+        this.initConnection();
       }, 2000);
     };
   }
