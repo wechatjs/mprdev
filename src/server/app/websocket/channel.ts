@@ -1,7 +1,8 @@
-import { channelService } from './channel-service';
-import { Target } from './target';
-import { Devtool } from './devtool';
 import { ChannelEventName, ChannelStatus } from './enum';
+
+import { Devtool } from './devtool';
+import { Target } from './target';
+import { channelService } from './channel-service';
 
 export class Channel {
   public id: string = '';
@@ -76,6 +77,7 @@ export class Channel {
   handleDevtoolClose(devtool: Devtool) {
     this.internalDevtools = this.internalDevtools.filter(item => item !== devtool);
     this.handleDevtoolMessage(Buffer.from('{"id":-1,"method":"Debugger.disable"}'));
+    this.handleDevtoolMessage(Buffer.from('{"id":-2,"method":"Page.stopScreencast"}'));
     channelService.fireChannelChange(ChannelEventName.DEVTOOL_REMOVE, this);
     // *检查频道是否还可用
     this.status === ChannelStatus.DISABLE && channelService.fireChannelChange(ChannelEventName.CHANNEL_EMPTY, this);
