@@ -155,24 +155,49 @@ export function listenHttpSocket(router: Router) {
     const mode = ctx.query.mode as string;
     const timeout = 10000; // 超时兜底10s
 
+    // 无命令时直接返回空数组，避免不必要的连接开销
+    if (!Array.isArray(data) || data.length === 0) {
+      ctx.body = JSON.stringify([]);
+      return;
+    }
+
     try {
       const socket = await getDevtoolSocket(ctx.socket.localPort, mode, id);
       const key = `${mode}_${id}`;
       const messages: Data[] = [];
 
+      // 解析出所有命令的 id，用于匹配响应
+      const pendingIds = new Set<number>();
+      data.forEach((message) => {
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed.id != null) pendingIds.add(parsed.id);
+        } catch {}
+      });
+
       // 发送所有CDP命令
       data.forEach((message) => socket.send(message));
 
-      // 等待收集响应：命令数量匹配或超时
+      // 等待收集响应：按命令 id 匹配，事件也一并收集但不占名额
       await new Promise<void>((resolve) => {
         const timer = setTimeout(resolve, timeout);
         devtoolSockets[key].onResponse = (msg) => {
           messages.push(msg);
-          if (messages.length >= data.length) {
+          // 检查是否是命令响应（有 id），从待匹配集合中移除
+          try {
+            const parsed = JSON.parse(typeof msg === 'string' ? msg : msg.toString());
+            if (parsed.id != null) pendingIds.delete(parsed.id);
+          } catch {}
+          // 所有命令响应都收到了才 resolve
+          if (pendingIds.size === 0) {
             clearTimeout(timer);
             resolve();
           }
         };
+        if (pendingIds.size === 0) {
+          clearTimeout(timer);
+          resolve();
+        }
         socket.addEventListener('close', () => {
           clearTimeout(timer);
           resolve();
