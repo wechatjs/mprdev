@@ -1,6 +1,6 @@
-import html2canvas from 'html2canvas';
 import BaseDomain from './domain';
 import { Event } from './protocol';
+import html2canvas from 'html2canvas';
 import { requestSource } from '../common/utils';
 
 export default class Page extends BaseDomain {
@@ -235,6 +235,7 @@ export default class Page extends BaseDomain {
       allowTaint: true,
       imageTimeout: 10000,
       scale: 1,
+      logging: false,
       ignoreElements: (element) => {
         if (!element?.style) return false;
         const { display, opacity, visibility } = element.style;
