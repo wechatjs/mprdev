@@ -28,11 +28,10 @@ function getTitle() {
 
 // 获取调试id
 export function getId() {
-  if (
-    window.__remote_dev_sdk_inited__?.target &&
-    typeof window.__remote_dev_sdk_inited__.target === 'string'
-  ) {
-    return window.__remote_dev_sdk_inited__.target;
+  // 允许外部显式指定 targetId（优先于 sessionStorage 缓存的 uuid）
+  const { targetId } = window.__remote_dev_sdk_inited__ || {};
+  if (targetId && typeof targetId === 'string') {
+    return targetId;
   }
 
   let id = sessionStorage.getItem('debug_id');
@@ -212,10 +211,11 @@ if (document.currentScript?.src) {
   const host = matchUrl('host')?.[2];
   const port = matchUrl('port')?.[2] * 1;
   const target = matchUrl('target')?.[2];
+  const targetId = matchUrl('targetId')?.[2];
   const protocol = matchUrl('protocol')?.[2];
   const title = decodeURIComponent(matchUrl('title')?.[2] || '');
-  if (target || host || port || title) {
-    docReady(() => init({ host: host.split(','), port, title, protocol, target }));
+  if (target || targetId || host || port || title) {
+    docReady(() => init({ host: host?.split(','), port, title, protocol, target, targetId }));
   }
 }
 
