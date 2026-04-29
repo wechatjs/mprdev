@@ -1,11 +1,12 @@
+import { docReady, escapeRegString, getAbsolutePath } from './common/utils';
+
+import ChromeDomain from './domain/index';
+import HttpSocket from './common/httpsocket';
+import JDB from './common/jdb';
+import ReconnectingWebSocket from 'reconnecting-websocket';
 import qs from 'query-string';
 import { v4 as uuid } from 'uuid';
 import { version } from '../../package.json';
-import { docReady, escapeRegString, getAbsolutePath } from './common/utils';
-import ReconnectingWebSocket from 'reconnecting-websocket';
-import HttpSocket from './common/httpsocket';
-import ChromeDomain from './domain/index';
-import JDB from './common/jdb';
 
 // 获取页面icon
 function getDocumentFavicon() {
@@ -136,9 +137,9 @@ export function init(opts = {}) {
     socket.addEventListener('open', handleOpen);
   };
 
-  initSocket();
-
   window.__remote_dev_sdk_inited__ = opts;
+
+  initSocket();
 
   return () => socket.close();
 }

@@ -1,11 +1,11 @@
-import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
-import terser from '@rollup/plugin-terser';
-import json from '@rollup/plugin-json';
-import gzip from 'rollup-plugin-gzip';
-import path from 'path';
 import fs from 'fs';
+import gzip from 'rollup-plugin-gzip';
+import json from '@rollup/plugin-json';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import path from 'path';
+import terser from '@rollup/plugin-terser';
 
 const isWatch = process.env.ROLLUP_WATCH;
 const outputFile = 'dist/sdk/index.js';
