@@ -157,7 +157,7 @@ export default class Page extends BaseDomain {
     if (this.checkIfTakeScreenshotByJsapi()) {
       this.takeScreenshotByJsapi();
     } else {
-      this.takeScreenshotByHTML2Canvas();
+      this.takeScreenshotByHTML2Canvas(true);
     }
   }
 
@@ -227,22 +227,33 @@ export default class Page extends BaseDomain {
   /**
    * 通过html2canvas截图
    * @private
+   * @param {Boolean} viewportOnly 是否只截取当前视口，默认 false（截全页）
    */
-  takeScreenshotByHTML2Canvas() {
+  takeScreenshotByHTML2Canvas(viewportOnly = false) {
     const curOffsetTop = -window.scrollY;
-    html2canvas(document.body, {
+    const opts = {
       useCORS: true,
       allowTaint: true,
       imageTimeout: 10000,
       scale: 1,
       logging: false,
+      // 传入窗口尺寸，使 html2canvas 按实际视口计算 CSS 布局（vw/vh/百分比等）
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
       ignoreElements: (element) => {
         if (!element?.style) return false;
         const { display, opacity, visibility } = element.style;
         return display === 'none' || opacity === 0 || visibility === 'hidden';
       }
-    }).then((canvas) => canvas.toDataURL('image/jpeg')).then((screenshot) => {
-      this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''), curOffsetTop);
+    };
+    if (viewportOnly) {
+      opts.x = 0;
+      opts.y = window.scrollY;
+      opts.width = window.innerWidth;
+      opts.height = window.innerHeight;
+    }
+    html2canvas(document.body, opts).then((canvas) => canvas.toDataURL('image/jpeg')).then((screenshot) => {
+      this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''), viewportOnly ? 0 : curOffsetTop);
     }).catch(() => {
       console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot by html2canvas');
     });
