@@ -87,6 +87,50 @@ export default class Page extends BaseDomain {
   }
 
   /**
+   * 单次截图（CDP Page.captureScreenshot）
+   * 优先使用 JSAPI 截图，不可用时回退到 html2canvas
+   * @public
+   * @param {Object} params
+   * @param {String} [params.format="png"] 图片格式：jpeg | png | webp
+   * @param {Number} [params.quality] jpeg 质量 0-100（仅 jpeg 有效，未传则用 Canvas 默认）
+   * @param {Object} [params.clip] 裁剪区域 { x, y, width, height, scale }
+   * @param {Boolean} [params.captureBeyondViewport] 是否截取视口外内容，默认 false（仅视口）
+   */
+  async captureScreenshot(params = {}) {
+    const { format = 'png', clip, captureBeyondViewport = false } = params;
+    let base64;
+
+    // clip 或全页截图需走 html2canvas，JSAPI 不支持
+    if (!clip && !captureBeyondViewport) {
+      base64 = await this.takeScreenshotByJsapi();
+    }
+
+    if (base64 == null) {
+      base64 = await this.takeScreenshotByHTML2Canvas(!captureBeyondViewport ? true : false, clip);
+    }
+
+    // 格式转换：加载图片 → Canvas → 目标格式
+    const needConvert = format !== 'jpeg' || (format === 'jpeg' && params.quality !== undefined);
+    if (needConvert) {
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,' + base64;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('Failed to load image for format conversion'));
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const q = (format === 'jpeg' && params.quality !== undefined) ? params.quality / 100 : undefined;
+      const dataUrl = canvas.toDataURL(`image/${format}`, q);
+      base64 = dataUrl.replace(/^data:image\/[^;]+;base64,/, '');
+    }
+
+    return { data: base64 };
+  }
+
+  /**
    * 开始截屏
    * @public
    */
@@ -151,14 +195,25 @@ export default class Page extends BaseDomain {
    */
   sendScreenshot() {
     if (document.hidden) {
-      this.sendScreenshotEvent(null, this.checkIfTakeScreenshotByJsapi() ? 0 : -window.scrollY);
+      this.sendScreenshotEvent(null, -window.scrollY);
       return;
-    };
-    if (this.checkIfTakeScreenshotByJsapi()) {
-      this.takeScreenshotByJsapi();
-    } else {
-      this.takeScreenshotByHTML2Canvas(true);
     }
+    const promise = this.checkIfTakeScreenshotByJsapi()
+      ? this.takeScreenshotByJsapi()
+      : this.takeScreenshotByHTML2Canvas(true);
+
+    promise.then((screenshot) => {
+      if (screenshot != null) {
+        this.sendScreenshotEvent(screenshot, 0);
+      }
+    }).catch(() => {
+      // JSAPI 失败回退：forceTakeScreenshotByHTML2Canvas 已置 true
+      this.sendScreenshot();
+      if (this.intervalTimer) {
+        clearInterval(this.intervalTimer);
+        this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
+      }
+    });
   }
 
   /**
@@ -186,56 +241,65 @@ export default class Page extends BaseDomain {
   }
 
   /**
-   * 通过JSAPI截图
+   * 通过JSAPI截图（返回 Promise<base64|null>）
    * @private
+   * @returns {Promise<String|null>} base64 jpeg 数据，失败返回 null
    */
   takeScreenshotByJsapi() {
-    window.WeixinJSBridge.invoke('handleMPPageAction', {
-      action: 'takeSnapshot',
-    }, (res) => {
-      if (!res || !res.err_msg || res.err_msg.indexOf('ok') === -1) {
-        // 只有微信的可调试版本中极少部分网页才有JSAPI权限，所以调用失败回退到html2canvas
-        this.forceTakeScreenshotByHTML2Canvas = true;
-        this.sendScreenshot();
-        if (this.intervalTimer) {
-          clearInterval(this.intervalTimer);
-          this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
-        }
+    return new Promise((resolve) => {
+      if (!this.checkIfTakeScreenshotByJsapi()) {
+        resolve(null);
         return;
       }
-      const img = new Image();
-      img.$$ignoreHandle = true;
-      img.crossOrigin = 'anonymous';
-      img.src = 'data:image/jpeg;base64,' + res.data;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const ratio = window.innerHeight / window.innerWidth;
-        const iWidth = img.naturalWidth / 3;
-        const iHeight = img.naturalHeight / 3
-        const cWidth = iWidth;
-        const cHeight = iWidth * ratio;
-        canvas.width = cWidth;
-        canvas.height = cHeight;
-        ctx.drawImage(img, 0, cHeight - iHeight, iWidth, iHeight);
-        const screenshot = canvas.toDataURL('image/jpeg', 0.8);
-        this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''));
-      };
+      window.WeixinJSBridge.invoke('handleMPPageAction', {
+        action: 'takeSnapshot',
+      }, (res) => {
+        if (!res || !res.err_msg || res.err_msg.indexOf('ok') === -1) {
+          // 只有微信的可调试版本中极少部分网页才有JSAPI权限，所以调用失败回退到html2canvas
+          this.forceTakeScreenshotByHTML2Canvas = true;
+          // screencast 调用方通过 catch 感知回退，captureScreenshot 通过 null 感知
+          resolve(null);
+          return;
+        }
+        const img = new Image();
+        img.$$ignoreHandle = true;
+        img.crossOrigin = 'anonymous';
+        img.src = 'data:image/jpeg;base64,' + res.data;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const ratio = window.innerHeight / window.innerWidth;
+          const iWidth = img.naturalWidth / 3;
+          const iHeight = img.naturalHeight / 3;
+          const cWidth = iWidth;
+          const cHeight = iWidth * ratio;
+          canvas.width = cWidth;
+          canvas.height = cHeight;
+          ctx.drawImage(img, 0, cHeight - iHeight, iWidth, iHeight);
+          const screenshot = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(screenshot.replace(/^data:image\/jpeg;base64,/, ''));
+        };
+        img.onerror = () => {
+          this.forceTakeScreenshotByHTML2Canvas = true;
+          resolve(null);
+        };
+      });
     });
   }
 
   /**
-   * 通过html2canvas截图
+   * 通过html2canvas截图（返回 Promise<base64|null>）
    * @private
    * @param {Boolean} viewportOnly 是否只截取当前视口，默认 false（截全页）
+   * @param {Object} [clip] 裁剪区域 { x, y, width, height, scale }
+   * @returns {Promise<String|null>} base64 jpeg 数据，失败返回 null
    */
-  takeScreenshotByHTML2Canvas(viewportOnly = false) {
-    const curOffsetTop = -window.scrollY;
+  takeScreenshotByHTML2Canvas(viewportOnly = false, clip) {
     const opts = {
       useCORS: true,
       allowTaint: true,
       imageTimeout: 10000,
-      scale: 1,
+      scale: clip?.scale || 1,
       logging: false,
       // 传入窗口尺寸，使 html2canvas 按实际视口计算 CSS 布局（vw/vh/百分比等）
       windowWidth: window.innerWidth,
@@ -246,16 +310,25 @@ export default class Page extends BaseDomain {
         return display === 'none' || opacity === 0 || visibility === 'hidden';
       }
     };
-    if (viewportOnly) {
+
+    if (clip) {
+      opts.x = clip.x;
+      opts.y = clip.y;
+      opts.width = clip.width;
+      opts.height = clip.height;
+    } else if (viewportOnly) {
       opts.x = 0;
       opts.y = window.scrollY;
       opts.width = window.innerWidth;
       opts.height = window.innerHeight;
     }
-    html2canvas(document.body, opts).then((canvas) => canvas.toDataURL('image/jpeg')).then((screenshot) => {
-      this.sendScreenshotEvent(screenshot.replace(/^data:image\/jpeg;base64,/, ''), viewportOnly ? 0 : curOffsetTop);
-    }).catch(() => {
-      console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot by html2canvas');
-    });
+
+    return html2canvas(document.body, opts)
+      .then((canvas) => canvas.toDataURL('image/jpeg'))
+      .then((dataUrl) => dataUrl.replace(/^data:image\/jpeg;base64,/, ''))
+      .catch(() => {
+        console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot by html2canvas');
+        return null;
+      });
   }
 }

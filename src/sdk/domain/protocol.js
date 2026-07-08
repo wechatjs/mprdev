@@ -75,6 +75,7 @@ export default {
     'navigate',
     'startScreencast',
     'stopScreencast',
+    'captureScreenshot',
     'getResourceTree',
     'getResourceContent',
     'getNavigationHistory',
