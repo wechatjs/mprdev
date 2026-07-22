@@ -1,8 +1,9 @@
-import { objectFormat, objectRelease, objectGroupRelease, getObjectById, getObjectProperties, exceptionFormat, callOnObject } from '../common/remote-obj';
-import { formatErrorStack, getEvaluateResult, getPromiseState, getCallSites } from '../common/utils';
-import { Event } from './protocol';
+import { callOnObject, exceptionFormat, getObjectById, getObjectProperties, objectFormat, objectGroupRelease, objectRelease } from '../common/remote-obj';
+import { formatErrorStack, getCallSites, getEvaluateResult, getPromiseState } from '../common/utils';
+
 import BaseDomain from './domain';
 import Debugger from './debugger';
+import { Event } from './protocol';
 import JDB from '../common/jdb';
 
 const oriEval = window.eval;
@@ -24,6 +25,15 @@ export default class Runtime extends BaseDomain {
 
   constructor(options) {
     super(options);
+  }
+
+  /**
+   * 同步 hook console 和 error 监听（init 时调用，只执行一次）
+   * @public
+   */
+  hookRuntime() {
+    if (this._hooked) return;
+    this._hooked = true;
     this.hookConsole();
     this.listenError();
   }
@@ -139,7 +149,10 @@ export default class Runtime extends BaseDomain {
    * @public
    */
   enable() {
-    this.isEnabled = true;
+    if (!this.isEnabled) {
+      this.isEnabled = true;
+      this.hookRuntime();
+    }
     this.cacheConsole.forEach((data) => this.send(data));
     this.cacheError.forEach((data) => this.send(data));
     this.send({

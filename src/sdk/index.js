@@ -48,6 +48,9 @@ const domain = new ChromeDomain();
 export function init(opts = {}) {
   if (window.__remote_dev_sdk_inited__ || window !== top) return false;
 
+  // 同步 hook console，确保 init() 调用后立即生效
+  domain.Runtime.hookRuntime();
+
   let socket;
   let getDevUrl;
   let trialIdx = 0;

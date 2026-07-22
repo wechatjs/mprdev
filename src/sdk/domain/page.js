@@ -106,7 +106,7 @@ export default class Page extends BaseDomain {
     }
 
     if (base64 == null) {
-      base64 = await this.takeScreenshotByHTML2Canvas(!captureBeyondViewport ? true : false, clip);
+      base64 = await this.takeScreenshotByHTML2Canvas(!captureBeyondViewport, clip);
     }
 
     // 格式转换：加载图片 → Canvas → 目标格式
@@ -205,14 +205,17 @@ export default class Page extends BaseDomain {
     promise.then((screenshot) => {
       if (screenshot != null) {
         this.sendScreenshotEvent(screenshot, 0);
+      } else {
+        // JSAPI 返回 null（失败或不可用），forceTakeScreenshotByHTML2Canvas 已置 true
+        // 切换到 html2canvas 定时器并立即触发一次
+        if (this.intervalTimer) {
+          clearInterval(this.intervalTimer);
+          this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
+        }
+        this.sendScreenshot();
       }
     }).catch(() => {
-      // JSAPI 失败回退：forceTakeScreenshotByHTML2Canvas 已置 true
-      this.sendScreenshot();
-      if (this.intervalTimer) {
-        clearInterval(this.intervalTimer);
-        this.intervalTimer = setInterval(this.sendScreenshot.bind(this), 2000);
-      }
+      console.warn('[RemoteDev][Inspect]', 'Failed to take screenshot');
     });
   }
 
@@ -257,7 +260,6 @@ export default class Page extends BaseDomain {
         if (!res || !res.err_msg || res.err_msg.indexOf('ok') === -1) {
           // 只有微信的可调试版本中极少部分网页才有JSAPI权限，所以调用失败回退到html2canvas
           this.forceTakeScreenshotByHTML2Canvas = true;
-          // screencast 调用方通过 catch 感知回退，captureScreenshot 通过 null 感知
           resolve(null);
           return;
         }
