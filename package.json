@@ -1,6 +1,6 @@
 {
   "name": "mprdev",
-  "version": "0.4.2-beta.7",
+  "version": "0.4.2-beta.8",
   "description": "A Web Remote Debug Toolkit",
   "main": "dist/sdk/index.js",
   "bin": {
@@ -51,6 +51,7 @@
     "vue-template-compiler": "^2.6.14"
   },
   "dependencies": {
+    "@babel/runtime-corejs3": "^8.0.0",
     "commander": "^8.3.0",
     "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.1",

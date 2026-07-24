@@ -2,11 +2,13 @@
   "presets": [
     ["@babel/preset-env", {
       "targets": {
-        "chrome": 55
+        "ie": 11
       }
     }]
   ],
   "plugins": [
-    "@babel/plugin-transform-runtime"
+    ["@babel/plugin-transform-runtime", {
+      "corejs": 3
+    }]
   ]
 }
