@@ -10,6 +10,12 @@ const oriFetch = window.fetch;
 const getWallTime = (now) => Date.now() / 1000 - now;
 const getTimestamp = () => performance.now() / 1000;
 const getHttpResLen = (s, st, h, bl) => `HTTP/1.1 ${s} ${st}\n${h}\n\n\n`.length + bl; // 计算统计响应大小的
+
+// 从 getAllResponseHeaders 返回的字符串中解析 Content-Length，避免 getResponseHeader 触发跨域警告
+const getResponseLen = (s, st, h) => {
+  const m = h.match(/content-length:\s*(\d+)/i);
+  return getHttpResLen(s, st, h, m ? Number(m[1]) : 0);
+};
 const resourceInitiatorMap = {
   'Document': { type: 'other' },
   'Script': { type: 'parser', url: location.href },
@@ -274,7 +280,7 @@ export default class Network extends BaseDomain {
                 type: this.$$type || 'XHR',
                 status: this.status,
                 statusText: this.statusText,
-                encodedDataLength: getHttpResLen(this.status, this.statusText, headers, Number(this.getResponseHeader('Content-Length')) || 0),
+                encodedDataLength: getResponseLen(this.status, this.statusText, headers),
                 timing: {
                   requestTime,
                   receiveHeadersEnd: (getTimestamp() - requestTime) * 1000 - 0.01,
