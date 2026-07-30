@@ -1,9 +1,10 @@
-import jsCookie from 'js-cookie';
 import { getAbsolutePath, getImgRequestUrl, getResponseParams, key2UpperCase } from '../common/utils';
-import { Event } from './protocol';
+
 import BaseDomain from './domain';
-import Runtime from './runtime';
+import { Event } from './protocol';
 import JDB from '../common/jdb';
+import Runtime from './runtime';
+import jsCookie from 'js-cookie';
 
 const oriUADptor = Object.getOwnPropertyDescriptor(window.navigator.__proto__, 'userAgent');
 const oriFetch = window.fetch;
@@ -177,7 +178,7 @@ export default class Network extends BaseDomain {
    * @private
    */
   registerPerfObserver() {
-    if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes.indexOf('resource') !== -1) {
+    if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes && PerformanceObserver.supportedEntryTypes.indexOf('resource') !== -1) {
       this.networkPerfObserver = new PerformanceObserver((perf) => {
         return JDB.runInNativeEnv(() => {
           const cbs = Array.from(this.networkPerfCallbacks);
