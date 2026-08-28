@@ -310,6 +310,13 @@ export default class Page extends BaseDomain {
         if (!element?.style) return false;
         const { display, opacity, visibility } = element.style;
         return display === 'none' || opacity === 0 || visibility === 'hidden';
+      },
+      // 页面 CSS mask(url(svg)) 与 background-image 会让 html2canvas 的 createPattern() 抛 InvalidStateError，
+      // 在克隆文档上清空这些属性规避（mask 图标退化为占位块，其余内容正常）
+      onclone: (doc) => {
+        const style = doc.createElement('style');
+        style.textContent = '*{mask:none!important;-webkit-mask:none!important;background-image:none!important}';
+        doc.head.appendChild(style);
       }
     };
 
