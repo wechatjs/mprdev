@@ -1,6 +1,7 @@
-import { WebSocket } from 'ws';
 import { Channel } from './channel';
 import { ChannelEventName } from './enum';
+import { RecordConfig } from '../record';
+import { WebSocket } from 'ws';
 
 export interface TargetInfo {
   targetId: string;
@@ -29,4 +30,5 @@ export interface ServeOptions {
   port: number;
   host: string;
   verbose: boolean;
+  record?: RecordConfig;
 }

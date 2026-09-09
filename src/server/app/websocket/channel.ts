@@ -3,6 +3,7 @@ import { ChannelEventName, ChannelStatus } from './enum';
 import { Devtool } from './devtool';
 import { Target } from './target';
 import { channelService } from './channel-service';
+import { recordBuffer } from '../record';
 
 export class Channel {
   public id: string = '';
@@ -57,10 +58,18 @@ export class Channel {
   }
 
   handleTargetMessage(buffer: Buffer) {
+    // 上行分流到录制缓冲（target → devtool）
+    if (recordBuffer.isReady()) {
+      recordBuffer.append(this.id, 'up', buffer.toString());
+    }
     this.sendMessageToOpponent(this.internalDevtools, buffer);
   }
 
   handleDevtoolMessage(buffer: Buffer) {
+    // 下行分流到录制缓冲（devtool → target）
+    if (recordBuffer.isReady()) {
+      recordBuffer.append(this.id, 'down', buffer.toString());
+    }
     this.sendMessageToOpponent(this.internalTargets, buffer);
   }
 
@@ -70,6 +79,8 @@ export class Channel {
     channelService.fireChannelChange(ChannelEventName.TARGET_REMOVE, this);
     // 如果已经没有 target 了，要把对应的所有 devtool 关掉
     if (this.internalTargets.length === 0) {
+      // target 全断开：按 config.auto 决定是否把缓冲落盘
+      recordBuffer.autoDumpOnClose(this.id);
       this.internalDevtools.forEach(devtool => devtool.ws.close());
     }
   }
