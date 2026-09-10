@@ -1,11 +1,11 @@
-import { mkdirSync, appendFileSync, existsSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { mkdirSync, existsSync, createWriteStream, WriteStream } from 'fs';
+import { promises as fsp } from 'fs';
 import { join, resolve } from 'path';
 
 export interface RecordConfig {
   enabled: boolean;
   dir: string;
-  flushMb: number;   // 单段 flush 阈值（MB）：内存攒到此值就 append 到文件并清空，防 OOM（数据不丢）
-  auto: boolean;     // target 断开时自动 flush 剩余（--record 开启即默认 true）
+  auto: boolean;     // target 断开时自动关闭流（确保写完）
   maxFiles: number;  // 落盘文件数上限：超过则删最旧的，防磁盘打爆
 }
 
@@ -18,21 +18,22 @@ export interface RecordEvent {
 }
 
 export interface DumpResult {
-  file: string;        // 单个累计追加文件路径
-  count: number;        // 累计已写入事件数
-  bytes: number;        // 累计已写入字节数
+  file: string;
+  count: number;
+  bytes: number;
 }
 
 interface BufferEntry {
-  events: RecordEvent[];  // 当前内存中未 flush 的事件
-  startTs: number;         // 会话开始时间（文件名后缀）
-  bytes: number;            // 当前内存段字节数
-  filePath?: string;        // 落盘文件路径（首次 flush 时确定）
-  totalCount: number;        // 累计已写入事件数（含已 flush 的）
-  totalBytes: number;        // 累计已写入字节数
+  startTs: number;
+  filePath?: string;
+  stream?: WriteStream | null;
+  totalCount: number;
+  totalBytes: number;
+  recent: RecordEvent[];  // 内存 ring，保留最近 N 条供 getBuffer 轻量查询（完整数据在文件）
 }
 
-const META_OVERHEAD = 100; // 每条事件 metadata 估算字节数
+const META_OVERHEAD = 100;
+const RECENT_SIZE = 100; // getBuffer 返回最近 N 条，完整数据读 dump 文件
 
 class RecordBuffer {
   private config: RecordConfig | null = null;
@@ -40,7 +41,6 @@ class RecordBuffer {
   private seq = 0;
 
   init(config?: RecordConfig): void {
-    // 未配置或未启用：保持禁用态，append 是 no-op
     this.config = config && config.enabled ? config : null;
     if (this.config) {
       const dir = resolve(this.config.dir);
@@ -57,96 +57,64 @@ class RecordBuffer {
   private getOrCreate(targetId: string): BufferEntry {
     let entry = this.buffers.get(targetId);
     if (!entry) {
-      entry = { events: [], startTs: Date.now(), bytes: 0, totalCount: 0, totalBytes: 0 };
+      entry = { startTs: Date.now(), stream: null, totalCount: 0, totalBytes: 0, recent: [] };
       this.buffers.set(targetId, entry);
     }
     return entry;
   }
 
   /**
-   * Channel 转发时调用，写入内存缓冲
-   * 达 flushMb 阈值则 append 到文件并清空内存（防 OOM，数据不丢）
+   * Channel 转发时调用，异步写流（不阻塞消息转发路径）
    */
   append(targetId: string, dir: 'up' | 'down', raw: string): void {
     if (!this.config) return;
     const entry = this.getOrCreate(targetId);
-    const event: RecordEvent = {
-      seq: ++this.seq,
-      ts: Date.now(),
-      dir,
-      targetId,
-      raw,
-    };
-    entry.events.push(event);
-    entry.bytes += raw.length + META_OVERHEAD;
-    const threshold = this.config.flushMb * 1024 * 1024;
-    if (entry.bytes >= threshold) {
-      this.flushCurrent(targetId);
+    const event: RecordEvent = { seq: ++this.seq, ts: Date.now(), dir, targetId, raw };
+    this.ensureStream(entry, targetId);
+    // 异步写流，write 立即返回，由 WriteStream 内部缓冲 + 背压处理
+    if (entry.stream) {
+      entry.stream.write(JSON.stringify(event) + '\n');
+    }
+    entry.totalCount++;
+    entry.totalBytes += raw.length + META_OVERHEAD;
+    // 内存 ring，供 getBuffer 轻量查询
+    entry.recent.push(event);
+    if (entry.recent.length > RECENT_SIZE) {
+      entry.recent.shift();
     }
   }
 
   /**
-   * 把当前内存段 append 到磁盘文件并清空内存
-   * 文件名 {targetId}_{会话startTs}.jsonl，整个会话持续追加同一文件
+   * 确保 target 有可写的流（懒创建 + 断后续建）
    */
-  private flushCurrent(targetId: string): void {
-    if (!this.config) return;
-    const entry = this.buffers.get(targetId);
-    if (!entry || entry.events.length === 0) return;
-    if (!entry.filePath) {
-      const dir = resolve(this.config.dir);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
+  private ensureStream(entry: BufferEntry, targetId: string): void {
+    if (entry.stream && !entry.stream.destroyed) return;
+    const dir = resolve(this.config!.dir);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    const isFirst = !entry.filePath;
+    if (isFirst) {
       entry.filePath = join(dir, `${targetId}_${entry.startTs}.jsonl`);
-      // 新会话产生新文件，顺带清理超额旧文件（同文件追加不触发，避免频繁扫盘）
+    }
+    entry.stream = createWriteStream(entry.filePath!, { flags: 'a' });
+    entry.stream.on('error', () => {
+      // 写盘失败（如磁盘满）仅吞掉，不影响主流程；下次 append 会重建流
+    });
+    if (isFirst) {
+      // 新文件产生，异步清理超额旧文件（不阻塞 append）
       this.pruneOldFiles();
     }
-    const lines = entry.events.map(e => JSON.stringify(e));
-    const content = lines.join('\n') + (lines.length ? '\n' : '');
-    appendFileSync(entry.filePath, content, { encoding: 'utf8' });
-    entry.totalCount += entry.events.length;
-    entry.totalBytes += content.length;
-    entry.events = [];
-    entry.bytes = 0;
   }
 
   /**
-   * 清理超额旧文件：按 mtime 排序，保留最近 maxFiles 个，删最旧的
-   * 仅在新文件首次创建时调用一次
-   */
-  private pruneOldFiles(): void {
-    if (!this.config) return;
-    const dir = resolve(this.config.dir);
-    if (!existsSync(dir)) return;
-    let files: { file: string; mtime: number }[] = [];
-    try {
-      files = readdirSync(dir)
-        .filter(f => f.endsWith('.jsonl'))
-        .map(f => {
-          const p = join(dir, f);
-          return { file: p, mtime: statSync(p).mtimeMs };
-        })
-        .sort((a, b) => a.mtime - b.mtime); // 旧的在前
-    } catch {
-      return;
-    }
-    const excess = files.length - this.config.maxFiles;
-    if (excess > 0) {
-      files.slice(0, excess).forEach(f => {
-        try { unlinkSync(f.file); } catch { /* 忽略删除失败 */ }
-      });
-    }
-  }
-
-  /**
-   * 拉取当前内存中未 flush 的事件（不落盘）
-   * 注意：已 flush 到磁盘的部分需读 dump 返回的文件
+   * 拉取最近写入的事件（内存 ring，最多 RECENT_SIZE 条）
+   * 完整数据需读 dump 返回的文件
    */
   getBuffer(targetId: string, since?: number, limit?: number): RecordEvent[] {
     const entry = this.buffers.get(targetId);
     if (!entry) return [];
-    let events: RecordEvent[] = entry.events;
+    let events: RecordEvent[] = entry.recent;
     if (since !== undefined && !Number.isNaN(since)) {
       events = events.filter(e => e.seq > since);
     }
@@ -157,8 +125,7 @@ class RecordBuffer {
   }
 
   /**
-   * flush 当前内存剩余到同一文件，返回累计文件信息
-   * 业务侧拿到单个自包含 jsonl 文件
+   * 等待流写完并返回累计文件信息
    */
   async dump(targetId: string): Promise<DumpResult> {
     if (!this.config) {
@@ -168,7 +135,7 @@ class RecordBuffer {
     if (!entry) {
       return { file: '', count: 0, bytes: 0 };
     }
-    this.flushCurrent(targetId);
+    await this.closeStream(entry);
     return {
       file: entry.filePath || '',
       count: entry.totalCount,
@@ -176,17 +143,35 @@ class RecordBuffer {
     };
   }
 
+  private closeStream(entry: BufferEntry): Promise<void> {
+    if (!entry.stream || entry.stream.destroyed) {
+      entry.stream = null;
+      return Promise.resolve();
+    }
+    const s = entry.stream;
+    return new Promise<void>((resolve) => {
+      s.once('finish', () => resolve());
+      s.once('error', () => resolve());
+      s.end();
+    }).then(() => { entry.stream = null; });
+  }
+
   /**
-   * target 断开时调用，内部按 config.auto 决定是否 flush 剩余到文件
-   * channel 不直接碰 config，只调此方法
+   * target 断开时调用，确保流写完关闭（不 await，不阻塞 channel 清理）
    */
   autoDumpOnClose(targetId: string): void {
-    if (this.config && this.config.auto) {
-      this.flushCurrent(targetId);
+    if (!this.config || !this.config.auto) return;
+    const entry = this.buffers.get(targetId);
+    if (entry) {
+      this.closeStream(entry);
     }
   }
 
   clear(targetId: string): void {
+    const entry = this.buffers.get(targetId);
+    if (entry) {
+      this.closeStream(entry);
+    }
     this.buffers.delete(targetId);
   }
 
@@ -194,7 +179,35 @@ class RecordBuffer {
     return Array.from(this.buffers.keys());
   }
 
+  /**
+   * 异步清理超额旧文件：按 mtime 排序，保留最近 maxFiles 个
+   */
+  private async pruneOldFiles(): Promise<void> {
+    if (!this.config) return;
+    const dir = resolve(this.config.dir);
+    try {
+      const names = await fsp.readdir(dir);
+      const jsonlNames = names.filter(n => n.endsWith('.jsonl'));
+      if (jsonlNames.length <= this.config.maxFiles) return;
+      const statted = await Promise.all(
+        jsonlNames.map(async n => {
+          const p = join(dir, n);
+          const st = await fsp.stat(p);
+          return { file: p, mtime: st.mtimeMs };
+        })
+      );
+      statted.sort((a, b) => a.mtime - b.mtime);
+      const excess = statted.length - this.config.maxFiles;
+      await Promise.all(
+        statted.slice(0, excess).map(item => fsp.unlink(item.file).catch(() => {}))
+      );
+    } catch {
+      // 扫盘失败仅吞掉，不影响录制主流程
+    }
+  }
+
   destroy(): void {
+    this.buffers.forEach(entry => { this.closeStream(entry); });
     this.buffers.clear();
     this.config = null;
   }

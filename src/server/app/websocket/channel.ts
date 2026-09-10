@@ -38,7 +38,30 @@ export class Channel {
     target.ws.on('message', this.handleTargetMessage.bind(this));
     target.ws.on('close', this.handleTargetClose.bind(this, target));
     this.internalTargets.push(target);
+    // 录制开启时：target 连接即主动下发 enable，触发 SDK 上报四路数据（无需等 devtool 连接）
+    if (recordBuffer.isReady()) {
+      this.startRecordingOnConnect(target);
+    }
     channelService.fireChannelChange(ChannelEventName.TARGET_ADD, this);
+  }
+
+  /**
+   * target 连接时主动下发 enable，触发 SDK 开始上报 console/console 数据
+   * 只录 Runtime（console/error）+ Network（请求），不录 DOM/Page——
+   * DOM MutationObserver 全树监听最重，会导致页面卡顿，录制场景不开启
+   * 沿用 handleDevtoolClose 的负 id 惯例，避免与 devtool 命令 id 冲突
+   */
+  private startRecordingOnConnect(target: Target) {
+    const commands = [
+      { id: -1, method: 'Runtime.enable' },
+      { id: -2, method: 'Network.enable' },
+    ];
+    commands.forEach(cmd => {
+      const raw = JSON.stringify(cmd);
+      // 记录下行 enable，保证录制件时间轴完整（知道何时开始录的）
+      recordBuffer.append(this.id, 'down', raw);
+      target.ws.send(raw);
+    });
   }
 
   public addDevtool(devtool: Devtool) {
